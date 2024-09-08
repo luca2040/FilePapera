@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>File</title>
+
     <link
       rel="icon"
       href="{{ url_for('static', filename='favicon.ico') }}"
@@ -16,26 +18,39 @@
     />
   </head>
   <body>
+    <!-- Button to open the modal -->
+    <button id="openModalBtn">Upload File</button>
+
     <div class="container">
-      <h1>File Upload with Progress Bar</h1>
-      <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="file" id="fileInput" required />
-        <input
-          type="text"
-          name="folder"
-          id="folderInput"
-          placeholder="Enter folder name"
-          required
-        />
-        <button type="submit">Upload</button>
-      </form>
-      <div id="progressWrapper">
-        <progress id="progressBar" value="0" max="100"></progress>
-        <span id="progressText"></span>
-      </div>
-      <div id="message"></div>
+      <h1>File List</h1>
+      <ul id="fileList"></ul>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- The Modal -->
+    <div id="uploadModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" id="closeModalBtn">&times;</span>
+        <h1>Upload a file</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+          <input type="file" name="file" id="fileInput" required />
+          <input
+            type="text"
+            name="folder"
+            id="folderInput"
+            placeholder="Enter folder name"
+          />
+          <button type="submit">Upload</button>
+        </form>
+        <div id="progressWrapper">
+          <progress id="progressBar" value="0" max="100"></progress>
+          <span id="progressText"></span>
+        </div>
+        <div id="message"></div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='scripts/upload_modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/load_file_list.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
   </body>
 </html>

@@ -9,18 +9,17 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
 
   const file = fileInput.files[0];
   const folder = folderInput.value;
-  const chunkSize = 10 * 1024 * 1024; // 1MB per chunk
+  const chunkSize = 10 * 1024 * 1024;
   let offset = 0;
   let totalChunks = Math.ceil(file.size / chunkSize);
 
   progressBar.value = 0;
-  progressBar.style.backgroundColor = "#007bff"; // Default color
   progressText.textContent = "";
   messageDiv.textContent = "";
 
   function uploadChunk() {
     if (offset >= file.size) {
-      checkMergingStatus(); // Start checking the merging status
+      checkMergingStatus();
       return;
     }
 
@@ -47,7 +46,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
     xhr.onload = function () {
       if (xhr.status === 200) {
         offset += chunkSize;
-        uploadChunk(); // Upload the next chunk
+        uploadChunk();
       } else {
         messageDiv.textContent = `Error: ${xhr.statusText}`;
       }
@@ -69,16 +68,13 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
         .then((data) => {
           const status = data.status;
           if (status === 0) {
-            progressBar.style.backgroundColor = "#007bff"; // Blue during merging
-            progressBar.value = 100; // Show full progress during merging
+            progressBar.value = 0;
             progressText.textContent = "Merging: In Progress";
           } else if (status < 100) {
-            progressBar.style.backgroundColor = "#007bff"; // Blue during merging
-            progressBar.value = 100; // Show full progress while merging
+            progressBar.value = status;
             progressText.textContent = `Merging: ${status}%`;
           } else {
             clearInterval(statusInterval);
-            progressBar.style.backgroundColor = "green"; // Green when done
             progressBar.value = 100;
             progressText.textContent = "Upload complete!";
           }
@@ -87,8 +83,8 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
           clearInterval(statusInterval);
           messageDiv.textContent = `Error: ${error}`;
         });
-    }, 500); // Check every 500ms
+    }, 100);
   }
 
-  uploadChunk(); // Start uploading
+  uploadChunk();
 });
