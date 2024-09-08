@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File</title>
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='favicon.ico') }}"
+      type="image/x-icon"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>File Upload with Progress Bar</h1>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput" required />
+        <input
+          type="text"
+          name="folder"
+          id="folderInput"
+          placeholder="Enter folder name"
+          required
+        />
+        <button type="submit">Upload</button>
+      </form>
+      <div id="progressWrapper">
+        <progress id="progressBar" value="0" max="100"></progress>
+        <span id="progressText"></span>
+      </div>
+      <div id="message"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+
+  upload_server:
+    build: ./flask
+    container_name: upload_server
+    restart: always
+    # volumes:
+    #   - ./database/database.db:/app/database/db.sqlite:rw
+    #   - ./config/parameters.json:/app/parameters/parameters.json
+    expose:
+      - 8080
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
