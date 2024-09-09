@@ -2,13 +2,14 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
   e.preventDefault();
 
   const fileInput = document.getElementById("fileInput");
-  const folderInput = document.getElementById("folderInput");
+
+  const folder = uploadPath;
+
   const progressBar = document.getElementById("progressBar");
   const progressText = document.getElementById("progressText");
   const messageDiv = document.getElementById("message");
 
   const file = fileInput.files[0];
-  const folder = folderInput.value;
   const chunkSize = 10 * 1024 * 1024;
   let offset = 0;
   let totalChunks = Math.ceil(file.size / chunkSize);
@@ -56,14 +57,14 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
       messageDiv.textContent = `Error: Could not upload chunk.`;
     };
 
-    xhr.open("POST", `/upload/${folder}`, true);
+    xhr.open("POST", `/upload?folder=${encodeURIComponent(folder)}`, true);
     xhr.send(formData);
   }
 
   function checkMergingStatus() {
     const filename = file.name;
     const statusInterval = setInterval(() => {
-      fetch(`/merge_status/${filename}`)
+      fetch(`/merge_status?filename=${encodeURIComponent(filename)}`)
         .then((response) => response.json())
         .then((data) => {
           const status = data.status;
@@ -87,4 +88,35 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
   }
 
   uploadChunk();
+});
+
+document.getElementById("folderForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const folderInput = document.getElementById("folderInput");
+
+  const folder = uploadPath;
+  const folderName = folderInput.value;
+
+  const messageDiv = document.getElementById("folderMessage");
+
+  messageDiv.textContent = "";
+
+  fetch(
+    `/createFolder?path=${encodeURIComponent(folder)}&name=${encodeURIComponent(
+      folderName
+    )}`
+  )
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      messageDiv.textContent = data.message || "Folder created successfully!";
+    })
+    .catch((error) => {
+      messageDiv.textContent = `Error: ${error.message}`;
+    });
 });

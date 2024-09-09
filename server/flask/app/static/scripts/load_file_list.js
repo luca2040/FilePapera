@@ -1,4 +1,3 @@
-// Function to load and display files/folders
 function loadFileList(folder = "") {
   const listEndpoint = `/list?path=${encodeURIComponent(folder)}`;
   fetch(listEndpoint)
@@ -15,13 +14,12 @@ function loadFileList(folder = "") {
     });
 }
 
-// Function to render files and folders in a tree structure
 function renderFileList(
   files,
   folder,
   parentElement = document.getElementById("fileList")
 ) {
-  parentElement.innerHTML = ""; // Clear the list before rendering
+  parentElement.innerHTML = "";
 
   files.forEach((file) => {
     const listItem = document.createElement("li");
@@ -34,7 +32,6 @@ function renderFileList(
     const fileActionsDiv = document.createElement("div");
     fileActionsDiv.className = "file-actions";
 
-    // Add action buttons (e.g., delete)
     const deleteButton = document.createElement("a");
     deleteButton.className = "action-button";
     deleteButton.textContent = "Delete";
@@ -45,18 +42,25 @@ function renderFileList(
 
     fileActionsDiv.appendChild(deleteButton);
 
-    // Check if the file is a folder
     if (file.indexOf(".") === -1) {
-      // Simple check for folders
       listItem.className = "folder-item";
       fileNameSpan.onclick = function () {
         toggleFolderContent(folder ? `${folder}/${file}` : file, listItem);
       };
 
-      // Create a nested list for folder content
       const nestedList = document.createElement("ul");
       nestedList.className = "folder-content";
       listItem.appendChild(nestedList);
+    } else {
+      const downloadButton = document.createElement("a");
+      downloadButton.className = "action-button";
+      downloadButton.textContent = "Download";
+      downloadButton.href = "#";
+      downloadButton.onclick = function () {
+        downloadFile(folder ? `${folder}/${file}` : file);
+      };
+
+      fileActionsDiv.appendChild(downloadButton);
     }
 
     listItem.appendChild(fileNameSpan);
@@ -65,14 +69,12 @@ function renderFileList(
   });
 }
 
-// Function to toggle folder content (expand/collapse)
 function toggleFolderContent(folder, listItem) {
   const nestedList = listItem.querySelector(".folder-content");
 
   if (nestedList.style.display === "none" || nestedList.style.display === "") {
-    nestedList.style.display = "block"; // Show folder content
+    nestedList.style.display = "block";
 
-    // Load and render files in the folder
     const listEndpoint = `/list?path=${encodeURIComponent(folder)}`;
     fetch(listEndpoint)
       .then((response) => response.json())
@@ -87,21 +89,20 @@ function toggleFolderContent(folder, listItem) {
         console.error("Error:", error);
       });
   } else {
-    nestedList.style.display = "none"; // Hide folder content
+    nestedList.style.display = "none";
   }
 }
 
-// Function to confirm and delete a file or folder
 function confirmDelete(filePath) {
   if (confirm(`Are you sure you want to delete ${filePath}?`)) {
-    fetch(`/delete/${filePath}`, {
+    fetch(`/delete?target=${encodeURIComponent(filePath)}`, {
       method: "DELETE",
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.message) {
           alert("File/folder deleted successfully");
-          loadFileList(); // Reload the file list
+          loadFileList();
         } else {
           alert("Error deleting file/folder: " + data.error);
         }
@@ -112,7 +113,20 @@ function confirmDelete(filePath) {
   }
 }
 
-// Load the file list on page load
+function downloadFile(filePath) {
+  const url = new URL("/download", window.location.origin);
+  url.searchParams.append("filepath", encodeURIComponent(filePath));
+
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filePath.split("/").pop();
+
+  document.body.appendChild(anchor);
+  anchor.click();
+
+  document.body.removeChild(anchor);
+}
+
 window.onload = function () {
   loadFileList();
 };

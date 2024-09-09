@@ -55,7 +55,7 @@ progress {
   margin-bottom: 10px;
 }
 
-#message {
+.form-message {
   margin-top: 20px;
   text-align: center;
   font-weight: bold;

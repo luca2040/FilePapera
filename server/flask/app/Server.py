@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory, jsonify, abort, render_template
+from flask import Flask, request, send_from_directory, jsonify, abort, render_template, Response
 from flask_sockets import Sockets
 import os
 import threading
@@ -8,28 +8,36 @@ app = Flask(__name__)
 sockets = Sockets(app)
 
 
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = './uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 MERGING_STATUS = {}
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def merge_chunks(file_name, folder_path, total_chunks):
     try:
+
         file_path = os.path.join(folder_path, file_name)
+
         with open(file_path, 'wb') as outfile:
             for i in range(total_chunks):
+
                 chunk_path = os.path.join(folder_path, f"{file_name}.part{i}")
+
                 with open(chunk_path, 'rb') as infile:
                     outfile.write(infile.read())
-                os.remove(chunk_path)  # Remove chunk file after combining
+
+                os.remove(chunk_path)
+
                 MERGING_STATUS[file_name] = int((i / total_chunks) * 100)
-        MERGING_STATUS[file_name] = 100  # Mark as completed
+
+        MERGING_STATUS[file_name] = 100
+
     except Exception as e:
+
         print(f"Error during merging: {e}")
-        MERGING_STATUS[file_name] = -1  # Error status
-
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        MERGING_STATUS[file_name] = -1
 
 
 @app.route("/")
@@ -37,10 +45,15 @@ def index():
     return render_template("index.html")
 
 
-@app.route('/merge_status/<filename>', methods=['GET'])
-def merge_status(filename):
-    status = MERGING_STATUS.get(filename, 0)
-    return jsonify({"status": status}), 200
+@app.route('/merge_status', methods=['GET'])
+def merge_status():
+    filename = request.args.get("filename", None)
+
+    if filename:
+        status = MERGING_STATUS.get(filename, 0)
+        return jsonify({"status": status}), 200
+
+    return jsonify({"error": "Invalid filename"}), 400
 
 
 @app.route('/list', methods=['GET'])
@@ -53,15 +66,38 @@ def list_files_and_folders():
 
     if os.path.isdir(folder_path):
         files = os.listdir(folder_path)
-        print(files)
         return jsonify({"files": files}), 200
 
     return jsonify({"error": "Invalid folder"}), 400
 
 
-@app.route('/upload/<path:folder>', methods=['POST'])
-def upload_file(folder):
-    folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
+@app.route('/createFolder', methods=['GET'])
+def create_folder():
+    path = request.args.get("path", "")
+    folder_name = request.args.get("name", None)
+
+    if not folder_name:
+        return jsonify({"error": "Folder name is required"}), 400
+
+    full_path = os.path.join(app.config['UPLOAD_FOLDER'], path, folder_name)
+
+    try:
+        os.makedirs(full_path, exist_ok=True)
+        return jsonify({"message": f"Folder '{folder_name}' created successfully at '{path}'"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    folder = request.args.get("folder", None)
+
+    folder_path = None
+
+    if folder:
+        os.path.join(app.config['UPLOAD_FOLDER'], folder)
+    else:
+        folder_path = app.config['UPLOAD_FOLDER']
 
     os.makedirs(folder_path, exist_ok=True)
 
@@ -97,19 +133,44 @@ def upload_file(folder):
     return jsonify({"message": f"Chunk {chunk} uploaded successfully"}), 200
 
 
-@app.route('/download/<path:filepath>', methods=['GET'])
-def download_file(filepath):
-    file_dir, filename = os.path.split(filepath)
-    dir_path = os.path.join(app.config['UPLOAD_FOLDER'], file_dir)
+def generate_large_file(filepath):
+    with open(filepath, 'rb') as f:
+        while chunk := f.read(8192):
+            yield chunk
 
-    if not os.path.exists(os.path.join(dir_path, filename)):
+
+@app.route('/download', methods=['GET'])
+def download_file():
+    filepath = request.args.get("filepath", None)
+
+    if not filepath:
         abort(404, description="File not found")
 
-    return send_from_directory(dir_path, filename, as_attachment=True)
+    if os.path.dirname(filepath):
+        file_dir, filename = os.path.split(filepath)
+        full_dir_path = os.path.join(app.config['UPLOAD_FOLDER'], file_dir)
+    else:
+        filename = filepath
+        full_dir_path = app.config['UPLOAD_FOLDER']
+
+    full_file_path = os.path.join(full_dir_path, filename)
+
+    if not os.path.isfile(full_file_path):
+        abort(404, description="File not found")
+
+    return Response(generate_large_file(full_file_path),
+                    headers={
+                        "Content-Disposition": f"attachment; filename={filename}"},
+                    mimetype='application/octet-stream')
 
 
-@app.route('/delete/<path:target>', methods=['DELETE'])
-def delete_file_or_folder(target):
+@app.route('/delete', methods=['DELETE'])
+def delete_file_or_folder():
+    target = request.args.get("target", None)
+
+    if not target:
+        abort(404, description="File or folder not found")
+
     target_path = os.path.join(app.config['UPLOAD_FOLDER'], target)
 
     if not os.path.exists(target_path):
