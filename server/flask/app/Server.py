@@ -1,4 +1,5 @@
-from flask import Flask, request, send_from_directory, jsonify, abort, render_template, Response
+from flask import Flask, request, jsonify, abort, render_template, Response
+from urllib.parse import unquote_plus
 from flask_sockets import Sockets
 import os
 import threading
@@ -141,7 +142,9 @@ def generate_large_file(filepath):
 
 @app.route('/download', methods=['GET'])
 def download_file():
-    filepath = request.args.get("filepath", None)
+    filepath = unquote_plus(request.args.get("filepath", None))
+
+    print(filepath)
 
     if not filepath:
         abort(404, description="File not found")

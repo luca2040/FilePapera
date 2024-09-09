@@ -26,7 +26,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
 
     const formData = new FormData();
     const chunk = file.slice(offset, offset + chunkSize);
-    formData.append("file", chunk, file.name);
+    formData.append("file", chunk, file.name + ".file");
     formData.append("folder", folder);
     formData.append("chunk", offset / chunkSize);
     formData.append("totalChunks", totalChunks);
@@ -64,7 +64,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
   function checkMergingStatus() {
     const filename = file.name;
     const statusInterval = setInterval(() => {
-      fetch(`/merge_status?filename=${encodeURIComponent(filename)}`)
+      fetch(`/merge_status?filename=${encodeURIComponent(filename)}.file`)
         .then((response) => response.json())
         .then((data) => {
           const status = data.status;
@@ -76,6 +76,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
             progressText.textContent = `Merging: ${status}%`;
           } else {
             clearInterval(statusInterval);
+            loadFileList();
             progressBar.value = 100;
             progressText.textContent = "Upload complete!";
           }
@@ -119,4 +120,6 @@ document.getElementById("folderForm").addEventListener("submit", function (e) {
     .catch((error) => {
       messageDiv.textContent = `Error: ${error.message}`;
     });
+
+  loadFileList();
 });

@@ -21,13 +21,21 @@ function renderFileList(
 ) {
   parentElement.innerHTML = "";
 
-  files.forEach((file) => {
+  const fileList = files.filter((file) => file.indexOf(".file") !== -1).sort();
+  const folderList = files
+    .filter((file) => file.indexOf(".file") === -1)
+    .sort();
+
+  const sortedFilesAndFolders = [...fileList, ...folderList];
+
+  sortedFilesAndFolders.forEach((file) => {
     const listItem = document.createElement("li");
-    listItem.className = "file-item";
+    listItem.className =
+      file.indexOf(".file") === -1 ? "folder-item" : "file-item";
 
     const fileNameSpan = document.createElement("span");
     fileNameSpan.className = "file-name";
-    fileNameSpan.textContent = file;
+    fileNameSpan.textContent = file.replace(".file", "");
 
     const fileActionsDiv = document.createElement("div");
     fileActionsDiv.className = "file-actions";
@@ -42,8 +50,7 @@ function renderFileList(
 
     fileActionsDiv.appendChild(deleteButton);
 
-    if (file.indexOf(".") === -1) {
-      listItem.className = "folder-item";
+    if (file.indexOf(".file") === -1) {
       fileNameSpan.onclick = function () {
         toggleFolderContent(folder ? `${folder}/${file}` : file, listItem);
       };
@@ -105,6 +112,7 @@ function confirmDelete(filePath) {
           loadFileList();
         } else {
           alert("Error deleting file/folder: " + data.error);
+          loadFileList();
         }
       })
       .catch((error) => {

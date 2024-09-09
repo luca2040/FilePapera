@@ -15,12 +15,22 @@ function openFolderModal(path) {
   uploadPath = path;
 }
 
+function closeFolderModal_fn() {
+  folderModal.style.display = "none";
+
+  const folderInput = document.getElementById("folderInput");
+  const messageDiv = document.getElementById("folderMessage");
+
+  folderInput.value = "";
+  messageDiv.textContent = "";
+}
+
 closeModal.onclick = function () {
   modal.style.display = "none";
 };
 
 closeFolderModal.onclick = function () {
-  folderModal.style.display = "none";
+  closeFolderModal_fn();
 };
 
 window.onclick = function (event) {
@@ -28,6 +38,6 @@ window.onclick = function (event) {
     modal.style.display = "none";
   }
   if (event.target == folderModal) {
-    folderModal.style.display = "none";
+    closeFolderModal_fn();
   }
 };
