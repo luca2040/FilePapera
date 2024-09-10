@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify, abort, render_template, Response
 from urllib.parse import unquote_plus
 from flask_sockets import Sockets
+from FilenameEncoder import FilenameEncoder
 import os
 import threading
 
+enc = FilenameEncoder()
 
 app = Flask(__name__)
 sockets = Sockets(app)
@@ -96,7 +98,7 @@ def upload_file():
     folder_path = None
 
     if folder:
-        os.path.join(app.config['UPLOAD_FOLDER'], folder)
+        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
     else:
         folder_path = app.config['UPLOAD_FOLDER']
 

@@ -26,7 +26,7 @@ function renderFileList(
     .filter((file) => file.indexOf(".file") === -1)
     .sort();
 
-  const sortedFilesAndFolders = [...fileList, ...folderList];
+  const sortedFilesAndFolders = [...folderList, ...fileList];
 
   sortedFilesAndFolders.forEach((file) => {
     const listItem = document.createElement("li");
@@ -54,6 +54,25 @@ function renderFileList(
       fileNameSpan.onclick = function () {
         toggleFolderContent(folder ? `${folder}/${file}` : file, listItem);
       };
+
+      const newFolderButton = document.createElement("a");
+      newFolderButton.className = "action-button";
+      newFolderButton.textContent = "Create folder";
+      newFolderButton.href = "#";
+      newFolderButton.onclick = function () {
+        openFolderModal(folder ? `${folder}/${file}` : file);
+      };
+
+      const newFileButton = document.createElement("a");
+      newFileButton.className = "action-button";
+      newFileButton.textContent = "Upload file here";
+      newFileButton.href = "#";
+      newFileButton.onclick = function () {
+        openModal(folder ? `${folder}/${file}` : file);
+      };
+
+      fileActionsDiv.appendChild(newFolderButton);
+      fileActionsDiv.appendChild(newFileButton);
 
       const nestedList = document.createElement("ul");
       nestedList.className = "folder-content";
