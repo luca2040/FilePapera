@@ -14,7 +14,10 @@ class FilenameEncoder:
                            original, replacement in
                            self.encode_map.items()}
 
+        self.replace_bar = '>'
+
         self.basepath = base_filepath
+        self.replaced_basepath = self.basepath.replace('/', self.replace_bar)
 
     def encode_str(self, text: str) -> str:
         """Encode a string to base64 but replace not valid characters"""
@@ -40,21 +43,29 @@ class FilenameEncoder:
     def encode(self, path: str) -> str:
         "Encodes the path keeping the basepath"
 
+        path = path.replace(self.basepath, self.replaced_basepath)
+
         path_parts = path.split("/")
         encoded_parts = [
-            self.encode_str(part) if part != self.basepath
-            else self.basepath
+            self.encode_str(part) if part != self.replaced_basepath
+            else self.replaced_basepath
             for part in path_parts]
 
-        return "/".join(encoded_parts)
+        encoded = "/".join(encoded_parts)
+
+        return encoded.replace(self.replaced_basepath, self.basepath)
 
     def decode(self, enc_path: str) -> str:
         "Decodes it"
 
+        enc_path = enc_path.replace(self.basepath, self.replaced_basepath)
+
         enc_path_parts = enc_path.split("/")
         decoded_parts = [
-            self.decode_str(part) if part != self.basepath
-            else self.basepath
+            self.decode_str(part) if part != self.replaced_basepath
+            else self.replaced_basepath
             for part in enc_path_parts]
 
-        return "/".join(decoded_parts)
+        decoded = "/".join(decoded_parts)
+
+        return decoded.replace(self.replaced_basepath, self.basepath)

@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify, abort, render_template, Response
 from urllib.parse import unquote_plus
 from flask_sockets import Sockets
-from FilenameEncoder import FilenameEncoder
+from app.FilenameEncoder import FilenameEncoder
 import os
 import threading
 
-enc = FilenameEncoder()
 
 app = Flask(__name__)
 sockets = Sockets(app)
@@ -15,6 +14,7 @@ UPLOAD_FOLDER = './uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 MERGING_STATUS = {}
 
+enc = FilenameEncoder(app.config['UPLOAD_FOLDER'])
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
@@ -22,11 +22,13 @@ def merge_chunks(file_name, folder_path, total_chunks):
     try:
 
         file_path = os.path.join(folder_path, file_name)
+        file_path = enc.encode(file_path)
 
         with open(file_path, 'wb') as outfile:
             for i in range(total_chunks):
 
                 chunk_path = os.path.join(folder_path, f"{file_name}.part{i}")
+                chunk_path = enc.encode(chunk_path)
 
                 with open(chunk_path, 'rb') as infile:
                     outfile.write(infile.read())
@@ -64,11 +66,14 @@ def list_files_and_folders():
     folder = request.args.get('path', '')
     folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
 
+    folder_path = enc.encode(folder_path)
+
     if not os.path.exists(folder_path):
         abort(404, description="Folder not found")
 
     if os.path.isdir(folder_path):
         files = os.listdir(folder_path)
+        files = [enc.decode(f) for f in files]
         return jsonify({"files": files}), 200
 
     return jsonify({"error": "Invalid folder"}), 400
@@ -83,6 +88,7 @@ def create_folder():
         return jsonify({"error": "Folder name is required"}), 400
 
     full_path = os.path.join(app.config['UPLOAD_FOLDER'], path, folder_name)
+    full_path = enc.encode(full_path)
 
     try:
         os.makedirs(full_path, exist_ok=True)
@@ -102,7 +108,7 @@ def upload_file():
     else:
         folder_path = app.config['UPLOAD_FOLDER']
 
-    os.makedirs(folder_path, exist_ok=True)
+    os.makedirs(enc.encode(folder_path), exist_ok=True)
 
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
@@ -116,11 +122,12 @@ def upload_file():
 
     filename = file.filename
     temp_file_path = os.path.join(folder_path, f"{filename}.part{chunk}")
+    temp_file_path = enc.encode(temp_file_path)
 
     file.save(temp_file_path)
 
-    chunk_files = [f for f in os.listdir(folder_path)
-                   if f.startswith(filename + '.part')]
+    chunk_files = [f for f in os.listdir(enc.encode(folder_path))
+                   if (enc.decode(f)).startswith(filename + '.part')]
 
     if len(chunk_files) == total_chunks:
 
@@ -146,8 +153,6 @@ def generate_large_file(filepath):
 def download_file():
     filepath = unquote_plus(request.args.get("filepath", None))
 
-    print(filepath)
-
     if not filepath:
         abort(404, description="File not found")
 
@@ -159,6 +164,7 @@ def download_file():
         full_dir_path = app.config['UPLOAD_FOLDER']
 
     full_file_path = os.path.join(full_dir_path, filename)
+    full_file_path = enc.encode(full_file_path)
 
     if not os.path.isfile(full_file_path):
         abort(404, description="File not found")
@@ -177,6 +183,7 @@ def delete_file_or_folder():
         abort(404, description="File or folder not found")
 
     target_path = os.path.join(app.config['UPLOAD_FOLDER'], target)
+    target_path = enc.encode(target_path)
 
     if not os.path.exists(target_path):
         abort(404, description="File or folder not found")
