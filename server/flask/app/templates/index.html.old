@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>File</title>
+
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='favicon.ico') }}"
+      type="image/x-icon"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>File List</h1>
+      <button id="openModalBtn" onclick="openModal('');">Upload File</button>
+      <button id="openFolderModalBtn" onclick="openFolderModal('');">
+        Create folder
+      </button>
+      <ul id="fileList"></ul>
+    </div>
+
+    <!-- Create File modal -->
+    <div id="uploadModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" id="closeModalBtn">&times;</span>
+        <h1>Upload a file</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+          <input type="file" name="file" id="fileInput" required />
+          <button type="submit">Upload</button>
+        </form>
+        <div id="progressWrapper">
+          <progress id="progressBar" value="0" max="100"></progress>
+          <span id="progressText"></span>
+        </div>
+        <div class="form-message" id="message"></div>
+      </div>
+    </div>
+    <!-- Create Folder modal -->
+    <div id="folderModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" id="closeFolderModalBtn">&times;</span>
+        <h1>New folder</h1>
+        <form id="folderForm" enctype="multipart/form-data">
+          <input type="text" name="folderName" id="folderInput" required />
+          <button type="submit">Create folder</button>
+        </form>
+        <div class="form-message" id="folderMessage"></div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='scripts/upload_modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/load_file_list.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+  </body>
+</html>
