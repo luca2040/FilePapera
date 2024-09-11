@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify, abort, render_template, Response
-from urllib.parse import unquote_plus
-from flask_sockets import Sockets
-from app.FilenameEncoder import FilenameEncoder
 import os
 import shutil
+import time
+from flask import Flask, Response, request, jsonify, abort, render_template
+from flask_sockets import Sockets
+from urllib.parse import unquote_plus
+from app.FilenameEncoder import FilenameEncoder
 
 
 app = Flask(__name__)
@@ -21,25 +22,47 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def index():
     return render_template("index.html")
 
-# NEEDS CHANGES
-
 
 @app.route('/list', methods=['GET'])
 def list_files_and_folders():
     folder = request.args.get('path', '')
-    folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
 
-    folder_path = enc.encode(folder_path)
+    try:
+        folder = unquote_plus(folder)
+        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
 
-    if not os.path.exists(folder_path):
-        abort(404, description="Folder not found")
+        folder_path = enc.encode(folder_path)
 
-    if os.path.isdir(folder_path):
-        files = os.listdir(folder_path)
-        files = [enc.decode(f) for f in files]
-        return jsonify({"files": files}), 200
+        if not os.path.exists(folder_path):
+            abort(404, description="Folder not found")
 
-    return jsonify({"error": "Invalid folder"}), 400
+        if os.path.isdir(folder_path):
+            files = os.listdir(folder_path)
+            file_details = []
+
+            for f in files:
+                decoded_file = enc.decode(f)
+                full_path = os.path.join(folder_path, f)
+
+                file_size = os.path.getsize(full_path)
+                is_file = os.path.isfile(full_path)
+
+                creation_time = os.path.getctime(full_path)
+                readable_creation_time = time.strftime(
+                    '%Y-%m-%d', time.localtime(creation_time))
+
+                file_details.append({
+                    "name": decoded_file,
+                    "size": file_size,
+                    "file": is_file,
+                    "creation_date": readable_creation_time
+                })
+
+            return jsonify({"files": file_details}), 200
+
+        return jsonify({"error": "Invalid folder"}), 400
+    except Exception as _:
+        return jsonify({"error": "Exception listing elements"}), 500
 
 
 @app.route('/new/folder', methods=['GET'])
