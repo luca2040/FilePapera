@@ -3,7 +3,6 @@ from urllib.parse import unquote_plus
 from flask_sockets import Sockets
 from app.FilenameEncoder import FilenameEncoder
 import os
-import threading
 
 
 app = Flask(__name__)
@@ -12,53 +11,14 @@ sockets = Sockets(app)
 
 UPLOAD_FOLDER = './uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-MERGING_STATUS = {}
 
 enc = FilenameEncoder(app.config['UPLOAD_FOLDER'])
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
-def merge_chunks(file_name, folder_path, total_chunks):
-    try:
-
-        file_path = os.path.join(folder_path, file_name)
-        file_path = enc.encode(file_path)
-
-        with open(file_path, 'wb') as outfile:
-            for i in range(total_chunks):
-
-                chunk_path = os.path.join(folder_path, f"{file_name}.part{i}")
-                chunk_path = enc.encode(chunk_path)
-
-                with open(chunk_path, 'rb') as infile:
-                    outfile.write(infile.read())
-
-                os.remove(chunk_path)
-
-                MERGING_STATUS[file_name] = int((i / total_chunks) * 100)
-
-        MERGING_STATUS[file_name] = 100
-
-    except Exception as e:
-
-        print(f"Error during merging: {e}")
-        MERGING_STATUS[file_name] = -1
-
-
 @app.route("/")
 def index():
     return render_template("index.html")
-
-
-@app.route('/merge_status', methods=['GET'])
-def merge_status():
-    filename = request.args.get("filename", None)
-
-    if filename:
-        status = MERGING_STATUS.get(filename, 0)
-        return jsonify({"status": status}), 200
-
-    return jsonify({"error": "Invalid filename"}), 400
 
 
 @app.route('/list', methods=['GET'])
@@ -100,13 +60,10 @@ def create_folder():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     folder = request.args.get("folder", None)
-
-    folder_path = None
+    folder_path = app.config['UPLOAD_FOLDER']
 
     if folder:
-        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
-    else:
-        folder_path = app.config['UPLOAD_FOLDER']
+        folder_path = os.path.join(folder_path, folder)
 
     os.makedirs(enc.encode(folder_path), exist_ok=True)
 
@@ -114,33 +71,23 @@ def upload_file():
         return jsonify({"error": "No file part"}), 400
 
     file = request.files['file']
-    chunk = request.form.get('chunk', type=int)
-    total_chunks = request.form.get('totalChunks', type=int)
-
     if not file:
         return jsonify({"error": "No file part"}), 400
-
     filename = file.filename
-    temp_file_path = os.path.join(folder_path, f"{filename}.part{chunk}")
-    temp_file_path = enc.encode(temp_file_path)
 
-    file.save(temp_file_path)
+    final_file_path = os.path.join(folder_path, filename)
+    final_file_path = enc.encode(final_file_path)
 
-    chunk_files = [f for f in os.listdir(enc.encode(folder_path))
-                   if (enc.decode(f)).startswith(filename + '.part')]
+    try:
+        with open(final_file_path, 'wb') as f:
+            while chunk := file.stream.read(262144):
 
-    if len(chunk_files) == total_chunks:
+                f.write(chunk)
 
-        MERGING_STATUS[filename] = 0
+        return jsonify({"message": f"File {filename} uploaded successfully."}), 200
+    except Exception as e:
 
-        merging_thread = threading.Thread(
-            target=merge_chunks, args=(filename, folder_path, total_chunks))
-
-        merging_thread.start()
-
-        return jsonify({"message": f"File {filename} uploaded successfully, merging in progress."}), 200
-
-    return jsonify({"message": f"Chunk {chunk} uploaded successfully"}), 200
+        return jsonify({"error": f"Failed to upload file: {str(e)}"}), 500
 
 
 def generate_large_file(filepath):
@@ -169,9 +116,12 @@ def download_file():
     if not os.path.isfile(full_file_path):
         abort(404, description="File not found")
 
+    file_size = os.path.getsize(full_file_path)
+
     return Response(generate_large_file(full_file_path),
                     headers={
-                        "Content-Disposition": f"attachment; filename={filename}"},
+                        "Content-Disposition": f"attachment; filename={filename}",
+                        "Content-Length": str(file_size)},
                     mimetype='application/octet-stream')
 
 
