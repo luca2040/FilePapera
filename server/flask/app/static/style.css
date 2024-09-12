@@ -6,6 +6,10 @@
   --border-color: #333;
   --node-size: 14px;
   --node-distance: 5px;
+  --scrollbar-bg: #444;
+  --scrollbar-thumb: #00bfae;
+  --storage-bar-bg: #444;
+  --storage-progress: #00bfae;
 }
 
 body {
@@ -13,11 +17,48 @@ body {
   font-family: Arial, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-light);
+  overflow-x: hidden; /* Prevents horizontal overflow */
 }
 
 .container {
   display: flex;
   height: 100vh;
+  overflow: hidden; /* Fixes vertical overflow */
+}
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-light);
+  color: var(--text-light);
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.title {
+  font-size: 20px;
+  margin-right: auto;
+}
+
+.path-title {
+  margin-left: 20px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.menu-btn {
+  background-color: var(--bg-light);
+  color: var(--text-light);
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 1001; /* Prevents button from being covered */
 }
 
 .sidebar {
@@ -25,18 +66,54 @@ body {
   background-color: var(--bg-light);
   padding: 10px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-  position: relative;
+  position: fixed;
+  top: 50px; /* Adjusted so it doesn't overlap titlebar */
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(0);
+  z-index: 999; /* Adjusted so it doesn't cover the titlebar */
+  overflow-y: auto;
+  transition: transform 0.3s ease; /* Smooth transition */
+}
+
+.sidebar.active {
+  transform: translateX(-100%);
+}
+
+.upload-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.upload-file,
+.upload-folder {
+  background-color: var(--accent-green);
+  color: var(--text-light);
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.upload-file:hover,
+.upload-folder:hover {
+  background-color: #009f95;
 }
 
 .tree {
-  position: relative;
+  flex-grow: 1;
+  overflow-y: auto;
 }
 
 .tree ul {
   list-style: none;
   padding-left: 0;
   margin: 0;
-  position: relative;
 }
 
 .tree ul ul {
@@ -44,39 +121,59 @@ body {
 }
 
 .tree li {
-  position: relative;
   margin: var(--node-distance) 0;
 }
 
-.tree .node {
+.node {
   width: var(--node-size);
   height: var(--node-size);
   border-radius: 50%;
   border: 2px solid var(--border-color);
-  background-color: transparent;
   display: inline-block;
-  vertical-align: middle;
-  position: relative;
+  background-color: transparent;
 }
 
-.tree .node.current {
+.node.current {
   background-color: var(--accent-green);
   border-color: var(--accent-green);
 }
 
-.tree .node.current-less {
+.node.current-less {
   border: 2px solid var(--accent-green);
   box-shadow: 0 0 0 2px var(--bg-light); /* Inner border effect */
 }
 
-.main {
-  flex: 1;
-  padding: 20px;
+.scrollable::-webkit-scrollbar {
+  width: 10px;
 }
 
-.path {
-  font-size: 16px;
-  margin-bottom: 10px;
+.scrollable::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+
+.storage-bar {
+  height: 20px;
+  background-color: var(--storage-bar-bg);
+  border-radius: 10px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.storage-progress {
+  width: 50%; /* Example size, this should be dynamic */
+  height: 100%;
+  background-color: var(--storage-progress);
+}
+
+.main {
+  flex: 1;
+  padding: 70px 20px 20px 280px; /* Adjusted to account for fixed sidebar and titlebar */
+  overflow-y: auto;
 }
 
 .files {
@@ -104,4 +201,38 @@ body {
 .file-date,
 .file-size {
   font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .menu-btn {
+    display: block;
+  }
+
+  .main {
+    padding-left: 20px; /* Adjusts for sidebar being hidden */
+  }
+}
+
+@media (min-width: 768px) {
+  .menu-btn {
+    display: none;
+  }
+
+  .sidebar {
+    transform: translateX(0);
+  }
+
+  .titlebar,
+  .sidebar {
+    position: fixed;
+  }
 }
