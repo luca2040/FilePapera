@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>File Upload Server</title>
+    <title>FileDrive</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
@@ -13,256 +13,37 @@
     <div class="container">
       <div class="titlebar">
         <button class="menu-btn" onclick="toggleSidebar()">☰ Menu</button>
-        <span class="title">File Upload Server</span>
+        <span class="title">FileDrive</span>
       </div>
 
       <div class="sidebar">
         <div class="upload-buttons">
-          <button class="upload-file">Upload File</button>
-          <button class="upload-folder">Upload Folder</button>
+          <button class="upload-file">Carica file</button>
+          <button class="upload-folder">Carica cartella</button>
         </div>
 
         <div class="tree scrollable">
           <ul class="tree-root">
             <li>
-              <div class="node current"></div>
+              <div class="node node-main current-less"></div>
               <ul>
+                <li>
+                  <div class="node"></div>
+                </li>
+                <li>
+                  <div class="node"></div>
+                </li>
                 <li>
                   <div class="node current-less"></div>
                   <ul>
                     <li>
-                      <div class="node"></div>
+                      <div class="node current-less"></div>
                       <ul>
                         <li>
                           <div class="node"></div>
                         </li>
                         <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
-                        </li>
-                        <li>
-                          <div class="node"></div>
+                          <div class="node current"></div>
                         </li>
                         <li>
                           <div class="node"></div>
@@ -288,187 +69,192 @@
       </div>
 
       <div class="main">
-        <div class="files">
-          <div class="file-path-info">
-            <span class="path-folder">/</span>
-            <span class="path-separator">></span>
-            <span class="path-folder">root</span>
-            <span class="path-separator">></span>
-            <span class="path-folder">folder</span>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 1</span>
-              <span class="file-date">2024-09-11</span>
-              <span class="file-size">1.2 MB</span>
+        <div class="main-inner scrollable">
+          <div class="files">
+            <div class="file-path-info">
+              <span class="path-folder">/</span>
+              <span class="path-separator">></span>
+              <span class="path-folder">cartella1</span>
+              <span class="path-separator">></span>
+              <span class="path-folder">cartella2</span>
+              <span class="path-separator">></span>
+              <span class="path-folder">cartella3</span>
+              <span class="path-separator">></span>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 2</span>
-              <span class="file-date">2024-09-10</span>
-              <span class="file-size">3.4 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 1</span>
+                <span class="file-date">2024-09-11</span>
+                <span class="file-size">1.2 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 2</span>
+                <span class="file-date">2024-09-10</span>
+                <span class="file-size">3.4 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
-          </div>
-          <div class="file">
-            <div class="file-info">
-              <span class="file-name">File 3</span>
-              <span class="file-date">2024-09-09</span>
-              <span class="file-size">2.8 MB</span>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
+            </div>
+            <div class="file">
+              <div class="file-info">
+                <span class="file-name">File 3</span>
+                <span class="file-date">2024-09-09</span>
+                <span class="file-size">2.8 MB</span>
+              </div>
             </div>
           </div>
         </div>

@@ -20,7 +20,7 @@ body {
   font-family: Arial, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-light);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .container {
@@ -137,6 +137,10 @@ body {
   background-color: transparent;
 }
 
+.node.node-main {
+  border-radius: 0;
+}
+
 .node.current {
   background-color: var(--accent-green);
   border-color: var(--accent-green);
@@ -182,8 +186,16 @@ body {
 
 .main {
   flex: 1;
-  padding: 70px 20px 20px 280px;
+  padding: 50px 0px 0px 260px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-inner {
+  flex: 1;
   overflow-y: auto;
+  padding: 20px;
 }
 
 /* FILES */
@@ -254,7 +266,7 @@ body {
   }
 
   .main {
-    padding-left: 20px;
+    padding-left: 0px;
   }
 }
 
