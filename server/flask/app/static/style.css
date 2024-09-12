@@ -1,15 +1,18 @@
+/* VARIABLES */
+
 :root {
   --bg-dark: #1e1e1e;
   --bg-light: #2a2a2a;
   --accent-green: #00bfae;
+  --storage-progress: #00bf03;
   --text-light: #f0f0f0;
   --border-color: #333;
-  --node-size: 14px;
-  --node-distance: 5px;
+  --node-size: 12px;
+  --node-distance: 2px;
   --scrollbar-bg: #444;
   --scrollbar-thumb: #00bfae;
   --storage-bar-bg: #444;
-  --storage-progress: #00bfae;
+  --bars-height: 8px;
 }
 
 body {
@@ -17,16 +20,19 @@ body {
   font-family: Arial, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-light);
-  overflow-x: hidden; /* Prevents horizontal overflow */
+  overflow-x: hidden;
 }
 
 .container {
   display: flex;
   height: 100vh;
-  overflow: hidden; /* Fixes vertical overflow */
+  overflow: hidden;
 }
 
+/* TITLE BAR */
+
 .titlebar {
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -46,20 +52,16 @@ body {
   margin-right: auto;
 }
 
-.path-title {
-  margin-left: 20px;
-  font-size: 16px;
-  font-weight: bold;
-}
-
 .menu-btn {
   background-color: var(--bg-light);
   color: var(--text-light);
   border: none;
   padding: 10px;
   cursor: pointer;
-  z-index: 1001; /* Prevents button from being covered */
+  z-index: 1001;
 }
+
+/* SIDEBAR */
 
 .sidebar {
   width: 250px;
@@ -73,9 +75,9 @@ body {
   display: flex;
   flex-direction: column;
   transform: translateX(0);
-  z-index: 999; /* Adjusted so it doesn't cover the titlebar */
+  z-index: 999;
   overflow-y: auto;
-  transition: transform 0.3s ease; /* Smooth transition */
+  transition: transform 0.3s ease;
 }
 
 .sidebar.active {
@@ -104,6 +106,8 @@ body {
 .upload-folder:hover {
   background-color: #009f95;
 }
+
+/* FOLDER STRUCTURE */
 
 .tree {
   flex-grow: 1;
@@ -140,41 +144,49 @@ body {
 
 .node.current-less {
   border: 2px solid var(--accent-green);
-  box-shadow: 0 0 0 2px var(--bg-light); /* Inner border effect */
+  box-shadow: 0 0 0 2px var(--bg-light);
 }
 
+/* SCROLLBARS */
+
 .scrollable::-webkit-scrollbar {
-  width: 10px;
+  width: var(--bars-height);
 }
 
 .scrollable::-webkit-scrollbar-track {
   background: var(--scrollbar-bg);
+  border-radius: var(--bars-height);
 }
 
 .scrollable::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
-  border-radius: 10px;
+  border-radius: var(--bars-height);
 }
 
+/* STORAGE BAR */
+
 .storage-bar {
-  height: 20px;
+  height: var(--bars-height);
   background-color: var(--storage-bar-bg);
-  border-radius: 10px;
-  margin-top: 10px;
+  border-radius: var(--bars-height);
+  margin-top: var(--bars-height);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .storage-progress {
-  width: 50%; /* Example size, this should be dynamic */
+  width: 24%;
   height: 100%;
   background-color: var(--storage-progress);
 }
 
 .main {
   flex: 1;
-  padding: 70px 20px 20px 280px; /* Adjusted to account for fixed sidebar and titlebar */
+  padding: 70px 20px 20px 280px;
   overflow-y: auto;
 }
+
+/* FILES */
 
 .files {
   display: flex;
@@ -187,6 +199,29 @@ body {
   border-radius: 5px;
   padding: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.file-path-info {
+  background-color: var(--bg-light);
+  border-radius: 5px;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.path-folder {
+  color: var(--path-folder-color);
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.path-separator {
+  color: var(--accent-green);
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .file-info {
@@ -203,7 +238,8 @@ body {
   font-size: 14px;
 }
 
-/* Responsive Design */
+/* RESPONSIVE SIDEBAR */
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -218,7 +254,7 @@ body {
   }
 
   .main {
-    padding-left: 20px; /* Adjusts for sidebar being hidden */
+    padding-left: 20px;
   }
 }
 
