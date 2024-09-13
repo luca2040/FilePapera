@@ -1,7 +1,15 @@
 import os
 import shutil
 import time
-from flask import Flask, Response, request, jsonify, abort, render_template
+from flask import (
+    Flask,
+    Response,
+    request,
+    jsonify,
+    abort,
+    render_template,
+    send_from_directory,
+)
 from flask_sockets import Sockets
 from urllib.parse import unquote_plus
 from app.FilenameEncoder import FilenameEncoder
@@ -11,10 +19,10 @@ app = Flask(__name__)
 sockets = Sockets(app)
 
 
-UPLOAD_FOLDER = './uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+UPLOAD_FOLDER = "./uploads"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-enc = FilenameEncoder(app.config['UPLOAD_FOLDER'])
+enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
@@ -23,13 +31,18 @@ def index():
     return render_template("index.html")
 
 
-@app.route('/list', methods=['GET'])
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory("static", "icons/favicon.ico")
+
+
+@app.route("/list", methods=["GET"])
 def list_files_and_folders():
-    folder = request.args.get('path', '')
+    folder = request.args.get("path", "")
 
     try:
         folder = unquote_plus(folder)
-        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
+        folder_path = os.path.join(app.config["UPLOAD_FOLDER"], folder)
 
         folder_path = enc.encode(folder_path)
 
@@ -49,14 +62,17 @@ def list_files_and_folders():
 
                 creation_time = os.path.getctime(full_path)
                 readable_creation_time = time.strftime(
-                    '%Y-%m-%d', time.localtime(creation_time))
+                    "%Y-%m-%d", time.localtime(creation_time)
+                )
 
-                file_details.append({
-                    "name": decoded_file,
-                    "size": file_size,
-                    "file": is_file,
-                    "creation_date": readable_creation_time
-                })
+                file_details.append(
+                    {
+                        "name": decoded_file,
+                        "size": file_size,
+                        "file": is_file,
+                        "creation_date": readable_creation_time,
+                    }
+                )
 
             return jsonify({"files": file_details}), 200
 
@@ -65,7 +81,7 @@ def list_files_and_folders():
         return jsonify({"error": "Exception listing elements"}), 500
 
 
-@app.route('/new/folder', methods=['GET'])
+@app.route("/new/folder", methods=["GET"])
 def create_folder():
     path = request.args.get("path", "")
     folder_name = request.args.get("name", None)
@@ -77,10 +93,7 @@ def create_folder():
         path = unquote_plus(path)
         folder_name = unquote_plus(path)
 
-        full_path = os.path.join(
-            app.config['UPLOAD_FOLDER'],
-            path,
-            folder_name)
+        full_path = os.path.join(app.config["UPLOAD_FOLDER"], path, folder_name)
         full_path = enc.encode(full_path)
 
         os.makedirs(full_path, exist_ok=True)
@@ -89,10 +102,10 @@ def create_folder():
         return jsonify({"error": "Exception creating a folder"}), 500
 
 
-@app.route('/new/file', methods=['POST'])
+@app.route("/new/file", methods=["POST"])
 def upload_file():
     folder = request.args.get("folder", None)
-    folder_path = app.config['UPLOAD_FOLDER']
+    folder_path = app.config["UPLOAD_FOLDER"]
 
     try:
         if folder:
@@ -101,10 +114,10 @@ def upload_file():
 
         os.makedirs(enc.encode(folder_path), exist_ok=True)
 
-        if 'file' not in request.files:
+        if "file" not in request.files:
             return jsonify({"error": "No file part"}), 400
 
-        file = request.files['file']
+        file = request.files["file"]
         if not file:
             return jsonify({"error": "No file part"}), 400
         filename = file.filename
@@ -112,7 +125,7 @@ def upload_file():
         final_file_path = os.path.join(folder_path, filename)
         final_file_path = enc.encode(final_file_path)
 
-        with open(final_file_path, 'wb') as f:
+        with open(final_file_path, "wb") as f:
             while chunk := file.stream.read(262144):
 
                 f.write(chunk)
@@ -123,12 +136,12 @@ def upload_file():
 
 
 def generate_large_file(filepath):
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         while chunk := f.read(262144):
             yield chunk
 
 
-@app.route('/download', methods=['GET'])
+@app.route("/download", methods=["GET"])
 def download_file():
     filepath = request.args.get("filepath", None)
 
@@ -140,10 +153,10 @@ def download_file():
 
         if os.path.dirname(filepath):
             file_dir, filename = os.path.split(filepath)
-            full_dir_path = os.path.join(app.config['UPLOAD_FOLDER'], file_dir)
+            full_dir_path = os.path.join(app.config["UPLOAD_FOLDER"], file_dir)
         else:
             filename = filepath
-            full_dir_path = app.config['UPLOAD_FOLDER']
+            full_dir_path = app.config["UPLOAD_FOLDER"]
 
         full_file_path = os.path.join(full_dir_path, filename)
         full_file_path = enc.encode(full_file_path)
@@ -153,17 +166,20 @@ def download_file():
 
         file_size = os.path.getsize(full_file_path)
 
-        return Response(generate_large_file(full_file_path),
-                        headers={
-                            "Content-Disposition": f"attachment; filename={filename}",
-                            "Content-Length": str(file_size)},
-                        mimetype='application/octet-stream')
+        return Response(
+            generate_large_file(full_file_path),
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Length": str(file_size),
+            },
+            mimetype="application/octet-stream",
+        )
 
     except Exception as _:
         abort(500, description="Exception downloading")
 
 
-@app.route('/delete', methods=['DELETE'])
+@app.route("/delete", methods=["DELETE"])
 def delete_file_or_folder():
     target = request.args.get("target", None)
 
@@ -173,7 +189,7 @@ def delete_file_or_folder():
 
         target = unquote_plus(target)
 
-        target_path = os.path.join(app.config['UPLOAD_FOLDER'], target)
+        target_path = os.path.join(app.config["UPLOAD_FOLDER"], target)
         target_path = enc.encode(target_path)
 
         if not os.path.exists(target_path):

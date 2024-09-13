@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FileDrive</title>
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+    <link rel="icon" href="favicon.ico" />
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      href="{{ url_for('static', filename='styles/font-awesome.all.min.css')}}"
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
+      href="{{ url_for('static', filename='styles/style.css') }}"
     />
   </head>
   <body>
@@ -20,7 +20,7 @@
         <button class="menu-btn" onclick="toggleSidebar()">☰ Menu</button>
         <div class="title-container">
           <img
-            src="{{ url_for('static', filename='favicon.png') }}"
+            src="{{ url_for('static', filename='icons/favicon.png') }}"
             alt="FileDrive"
             class="title-icon"
           />
@@ -441,6 +441,18 @@
         if (window.innerWidth >= 768) {
           sidebar.classList.remove("active");
         }
+      });
+
+      const tree_container = document.querySelector(".tree");
+
+      function tree_auto_scroll() {
+        tree_container.scrollLeft = tree_container.scrollWidth;
+      }
+
+      tree_auto_scroll();
+
+      tree_container.addEventListener("scroll", function () {
+        tree_auto_scroll();
       });
     </script>
   </body>

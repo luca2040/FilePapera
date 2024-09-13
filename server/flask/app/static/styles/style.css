@@ -6,7 +6,7 @@
   --accent-green: #00bfae;
   --accent-green-dark: #0365e5;
   --accent-green-transparent: #004c46;
-  --storage-progress: #ffffff;
+  --storage-progress: var(--accent-green);
   --files-color: var(--accent-green);
   --folders-color: var(--accent-green);
   --text-light: #f0f0f0;
@@ -14,7 +14,7 @@
   --node-size: 12px;
   --node-distance: 2px;
   --scrollbar-bg: #444;
-  --scrollbar-thumb: #00bfae;
+  --scrollbar-thumb: #ffffff;
   --storage-bar-bg: #444;
   --bars-height: 8px;
 }
@@ -176,6 +176,7 @@ body {
 .tree {
   flex-grow: 1;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .tree ul {
