@@ -11,6 +11,7 @@
   --folders-color: var(--accent-green);
   --text-light: #f0f0f0;
   --border-color: #666666;
+  --light-text: #c0c0c0;
   --node-size: 12px;
   --node-distance: 2px;
   --scrollbar-bg: #444;
@@ -153,7 +154,7 @@ body {
   justify-content: center;
   width: 30px;
   height: 30px;
-  border: 2px solid var(--accent-green);
+  border: none;
   border-radius: 24%;
   display: flex;
   align-items: center;
@@ -201,6 +202,7 @@ body {
   display: inline-block;
   background-color: transparent;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .node.node-main {
@@ -295,28 +297,118 @@ body {
   gap: 10px;
 }
 
-.file {
-  background-color: var(--bg-light);
-  border-radius: 5px;
+.file-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  background-color: var(--bg-light);
+  border-radius: 5px;
 }
 
+.folder-clickable {
+  cursor: pointer;
+}
+
+.folder-clickable:hover {
+  color: var(--accent-green);
+}
+
+.file-info {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+}
+
+.file-name {
+  font-weight: bold;
+  flex: 1;
+}
+
+.file-date,
+.file-size {
+  font-size: 14px;
+  color: var(--light-text);
+}
+
+.file-actions {
+  display: flex;
+  margin-left: 24px;
+  gap: 8px;
+}
+
+.file-action-button {
+  background: none;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 3px;
+}
+
+.file-action-button {
+  color: var(--accent-green);
+}
+
+.file-action-button:hover {
+  background: var(--accent-green-transparent);
+}
+
+.last-file {
+  margin-bottom: 45px;
+}
+
+.file-path-return,
 .file-path-info {
   background-color: var(--bg-light);
   border-radius: 5px;
   padding: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   margin-bottom: 20px;
-  display: flex;
-  align-items: center;
   gap: 5px;
+}
+
+.file-path-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-grow: 1;
+  padding-left: 10px;
+  margin-left: 10px;
+  overflow: hidden;
+}
+
+.file-path-return {
+  width: 50px;
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.file-path-container {
+  display: flex;
+  align-items: stretch;
+}
+
+.return-span {
+  color: var(--accent-green);
+  text-align: center;
+  display: block;
+  font-size: 25px;
+  font-weight: bold;
 }
 
 .path-folder {
   color: var(--path-folder-color);
   font-size: 16px;
   font-weight: bold;
+  cursor: pointer;
+}
+
+.path-folder:hover {
+  text-decoration: underline;
 }
 
 .path-separator {
@@ -325,21 +417,48 @@ body {
   font-weight: bold;
 }
 
-.file-info {
-  display: flex;
-  justify-content: space-between;
+.add-folder-icon::before,
+.add-file-icon::before {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  margin-right: 8px;
 }
 
-.file-name {
-  font-weight: bold;
+.add-file-icon::before {
+  content: "\f15b";
 }
 
-.file-date,
-.file-size {
-  font-size: 14px;
+.add-folder-icon::before {
+  content: "\f07c";
 }
 
-/* RESPONSIVE SIDEBAR */
+/* RESPONSIVE SIDEBAR AND THINGS */
+
+@media (max-width: 1200px) {
+  .file-info {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .file-name,
+  .file-date {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 6px;
+  }
+
+  .file-size {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+@media (max-height: 400px) {
+  .tree {
+    display: none;
+  }
+}
 
 @media (max-width: 768px) {
   .sidebar {

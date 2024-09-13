@@ -43,7 +43,7 @@
             <span class="icon-container">
               <i class="fas fa-folder-plus"></i>
             </span>
-            <span>Carica cartella</span>
+            <span>Crea cartella</span>
           </button>
         </div>
 
@@ -68,123 +68,6 @@
                       <ul>
                         <li>
                           <div class="node"></div>
-                          <ul>
-                            <li>
-                              <div class="node current-less"></div>
-                              <ul>
-                                <li>
-                                  <div class="node"></div>
-                                </li>
-                                <li>
-                                  <div class="node current"></div>
-                                  <ul>
-                                    <li>
-                                      <div class="node current-less"></div>
-                                      <ul>
-                                        <li>
-                                          <div class="node"></div>
-                                        </li>
-                                        <li>
-                                          <div class="node current"></div>
-                                          <ul>
-                                            <li>
-                                              <div
-                                                class="node current-less"
-                                              ></div>
-                                              <ul>
-                                                <li>
-                                                  <div class="node"></div>
-                                                </li>
-                                                <li>
-                                                  <div
-                                                    class="node current"
-                                                  ></div>
-                                                  <ul>
-                                                    <li>
-                                                      <div
-                                                        class="node current-less"
-                                                      ></div>
-                                                      <ul>
-                                                        <li>
-                                                          <div
-                                                            class="node"
-                                                          ></div>
-                                                        </li>
-                                                        <li>
-                                                          <div
-                                                            class="node current"
-                                                          ></div>
-                                                          <ul>
-                                                            <li>
-                                                              <div
-                                                                class="node current-less"
-                                                              ></div>
-                                                              <ul>
-                                                                <li>
-                                                                  <div
-                                                                    class="node"
-                                                                  ></div>
-                                                                </li>
-                                                                <li>
-                                                                  <div
-                                                                    class="node current"
-                                                                  ></div>
-                                                                </li>
-                                                                <li>
-                                                                  <div
-                                                                    class="node"
-                                                                  ></div>
-                                                                </li>
-                                                              </ul>
-                                                            </li>
-                                                            <li>
-                                                              <div
-                                                                class="node"
-                                                              ></div>
-                                                            </li>
-                                                          </ul>
-                                                        </li>
-                                                        <li>
-                                                          <div
-                                                            class="node"
-                                                          ></div>
-                                                        </li>
-                                                      </ul>
-                                                    </li>
-                                                    <li>
-                                                      <div class="node"></div>
-                                                    </li>
-                                                  </ul>
-                                                </li>
-                                                <li>
-                                                  <div class="node"></div>
-                                                </li>
-                                              </ul>
-                                            </li>
-                                            <li>
-                                              <div class="node"></div>
-                                            </li>
-                                          </ul>
-                                        </li>
-                                        <li>
-                                          <div class="node"></div>
-                                        </li>
-                                      </ul>
-                                    </li>
-                                    <li>
-                                      <div class="node"></div>
-                                    </li>
-                                  </ul>
-                                </li>
-                                <li>
-                                  <div class="node"></div>
-                                </li>
-                              </ul>
-                            </li>
-                            <li>
-                              <div class="node"></div>
-                            </li>
-                          </ul>
                         </li>
                         <li>
                           <div class="node current"></div>
@@ -219,189 +102,58 @@
       <div class="main">
         <div class="main-inner scrollable">
           <div class="files">
-            <div class="file-path-info">
-              <span class="path-folder">/</span>
-              <span class="path-separator">></span>
-              <span class="path-folder">cartella1</span>
-              <span class="path-separator">></span>
-              <span class="path-folder">cartella2</span>
-              <span class="path-separator">></span>
-              <span class="path-folder">cartella3</span>
-              <span class="path-separator">></span>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 1</span>
-                <span class="file-date">2024-09-11</span>
-                <span class="file-size">1.2 MB</span>
+            <div class="file-path-container">
+              <div id="file-path-return">
+                <button class="upload-file file-path-return">
+                  <i class="fa fa-level-up return-span" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div class="file-path-info">
+                <span class="path-folder">/</span>
+                <span class="path-separator">></span>
+                <span class="path-folder">cartella1</span>
+                <span class="path-separator">></span>
+                <span class="path-folder">cartella2</span>
+                <span class="path-separator">></span>
+                <span class="path-folder">cartella3</span>
+                <span class="path-separator">></span>
               </div>
             </div>
-            <div class="file">
+            <div class="file-container">
               <div class="file-info">
-                <span class="file-name">File 2</span>
-                <span class="file-date">2024-09-10</span>
-                <span class="file-size">3.4 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
+                <span class="file-name add-file-icon">File 3</span>
                 <span class="file-date">2024-09-09</span>
                 <span class="file-size">2.8 MB</span>
               </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
+              <div class="file-actions">
+                <button class="file-action-button" aria-label="Download">
+                  <i class="fa fa-download"></i>
+                </button>
+                <button class="file-action-button" aria-label="Rename">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button class="file-action-button" aria-label="Delete">
+                  <i class="fa fa-trash"></i>
+                </button>
               </div>
             </div>
-            <div class="file">
+            <div class="file-container last-file">
               <div class="file-info">
-                <span class="file-name">File 3</span>
+                <span class="file-name add-folder-icon folder-clickable"
+                  >Folder 1</span
+                >
                 <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
               </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
-              </div>
-            </div>
-            <div class="file">
-              <div class="file-info">
-                <span class="file-name">File 3</span>
-                <span class="file-date">2024-09-09</span>
-                <span class="file-size">2.8 MB</span>
+              <div class="file-actions">
+                <button class="file-action-button" aria-label="Download">
+                  <i class="fa fa-download"></i>
+                </button>
+                <button class="file-action-button" aria-label="Rename">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button class="file-action-button" aria-label="Delete">
+                  <i class="fa fa-trash"></i>
+                </button>
               </div>
             </div>
           </div>
