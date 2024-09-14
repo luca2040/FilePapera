@@ -13,6 +13,14 @@ function checkPath() {
   return urlParams.get("path");
 }
 
+function setPagePath(path) {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set("path", path);
+
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
+}
+
 function getSubPaths(filepath) {
   if (!filepath.startsWith("/")) {
     filepath = "/" + filepath;
@@ -48,7 +56,18 @@ async function loadFileList(filePath) {
 }
 
 async function loadFolderStructure(parent, paths, index) {
-  console.log(index, paths, paths.length);
+  if (index === 0) {
+    const rootNode = document.getElementById("root-node");
+    rootNode.onclick = () => {
+      setPagePath("/");
+      reloadFilesRequest();
+    };
+
+    if (paths.length <= 1) {
+      rootNode.className = "node node-main current";
+      return;
+    } else rootNode.className = "node node-main current-less";
+  }
 
   if (index >= paths.length) return;
 
@@ -57,11 +76,13 @@ async function loadFolderStructure(parent, paths, index) {
 
   for (const element of fileListJson) {
     if (!element["file"]) {
-      console.log(element["path"]);
-
       const elementContainer = document.createElement("li");
       const node = document.createElement("div");
       node.className = "node";
+      node.onclick = () => {
+        setPagePath(element["path"]);
+        reloadFilesRequest();
+      };
 
       const isCurrentFolder = element["path"] === paths[index + 1];
       const isOpenFolder = element["path"] === paths[paths.length - 1];
@@ -85,13 +106,21 @@ async function reloadFilesRequest() {
   filepath = checkPath();
   fileListJson = await loadFileList(filepath);
 
-  reloadFiles(fileListJson, filepath, "not_found" in fileListJson);
+  const pageNotFound = "not_found" in fileListJson;
 
-  let subPaths = getSubPaths(filepath);
-  subPaths = ["/"].concat(subPaths);
-  const nodesGroup = document.getElementById("main-node-group");
-  nodesGroup.innerHTML = "";
-  await loadFolderStructure(nodesGroup, subPaths, 0);
+  reloadFiles(fileListJson, filepath, pageNotFound);
+
+  if (pageNotFound) {
+    const nodesGroup = document.getElementById("main-node-group");
+    nodesGroup.innerHTML = "";
+    await loadFolderStructure(nodesGroup, ["/"], 0);
+  } else {
+    let subPaths = getSubPaths(filepath);
+    subPaths = ["/"].concat(subPaths);
+    const nodesGroup = document.getElementById("main-node-group");
+    nodesGroup.innerHTML = "";
+    await loadFolderStructure(nodesGroup, subPaths, 0);
+  }
 }
 
 function generateFilePathHTML(filepath, pathNotFound) {
@@ -296,3 +325,4 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
 }
 
 window.onload = reloadFilesRequest;
+window.onpopstate = reloadFilesRequest;
