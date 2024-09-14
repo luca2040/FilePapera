@@ -101,7 +101,7 @@
 
       <div class="main">
         <div class="main-inner scrollable">
-          <div class="files">
+          <div class="files" id="main-files-div">
             <div class="file-path-container">
               <div id="file-path-return">
                 <button class="upload-file file-path-return">
@@ -207,5 +207,6 @@
         tree_auto_scroll();
       });
     </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
   </body>
 </html>
