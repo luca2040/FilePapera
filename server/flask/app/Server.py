@@ -76,6 +76,8 @@ def list_files_and_folders():
                             "size": None,
                             "file": False,
                             "creation_date": readable_creation_time,
+                            "path": "/" + enc.decode(full_path)
+                            .lstrip(app.config["UPLOAD_FOLDER"])
                         }
                     )
                 else:

@@ -47,8 +47,38 @@ async function loadFileList(filePath) {
   return null;
 }
 
-async function loadFolderStructure(paths, index) {
-  if (index === paths.length - 1) return;
+async function loadFolderStructure(parent, paths, index) {
+  console.log(index, paths, paths.length);
+
+  if (index >= paths.length) return;
+
+  let fileListJson = await loadFileList(paths[index]);
+  fileListJson = fileListJson["files"];
+
+  for (const element of fileListJson) {
+    if (!element["file"]) {
+      console.log(element["path"]);
+
+      const elementContainer = document.createElement("li");
+      const node = document.createElement("div");
+      node.className = "node";
+
+      const isCurrentFolder = element["path"] === paths[index + 1];
+      const isOpenFolder = element["path"] === paths[paths.length - 1];
+      if (isOpenFolder) node.classList.add("current");
+      else if (isCurrentFolder) node.classList.add("current-less");
+
+      elementContainer.appendChild(node);
+
+      if (isCurrentFolder && !isOpenFolder) {
+        const internalContainer = document.createElement("ul");
+        await loadFolderStructure(internalContainer, paths, index + 1);
+        elementContainer.appendChild(internalContainer);
+      }
+
+      parent.appendChild(elementContainer);
+    }
+  }
 }
 
 async function reloadFilesRequest() {
@@ -57,8 +87,11 @@ async function reloadFilesRequest() {
 
   reloadFiles(fileListJson, filepath, "not_found" in fileListJson);
 
-  const subPaths = getSubPaths(filepath);
-  await loadFolderStructure(subPaths, 0);
+  let subPaths = getSubPaths(filepath);
+  subPaths = ["/"].concat(subPaths);
+  const nodesGroup = document.getElementById("main-node-group");
+  nodesGroup.innerHTML = "";
+  await loadFolderStructure(nodesGroup, subPaths, 0);
 }
 
 function generateFilePathHTML(filepath, pathNotFound) {
