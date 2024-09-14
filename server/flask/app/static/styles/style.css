@@ -6,6 +6,7 @@
   --accent-green: rgba(99, 209, 32);
   --accent-green-dark: rgb(66, 136, 21);
   --accent-green-transparent: rgb(40, 84, 12);
+  --error-not-found: #ff0000;
   --storage-progress: var(--accent-green);
   --files-color: var(--accent-green);
   --folders-color: var(--accent-green);
@@ -418,6 +419,10 @@ body {
   color: var(--accent-green);
   font-size: 16px;
   font-weight: bold;
+}
+
+.error.path-separator {
+  color: var(--error-not-found);
 }
 
 .add-folder-icon::before,

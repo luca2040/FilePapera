@@ -6,9 +6,9 @@ from flask import (
     Response,
     request,
     jsonify,
-    abort,
     render_template,
     send_from_directory,
+    redirect
 )
 from flask_sockets import Sockets
 from urllib.parse import unquote_plus
@@ -28,6 +28,11 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route("/")
 def index():
+    return redirect("/index")
+
+
+@app.route("/index")
+def index_html():
     return render_template("index.html")
 
 
@@ -39,6 +44,7 @@ def favicon():
 @app.route("/list", methods=["GET"])
 def list_files_and_folders():
     folder = request.args.get("path", "")
+    folder = folder.lstrip("/")
 
     try:
         folder = unquote_plus(folder)
@@ -47,34 +53,52 @@ def list_files_and_folders():
         folder_path = enc.encode(folder_path)
 
         if not os.path.exists(folder_path):
-            abort(404, description="Folder not found")
+            # Does not return 404 because it's not an error
+            return jsonify({"not_found": True}), 200
 
         if os.path.isdir(folder_path):
             files = os.listdir(folder_path)
             file_details = []
+            folder_details = []
 
             for f in files:
                 decoded_file = enc.decode(f)
                 full_path = os.path.join(folder_path, f)
 
-                file_size = os.path.getsize(full_path)
-                is_file = os.path.isfile(full_path)
+                if os.path.isdir(full_path):
+                    creation_time = os.path.getctime(full_path)
+                    readable_creation_time = time.strftime(
+                        "%Y-%m-%d", time.localtime(creation_time)
+                    )
+                    folder_details.append(
+                        {
+                            "name": decoded_file,
+                            "size": None,
+                            "file": False,
+                            "creation_date": readable_creation_time,
+                        }
+                    )
+                else:
+                    file_size = os.path.getsize(full_path)
+                    creation_time = os.path.getctime(full_path)
+                    readable_creation_time = time.strftime(
+                        "%Y-%m-%d", time.localtime(creation_time)
+                    )
+                    file_details.append(
+                        {
+                            "name": decoded_file,
+                            "size": file_size,
+                            "file": True,
+                            "creation_date": readable_creation_time,
+                        }
+                    )
 
-                creation_time = os.path.getctime(full_path)
-                readable_creation_time = time.strftime(
-                    "%Y-%m-%d", time.localtime(creation_time)
-                )
+            folder_details.sort(key=lambda x: x["name"])
+            file_details.sort(key=lambda x: x["name"])
 
-                file_details.append(
-                    {
-                        "name": decoded_file,
-                        "size": file_size,
-                        "file": is_file,
-                        "creation_date": readable_creation_time,
-                    }
-                )
-
-            return jsonify({"files": file_details}), 200
+            return jsonify({
+                "files": (folder_details + file_details)
+            }), 200
 
         return jsonify({"error": "Invalid folder"}), 400
     except Exception as _:
@@ -93,7 +117,8 @@ def create_folder():
         path = unquote_plus(path)
         folder_name = unquote_plus(path)
 
-        full_path = os.path.join(app.config["UPLOAD_FOLDER"], path, folder_name)
+        full_path = os.path.join(
+            app.config["UPLOAD_FOLDER"], path, folder_name)
         full_path = enc.encode(full_path)
 
         os.makedirs(full_path, exist_ok=True)
@@ -147,7 +172,7 @@ def download_file():
 
     try:
         if not filepath:
-            abort(400, description="Filepath not provided")
+            return jsonify({"error": "Filepath not provided"}), 400
 
         filepath = unquote_plus(filepath)
 
@@ -162,7 +187,7 @@ def download_file():
         full_file_path = enc.encode(full_file_path)
 
         if not os.path.isfile(full_file_path):
-            abort(404, description="File not found")
+            return jsonify({"error": "File not found"}), 404
 
         file_size = os.path.getsize(full_file_path)
 
@@ -176,7 +201,7 @@ def download_file():
         )
 
     except Exception as _:
-        abort(500, description="Exception downloading")
+        return jsonify({"error": "Exception downloading"}), 500
 
 
 @app.route("/delete", methods=["DELETE"])
@@ -185,7 +210,7 @@ def delete_file_or_folder():
 
     try:
         if not target:
-            abort(404, description="File or folder not found")
+            return jsonify({"error": "File or folder not found"}), 404
 
         target = unquote_plus(target)
 
@@ -193,7 +218,7 @@ def delete_file_or_folder():
         target_path = enc.encode(target_path)
 
         if not os.path.exists(target_path):
-            abort(404, description="File or folder not found")
+            return jsonify({"error": "File or folder not found"}), 404
 
         if os.path.isfile(target_path):
             os.remove(target_path)

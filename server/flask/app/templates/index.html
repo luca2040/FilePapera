@@ -102,60 +102,7 @@
       <div class="main">
         <div class="main-inner scrollable">
           <div class="files" id="main-files-div">
-            <div class="file-path-container">
-              <div id="file-path-return">
-                <button class="upload-file file-path-return">
-                  <i class="fa fa-level-up return-span" aria-hidden="true"></i>
-                </button>
-              </div>
-              <div class="file-path-info">
-                <span class="path-folder">/</span>
-                <span class="path-separator">></span>
-                <span class="path-folder">cartella1</span>
-                <span class="path-separator">></span>
-                <span class="path-folder">cartella2</span>
-                <span class="path-separator">></span>
-                <span class="path-folder">cartella3</span>
-                <span class="path-separator">></span>
-              </div>
-            </div>
-            <div class="file-container">
-              <div class="file-info">
-                <span class="file-name add-file-icon">File 3</span>
-                <span class="file-size">2.8 MB</span>
-                <span class="file-date">2024-09-09</span>
-              </div>
-              <div class="file-actions">
-                <button class="file-action-button" aria-label="Download">
-                  <i class="fa fa-download"></i>
-                </button>
-                <button class="file-action-button" aria-label="Rename">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button class="file-action-button" aria-label="Delete">
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            </div>
-            <div class="file-container last-file">
-              <div class="file-info">
-                <span class="file-name add-folder-icon folder-clickable"
-                  >Folder 1</span
-                >
-                <span class="file-date">2024-09-09</span>
-              </div>
-              <div class="file-actions">
-                <button class="file-action-button" aria-label="Download">
-                  <i class="fa fa-download"></i>
-                </button>
-                <button class="file-action-button" aria-label="Rename">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button class="file-action-button" aria-label="Delete">
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            </div>
+            <!-- Dynamically generated content -->
           </div>
         </div>
       </div>
@@ -207,6 +154,6 @@
         tree_auto_scroll();
       });
     </script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/script.js') }}"></script>
   </body>
 </html>
