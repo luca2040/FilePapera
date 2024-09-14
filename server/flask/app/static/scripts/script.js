@@ -13,9 +13,25 @@ function checkPath() {
   return urlParams.get("path");
 }
 
-async function reloadFilesRequest() {
-  filepath = checkPath();
-  const url = `/list?path=${encodeURIComponent(filepath)}`;
+function getSubPaths(filepath) {
+  if (!filepath.startsWith("/")) {
+    filepath = "/" + filepath;
+  }
+
+  const subPaths = [];
+  const parts = filepath.split("/").filter((part) => part);
+
+  let currentPath = "";
+  for (let i = 0; i < parts.length; i++) {
+    currentPath += "/" + parts[i];
+    subPaths.push(currentPath);
+  }
+
+  return subPaths;
+}
+
+async function loadFileList(filePath) {
+  const url = `/list?path=${encodeURIComponent(filePath)}`;
 
   try {
     const response = await fetch(url);
@@ -23,14 +39,30 @@ async function reloadFilesRequest() {
       throw new Error("Network response was not ok " + response.statusText);
     }
     const data = await response.json();
-    reloadFiles(data, filepath, "not_found" in data);
+    return data;
   } catch (error) {
     console.error("There was a problem with the fetch operation:", error);
   }
+
+  return null;
+}
+
+async function loadFolderStructure(paths, index) {
+  if (index === paths.length - 1) return;
+}
+
+async function reloadFilesRequest() {
+  filepath = checkPath();
+  fileListJson = await loadFileList(filepath);
+
+  reloadFiles(fileListJson, filepath, "not_found" in fileListJson);
+
+  const subPaths = getSubPaths(filepath);
+  await loadFolderStructure(subPaths, 0);
 }
 
 function generateFilePathHTML(filepath, pathNotFound) {
-  var folders = [];
+  let folders = [];
 
   if (!(filepath === "" || filepath === "/")) {
     folders = filepath.replace(/^\/|\/$/g, "").split("/");
@@ -116,7 +148,7 @@ function formatFileSize(bytes) {
 
 function generateFilesHTML(filesJson) {
   const filesList = filesJson["files"];
-  var fileList = [];
+  let fileList = [];
 
   filesList.forEach((element, index) => {
     const fileInfo = document.createElement("div");
@@ -218,6 +250,8 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
     main_files_div.appendChild(titlePath);
     return;
   }
+
+  // Add file list
 
   const filesList = generateFilesHTML(filesJson);
 
