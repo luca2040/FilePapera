@@ -8,7 +8,7 @@ from flask import (
     jsonify,
     render_template,
     send_from_directory,
-    redirect
+    redirect,
 )
 from flask_sockets import Sockets
 from urllib.parse import unquote_plus
@@ -19,7 +19,7 @@ app = Flask(__name__)
 sockets = Sockets(app)
 
 
-UPLOAD_FOLDER = "./uploads"
+UPLOAD_FOLDER = "/app/uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
@@ -70,14 +70,15 @@ def list_files_and_folders():
                     readable_creation_time = time.strftime(
                         "%Y-%m-%d", time.localtime(creation_time)
                     )
+
                     folder_details.append(
                         {
                             "name": decoded_file,
                             "size": None,
                             "file": False,
                             "creation_date": readable_creation_time,
-                            "path": "/" + enc.decode(full_path)
-                            .lstrip(app.config["UPLOAD_FOLDER"])
+                            "path": "/"
+                            + enc.decode(full_path).lstrip(app.config["UPLOAD_FOLDER"]),
                         }
                     )
                 else:
@@ -98,9 +99,7 @@ def list_files_and_folders():
             folder_details.sort(key=lambda x: x["name"])
             file_details.sort(key=lambda x: x["name"])
 
-            return jsonify({
-                "files": (folder_details + file_details)
-            }), 200
+            return jsonify({"files": (folder_details + file_details)}), 200
 
         return jsonify({"error": "Invalid folder"}), 400
     except Exception as _:
@@ -119,8 +118,7 @@ def create_folder():
         path = unquote_plus(path)
         folder_name = unquote_plus(path)
 
-        full_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], path, folder_name)
+        full_path = os.path.join(app.config["UPLOAD_FOLDER"], path, folder_name)
         full_path = enc.encode(full_path)
 
         os.makedirs(full_path, exist_ok=True)

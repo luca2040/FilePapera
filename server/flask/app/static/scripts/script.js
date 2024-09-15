@@ -146,14 +146,21 @@ function generateFilePathHTML(filepath, pathNotFound) {
 
     returnButton.appendChild(returnIcon);
 
-    returnButton.addEventListener("click", () => {
+    returnButton.onclick = () => {
       window.history.back();
-    });
+    };
 
     returnDiv.appendChild(returnButton);
   } else if (filepath != "/" && filepath != "") {
     const returnButton = document.createElement("button");
     returnButton.className = "upload-file file-path-return";
+
+    const dividedFilepath = ["/"].concat(getSubPaths(filepath));
+
+    returnButton.onclick = () => {
+      setPagePath(dividedFilepath[dividedFilepath.length - 2]);
+      reloadFilesRequest();
+    };
 
     const returnIcon = document.createElement("i");
     returnIcon.className = "fa fa-level-up return-span";
@@ -202,10 +209,11 @@ function generateFilePathHTML(filepath, pathNotFound) {
 }
 
 function formatFileSize(bytes) {
-  if (bytes === 0) return "0 Bytes";
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]; // Maybe too much
-  const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-  return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
+  const sizes = ["B", "KB", "MB", "GB"];
+  if (bytes === 0) return `0 ${sizes[0]}`;
+  let i = Math.min(3, Math.floor(Math.log(bytes) / Math.log(1024)));
+  let fileSize = bytes / Math.pow(1024, i);
+  return fileSize.toFixed(2) + " " + sizes[i];
 }
 
 function generateFilesHTML(filesJson) {
@@ -236,6 +244,11 @@ function generateFilesHTML(filesJson) {
       const nameSpan = document.createElement("span");
       nameSpan.className = "file-name add-folder-icon folder-clickable";
       nameSpan.innerHTML = element["name"];
+      nameSpan.onclick = () => {
+        console.log(element["path"])
+        setPagePath(element["path"]);
+        reloadFilesRequest();
+      };
 
       const dateSpan = document.createElement("span");
       dateSpan.className = "file-date";

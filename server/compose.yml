@@ -6,9 +6,8 @@ services:
     build: ./flask
     container_name: upload_server
     restart: always
-    # volumes:
-    #   - ./database/database.db:/app/database/db.sqlite:rw
-    #   - ./config/parameters.json:/app/parameters/parameters.json
+    volumes:
+      - ./uploads:/app/uploads:rw
     expose:
       - 8080
 
