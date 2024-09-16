@@ -19,7 +19,7 @@ app = Flask(__name__)
 sockets = Sockets(app)
 
 
-UPLOAD_FOLDER = "/app/uploads"
+UPLOAD_FOLDER = "./uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
