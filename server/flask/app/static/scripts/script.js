@@ -268,6 +268,10 @@ function generateFilesHTML(filesJson) {
 
     const fileButtons = document.createElement("div");
     fileButtons.className = "file-actions";
+    const fileDropdown = document.createElement("div");
+    fileDropdown.className = "file-actions-dropdown-element";
+    const fileDropdownButtonContainer = document.createElement("div");
+    fileDropdownButtonContainer.className = "file-actions-dropdown-open";
 
     // Download
 
@@ -302,18 +306,60 @@ function generateFilesHTML(filesJson) {
 
     deleteButton.appendChild(deleteIcon);
 
+    // Dropdown open button
+
+    const openDropdown = document.createElement("button");
+    openDropdown.className = "file-action-button";
+    openDropdown.ariaLabel = "Menu";
+
+    const openDropdownIcon = document.createElement("i");
+    openDropdownIcon.className = "fa fa-bars";
+
+    openDropdown.appendChild(openDropdownIcon);
+
     fileButtons.appendChild(downloadButton);
     fileButtons.appendChild(renameButton);
     fileButtons.appendChild(deleteButton);
+    fileDropdown.appendChild(downloadButton.cloneNode(true));
+    fileDropdown.appendChild(renameButton.cloneNode(true));
+    fileDropdown.appendChild(deleteButton.cloneNode(true));
+
+    openDropdown.onclick = () => {
+      if (fileDropdown.classList.contains("show"))
+        fileDropdown.classList.remove("show");
+      else fileDropdown.classList.add("show");
+
+      const openButtonRect = openDropdown.getBoundingClientRect();
+
+      if (fileDropdown.classList.contains("show")) {
+        fileDropdown.style.top = `${openButtonRect.bottom}px`;
+        fileDropdown.style.left = `${openButtonRect.left - 0.875}px`;
+      }
+    };
+
+    function resetDropdownVisibility(event) {
+      if (
+        !fileDropdown.contains(event.target) &&
+        !openDropdown.contains(event.target)
+      ) {
+        fileDropdown.classList.remove("show");
+      }
+    }
+
+    document.addEventListener("click", resetDropdownVisibility);
+    window.addEventListener("resize", () => {
+      fileDropdown.classList.remove("show");
+    });
+
+    fileDropdownButtonContainer.appendChild(openDropdown);
 
     const fileContainer = document.createElement("div");
     fileContainer.className = "file-container";
 
-    if (index === filesList.length - 1)
-      fileContainer.classList.add("last-file");
-
     fileContainer.appendChild(fileInfo);
     fileContainer.appendChild(fileButtons);
+    fileContainer.appendChild(fileDropdownButtonContainer);
+    fileContainer.appendChild(fileDropdown);
 
     fileList.push(fileContainer);
   });
