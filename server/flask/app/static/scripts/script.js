@@ -182,6 +182,10 @@ function generateFilePathHTML(filepath, pathNotFound) {
     const rootSpan = document.createElement("span");
     rootSpan.className = "path-folder";
     rootSpan.textContent = "/";
+    rootSpan.onclick = () => {
+      setPagePath("/");
+      reloadFilesRequest();
+    };
     pathInfoDiv.appendChild(rootSpan);
     const rootSeparatorSpan = document.createElement("span");
     rootSeparatorSpan.className = "path-separator";
@@ -192,6 +196,10 @@ function generateFilePathHTML(filepath, pathNotFound) {
       const folderSpan = document.createElement("span");
       folderSpan.className = "path-folder";
       folderSpan.textContent = folder;
+      folderSpan.onclick = () => {
+        setPagePath(getSubPaths(filepath)[index]);
+        reloadFilesRequest();
+      };
       pathInfoDiv.appendChild(folderSpan);
 
       const separatorSpan = document.createElement("span");
@@ -245,7 +253,7 @@ function generateFilesHTML(filesJson) {
       nameSpan.className = "file-name add-folder-icon folder-clickable";
       nameSpan.innerHTML = element["name"];
       nameSpan.onclick = () => {
-        console.log(element["path"])
+        console.log(element["path"]);
         setPagePath(element["path"]);
         reloadFilesRequest();
       };

@@ -307,6 +307,8 @@ body {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   background-color: var(--bg-light);
   border-radius: 5px;
+  overflow: hidden;
+  gap: 10px;
 }
 
 .folder-clickable {
@@ -326,7 +328,12 @@ body {
 
 .file-name {
   font-weight: bold;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .file-date,
@@ -339,6 +346,7 @@ body {
   display: flex;
   margin-left: 24px;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .file-action-button {
@@ -409,6 +417,11 @@ body {
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .path-folder:hover {
