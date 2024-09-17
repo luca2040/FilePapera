@@ -272,7 +272,7 @@ body {
 }
 
 .storage-progress {
-  width: 24%;
+  width: 0%;
   height: 100%;
   background-color: var(--storage-progress);
 }
@@ -375,7 +375,7 @@ body {
 }
 
 .file-actions-dropdown-element button {
-  margin-bottom: 8px; /* Space between items */
+  margin-bottom: 8px;
 }
 
 .file-actions-dropdown-element button:last-child {
@@ -395,15 +395,16 @@ body {
   cursor: pointer;
   font-size: 14px;
   border-radius: 3px;
-  transition: all 0.3s ease;
-}
-
-.file-action-button {
+  transition: all 0.3s cubic-bezier(0.45, 0.05, 0.55, 0.95);
   color: var(--accent-green);
 }
 
 .file-action-button:hover {
   background: var(--accent-green-transparent);
+}
+
+.file-action-button.show {
+  transform: rotate(90deg);
 }
 
 .file-path-return,

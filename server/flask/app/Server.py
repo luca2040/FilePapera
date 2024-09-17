@@ -12,6 +12,7 @@ from flask import (
 )
 from flask_sockets import Sockets
 from urllib.parse import unquote_plus
+from pathlib import Path
 from app.FilenameEncoder import FilenameEncoder
 
 
@@ -20,7 +21,9 @@ sockets = Sockets(app)
 
 
 UPLOAD_FOLDER = "./uploads"
+# Temporary parameters until docker compose is done
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_STORAGE"] = 80000000  # 80 Mb max - example
 
 enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -118,7 +121,8 @@ def create_folder():
         path = unquote_plus(path)
         folder_name = unquote_plus(path)
 
-        full_path = os.path.join(app.config["UPLOAD_FOLDER"], path, folder_name)
+        full_path = os.path.join(
+            app.config["UPLOAD_FOLDER"], path, folder_name)
         full_path = enc.encode(full_path)
 
         os.makedirs(full_path, exist_ok=True)
@@ -231,3 +235,17 @@ def delete_file_or_folder():
         return jsonify({"error": "Unknown error"}), 400
     except Exception as _:
         return jsonify({"error": "Exception deleting file"}), 500
+
+
+@app.route("/storage", methods=["GET"])
+def get_storage():
+    try:
+        enc_path = enc.encode(app.config["UPLOAD_FOLDER"])
+        max_size = app.config["MAX_STORAGE"]
+
+        dir = Path(enc_path)
+        size = sum(f.stat().st_size for f in dir.glob('**/*') if f.is_file())
+
+        return jsonify({"used_size": size, "max_size": max_size}), 200
+    except Exception as _:
+        return jsonify({"error": "Exception getting used storage"}), 500

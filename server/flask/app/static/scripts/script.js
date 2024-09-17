@@ -38,6 +38,53 @@ function getSubPaths(filepath) {
   return subPaths;
 }
 
+async function getStorage() {
+  const url = "/storage";
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("There was a problem with the fetch operation:", error);
+  }
+
+  return null;
+}
+
+async function set_usage_bar() {
+  const storage_json = await getStorage();
+
+  const used_bytes = storage_json["used_size"];
+  const max_bytes = storage_json["max_size"];
+
+  let percent = (used_bytes / max_bytes) * 100;
+  percent = percent.toFixed(1);
+
+  const barElement = document.getElementById("storage-bar-progress");
+  barElement.style.width = `${percent}%`;
+
+  const textElement = document.getElementById("storage-bar-info");
+
+  const storageText = document.createElement("span");
+  const storagePercent = document.createElement("span");
+
+  storageText.className = "storage-text";
+  storagePercent.className = "storage-percentage";
+
+  storageText.innerHTML = `${formatFileSize(used_bytes)} / ${formatFileSize(
+    max_bytes
+  )}`;
+  storagePercent.innerHTML = `${percent}%`;
+
+  textElement.innerHTML = "";
+  textElement.appendChild(storageText);
+  textElement.appendChild(storagePercent);
+}
+
 async function loadFileList(filePath) {
   const url = `/list?path=${encodeURIComponent(filePath)}`;
 
@@ -121,6 +168,10 @@ async function reloadFilesRequest() {
     nodesGroup.innerHTML = "";
     await loadFolderStructure(nodesGroup, subPaths, 0);
   }
+
+  await set_usage_bar();
+
+  tree_auto_scroll(); // Function from script in HTML
 }
 
 function generateFilePathHTML(filepath, pathNotFound) {
@@ -325,9 +376,13 @@ function generateFilesHTML(filesJson) {
     fileDropdown.appendChild(deleteButton.cloneNode(true));
 
     openDropdown.onclick = () => {
-      if (fileDropdown.classList.contains("show"))
+      if (fileDropdown.classList.contains("show")) {
         fileDropdown.classList.remove("show");
-      else fileDropdown.classList.add("show");
+        openDropdown.classList.remove("show");
+      } else {
+        fileDropdown.classList.add("show");
+        openDropdown.classList.add("show");
+      }
 
       const openButtonRect = openDropdown.getBoundingClientRect();
 
@@ -343,12 +398,14 @@ function generateFilesHTML(filesJson) {
         !openDropdown.contains(event.target)
       ) {
         fileDropdown.classList.remove("show");
+        openDropdown.classList.remove("show");
       }
     }
 
     document.addEventListener("click", resetDropdownVisibility);
     window.addEventListener("resize", () => {
       fileDropdown.classList.remove("show");
+      openDropdown.classList.remove("show");
     });
 
     fileDropdownButtonContainer.appendChild(openDropdown);
