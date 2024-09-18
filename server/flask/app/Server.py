@@ -1,5 +1,6 @@
 import os
 import shutil
+import zipstream
 import time
 from flask import (
     Flask,
@@ -96,6 +97,8 @@ def list_files_and_folders():
                             "size": file_size,
                             "file": True,
                             "creation_date": readable_creation_time,
+                            "path": "/"
+                            + enc.decode(full_path).lstrip(app.config["UPLOAD_FOLDER"]),
                         }
                     )
 
@@ -179,6 +182,7 @@ def download_file():
             return jsonify({"error": "Filepath not provided"}), 400
 
         filepath = unquote_plus(filepath)
+        filepath = filepath.lstrip("/")
 
         if os.path.dirname(filepath):
             file_dir, filename = os.path.split(filepath)
@@ -189,6 +193,30 @@ def download_file():
 
         full_file_path = os.path.join(full_dir_path, filename)
         full_file_path = enc.encode(full_file_path)
+
+        if os.path.isdir(full_file_path):
+            def generator():
+                z = zipstream.ZipFile(
+                    mode='w', compression=zipstream.ZIP_DEFLATED)
+
+                for root, dirs, files in os.walk(full_file_path):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arcname = os.path.relpath(file_path, full_file_path)
+
+                        z.write(file_path,
+                                arcname=enc.decode(arcname))
+
+                for chunk in z:
+                    yield chunk
+
+            return Response(
+                generator(),
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}.zip",
+                },
+                mimetype="application/zip"
+            )
 
         if not os.path.isfile(full_file_path):
             return jsonify({"error": "File not found"}), 404

@@ -44,12 +44,16 @@ async function getStorage() {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error("Network response was not ok " + response.statusText);
+      const errorText = `Errore: ${response.status} - ${response.statusText}`;
+      alert(errorText);
+      window.location.reload();
+      return;
     }
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("There was a problem with the fetch operation:", error);
+    alert(`Si è verificato un problema: ${error.message}`);
+    window.location.reload();
   }
 
   return null;
@@ -85,18 +89,36 @@ async function set_usage_bar() {
   textElement.appendChild(storagePercent);
 }
 
+function downloadFile(filePath) {
+  const url = new URL("/download", window.location.origin);
+  url.searchParams.append("filepath", filePath);
+
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filePath.split("/").pop();
+
+  document.body.appendChild(anchor);
+  anchor.click();
+
+  document.body.removeChild(anchor);
+}
+
 async function loadFileList(filePath) {
   const url = `/list?path=${encodeURIComponent(filePath)}`;
 
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error("Network response was not ok " + response.statusText);
+      const errorText = `Errore: ${response.status} - ${response.statusText}`;
+      alert(errorText);
+      window.location.reload();
+      return;
     }
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("There was a problem with the fetch operation:", error);
+    alert(`Si è verificato un problema: ${error.message}`);
+    window.location.reload();
   }
 
   return null;
@@ -330,10 +352,19 @@ function generateFilesHTML(filesJson) {
     downloadButton.className = "file-action-button";
     downloadButton.ariaLabel = "Download";
 
+    downloadButton.onclick = () => {
+      downloadFile(element["path"]);
+    };
+
     const downloadIcon = document.createElement("i");
     downloadIcon.className = "fa fa-download";
 
     downloadButton.appendChild(downloadIcon);
+
+    const downloadButtonClone = downloadButton.cloneNode(true);
+    downloadButtonClone.onclick = () => {
+      downloadFile(element["path"]);
+    };
 
     // Edit
 
@@ -346,6 +377,8 @@ function generateFilesHTML(filesJson) {
 
     renameButton.appendChild(renameIcon);
 
+    const renameButtonClone = renameButton.cloneNode(true);
+
     // Delete
 
     const deleteButton = document.createElement("button");
@@ -356,6 +389,8 @@ function generateFilesHTML(filesJson) {
     deleteIcon.className = "fa fa-trash";
 
     deleteButton.appendChild(deleteIcon);
+
+    const deleteButtonClone = deleteButton.cloneNode(true);
 
     // Dropdown open button
 
@@ -371,9 +406,9 @@ function generateFilesHTML(filesJson) {
     fileButtons.appendChild(downloadButton);
     fileButtons.appendChild(renameButton);
     fileButtons.appendChild(deleteButton);
-    fileDropdown.appendChild(downloadButton.cloneNode(true));
-    fileDropdown.appendChild(renameButton.cloneNode(true));
-    fileDropdown.appendChild(deleteButton.cloneNode(true));
+    fileDropdown.appendChild(downloadButtonClone);
+    fileDropdown.appendChild(renameButtonClone);
+    fileDropdown.appendChild(deleteButtonClone);
 
     openDropdown.onclick = () => {
       if (fileDropdown.classList.contains("show")) {
