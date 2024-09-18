@@ -112,7 +112,7 @@ def list_files_and_folders():
         return jsonify({"error": "Exception listing elements"}), 500
 
 
-@app.route("/new/folder", methods=["GET"])
+@app.route("/new/folder", methods=["POST"])
 def create_folder():
     path = request.args.get("path", "")
     folder_name = request.args.get("name", None)
@@ -134,7 +134,7 @@ def create_folder():
         return jsonify({"error": "Exception creating a folder"}), 500
 
 
-@app.route("/new/file", methods=["POST"])
+@app.route("/upload/file", methods=["POST"])
 def upload_file():
     folder = request.args.get("folder", None)
     folder_path = app.config["UPLOAD_FOLDER"]
@@ -165,6 +165,38 @@ def upload_file():
         return jsonify({"message": "File uploaded successfully."}), 200
     except Exception as _:
         return jsonify({"error": "Exception uploading a file"}), 500
+
+
+@app.route("/reformat", methods=["GET"])
+def rename_or_move():
+    old_path = request.args.get("old_path", None)
+    new_path = request.args.get("new_path", None)
+
+    if not old_path or not new_path:
+        return jsonify({"error": "'old_path' and/or 'new_path' missing"}), 400
+
+    try:
+        old_path = unquote_plus(old_path)
+        new_path = unquote_plus(new_path)
+        old_path = os.path.join(
+            app.config["UPLOAD_FOLDER"], old_path.lstrip("/"))
+        new_path = os.path.join(
+            app.config["UPLOAD_FOLDER"], new_path.lstrip("/"))
+        old_path = enc.encode(old_path)
+        new_path = enc.encode(new_path)
+
+        if not os.path.exists(old_path):
+            return jsonify({"error": "File not found"}), 404
+
+        if os.path.exists(new_path):
+            return jsonify({"error": "A file or directory with the new name already exists"}), 400
+
+        os.rename(old_path, new_path)
+
+        return jsonify({"message": "File or directory renamed/moved"}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Exception occurred: {str(e)}"}), 500
 
 
 def generate_large_file(filepath):
