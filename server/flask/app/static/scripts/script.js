@@ -59,6 +59,20 @@ async function getStorage() {
   return null;
 }
 
+async function reformatRequest(old_path, new_path) {
+  const url = `/reformat?old_path=${old_path}&new_path=${new_path}`;
+
+  try {
+    const response = await fetch(url);
+    return response;
+  } catch (error) {
+    alert(`Si è verificato un problema: ${error.message}`);
+    window.location.reload();
+  }
+
+  return null;
+}
+
 async function set_usage_bar() {
   const storage_json = await getStorage();
 
@@ -326,7 +340,6 @@ function generateFilesHTML(filesJson) {
       nameSpan.className = "file-name add-folder-icon folder-clickable";
       nameSpan.innerHTML = element["name"];
       nameSpan.onclick = () => {
-        console.log(element["path"]);
         setPagePath(element["path"]);
         reloadFilesRequest();
       };
@@ -372,12 +385,95 @@ function generateFilesHTML(filesJson) {
     renameButton.className = "file-action-button";
     renameButton.ariaLabel = "Rinomina";
 
+    function renameButtonClick() {
+      const modal = document.getElementById("file-rename-modal");
+      const modalTitle = document.getElementById("file-rename-title");
+      const renameInput = document.getElementById("file-rename-input");
+      const closeButton = document.getElementById("file-rename-close");
+      const saveButton = document.getElementById("file-rename-save");
+      const errorElement = document.getElementById("file-rename-error");
+
+      modalTitle.innerHTML = element["file"]
+        ? "Rinomina file"
+        : "Rinomina cartella";
+      renameInput.placeholder = element["name"];
+      renameInput.value = element["name"];
+
+      renameInput.addEventListener("input", () => {
+        renameInput.value = renameInput.value.replace(
+          /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
+          "_"
+        );
+        errorElement.style.display = "none";
+      });
+
+      errorElement.style.display = "none";
+
+      modal.onclick = (event) => {
+        if (event.target === modal) {
+          modal.style.display = "none";
+        }
+      };
+      closeButton.onclick = () => {
+        modal.style.display = "none";
+      };
+
+      saveButton.onclick = async () => {
+        const elementDividedPath = element["path"].split("/");
+        elementDividedPath[elementDividedPath.length - 1] = renameInput.value
+          ? renameInput.value
+          : element["name"];
+        const newPath = elementDividedPath.join("/");
+
+        const connectionResponse = await reformatRequest(
+          element["path"],
+          newPath
+        );
+
+        if (connectionResponse.ok) {
+          modal.style.display = "none";
+          reloadFilesRequest();
+        } else {
+          try {
+            const responseJSON = await connectionResponse.json();
+            const responseType = responseJSON["type"];
+
+            switch (responseType) {
+              case 1:
+                errorElement.innerHTML = "Errore durante la richiesta";
+                break;
+              case 2:
+                errorElement.innerHTML = "File non trovato";
+                break;
+              case 3:
+                errorElement.innerHTML =
+                  "Elemento con stesso nome già presente";
+                break;
+              default:
+                errorElement.innerHTML = "Errore del server";
+                break;
+            }
+
+            errorElement.style.display = "block";
+          } catch (error) {
+            alert(`Si è verificato un problema: ${error.message}`);
+            window.location.reload();
+          }
+        }
+      };
+
+      modal.style.display = "flex";
+    }
+
+    renameButton.onclick = renameButtonClick;
+
     const renameIcon = document.createElement("i");
     renameIcon.className = "fa fa-edit";
 
     renameButton.appendChild(renameIcon);
 
     const renameButtonClone = renameButton.cloneNode(true);
+    renameButtonClone.onclick = renameButtonClick;
 
     // Delete
 

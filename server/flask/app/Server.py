@@ -172,8 +172,11 @@ def rename_or_move():
     old_path = request.args.get("old_path", None)
     new_path = request.args.get("new_path", None)
 
+    if new_path == old_path:
+        return jsonify({"message": "Same path"}), 200
+
     if not old_path or not new_path:
-        return jsonify({"error": "'old_path' and/or 'new_path' missing"}), 400
+        return jsonify({"error": "'old_path' and/or 'new_path' missing", "type": 1}), 400
 
     try:
         old_path = unquote_plus(old_path)
@@ -186,17 +189,17 @@ def rename_or_move():
         new_path = enc.encode(new_path)
 
         if not os.path.exists(old_path):
-            return jsonify({"error": "File not found"}), 404
+            return jsonify({"error": "File not found", "type": 2}), 404
 
         if os.path.exists(new_path):
-            return jsonify({"error": "A file or directory with the new name already exists"}), 400
+            return jsonify({"error": "A file or directory with the new name already exists", "type": 3}), 400
 
         os.rename(old_path, new_path)
 
         return jsonify({"message": "File or directory renamed/moved"}), 200
 
     except Exception as e:
-        return jsonify({"error": f"Exception moving/renaming folder/file"}), 500
+        return jsonify({"error": f"Exception moving/renaming folder/file", "type": 4}), 500
 
 
 def generate_large_file(filepath):

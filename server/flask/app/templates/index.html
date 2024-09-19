@@ -77,14 +77,22 @@
       </div>
     </div>
 
-    <div class="modal-background">
+    <div class="modal-background" id="file-rename-modal">
       <div class="rename-modal">
         <div class="modal-header">
-          <div class="modal-title">Rinomina file</div>
-          <button class="file-action-button modal-close-button"></button>
+          <div class="modal-title" id="file-rename-title"></div>
+          <button
+            class="file-action-button modal-close-button"
+            id="file-rename-close"
+          ></button>
         </div>
-        <input class="rename-modal-input" placeholder="OldFilename.txt" />
-        <button class="modal-save-button">Ok</button>
+        <div
+          class="error"
+          style="display: none; margin-bottom: 20px"
+          id="file-rename-error"
+        ></div>
+        <input class="rename-modal-input" id="file-rename-input" />
+        <button class="modal-save-button" id="file-rename-save">Ok</button>
       </div>
     </div>
 
