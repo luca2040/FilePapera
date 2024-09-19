@@ -196,7 +196,7 @@ def rename_or_move():
         return jsonify({"message": "File or directory renamed/moved"}), 200
 
     except Exception as e:
-        return jsonify({"error": f"Exception occurred: {str(e)}"}), 500
+        return jsonify({"error": f"Exception moving/renaming folder/file"}), 500
 
 
 def generate_large_file(filepath):
