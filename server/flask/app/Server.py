@@ -271,7 +271,7 @@ def download_file():
         return jsonify({"error": "Exception downloading"}), 500
 
 
-@app.route("/delete", methods=["DELETE"])
+@app.route("/delete", methods=["GET"])
 def delete_file_or_folder():
     target = request.args.get("target", None)
 
@@ -279,7 +279,7 @@ def delete_file_or_folder():
         if not target:
             return jsonify({"error": "File or folder not found"}), 404
 
-        target = unquote_plus(target)
+        target = unquote_plus(target).lstrip("/")
 
         target_path = os.path.join(app.config["UPLOAD_FOLDER"], target)
         target_path = enc.encode(target_path)

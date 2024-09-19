@@ -60,11 +60,34 @@ async function getStorage() {
 }
 
 async function reformatRequest(old_path, new_path) {
-  const url = `/reformat?old_path=${old_path}&new_path=${new_path}`;
+  const url = `/reformat?old_path=${encodeURIComponent(
+    old_path
+  )}&new_path=${encodeURIComponent(new_path)}`;
 
   try {
     const response = await fetch(url);
     return response;
+  } catch (error) {
+    alert(`Si è verificato un problema: ${error.message}`);
+    window.location.reload();
+  }
+
+  return null;
+}
+
+async function deleteElement(path) {
+  const url = `/delete?target=${encodeURIComponent(path)}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = `Errore: ${response.status} - ${response.statusText}`;
+      alert(errorText);
+      window.location.reload();
+      return;
+    }
+    const data = await response.json();
+    return data;
   } catch (error) {
     alert(`Si è verificato un problema: ${error.message}`);
     window.location.reload();
@@ -226,6 +249,7 @@ function generateFilePathHTML(filepath, pathNotFound) {
   if (pathNotFound) {
     const returnButton = document.createElement("button");
     returnButton.className = "upload-file file-path-return";
+    returnButton.style = "margin-right:10px;";
 
     const returnIcon = document.createElement("i");
     returnIcon.className = "fa fa-level-up return-span";
@@ -241,6 +265,7 @@ function generateFilePathHTML(filepath, pathNotFound) {
   } else if (filepath != "/" && filepath != "") {
     const returnButton = document.createElement("button");
     returnButton.className = "upload-file file-path-return";
+    returnButton.style = "margin-right:10px;";
 
     const dividedFilepath = ["/"].concat(getSubPaths(filepath));
 
@@ -481,12 +506,50 @@ function generateFilesHTML(filesJson) {
     deleteButton.className = "file-action-button";
     deleteButton.ariaLabel = "Elimina";
 
+    function deleteButtonClick() {
+      const modal = document.getElementById("delete-file-modal");
+      const modalTitle = document.getElementById("delete-file-title");
+      const closeButton = document.getElementById("delete-file-close");
+      const saveButton = document.getElementById("delete-file-save");
+      const cancelButton = document.getElementById("delete-file-cancel");
+
+      modalTitle.innerHTML =
+        "'" +
+        (element["file"]
+          ? element["name"] + "' ?"
+          : element["name"] + "' e tutto il suo contenuto?");
+
+      modal.onclick = (event) => {
+        if (event.target === modal) {
+          modal.style.display = "none";
+        }
+      };
+      closeButton.onclick = () => {
+        modal.style.display = "none";
+      };
+      cancelButton.onclick = () => {
+        modal.style.display = "none";
+      };
+
+      saveButton.onclick = async () => {
+        await deleteElement(element["path"]);
+
+        modal.style.display = "none";
+        reloadFilesRequest();
+      };
+
+      modal.style.display = "flex";
+    }
+
+    deleteButton.onclick = deleteButtonClick;
+
     const deleteIcon = document.createElement("i");
     deleteIcon.className = "fa fa-trash";
 
     deleteButton.appendChild(deleteIcon);
 
     const deleteButtonClone = deleteButton.cloneNode(true);
+    deleteButtonClone.onclick = deleteButtonClick;
 
     // Dropdown open button
 
