@@ -512,12 +512,13 @@ function generateFilesHTML(filesJson) {
       const closeButton = document.getElementById("delete-file-close");
       const saveButton = document.getElementById("delete-file-save");
       const cancelButton = document.getElementById("delete-file-cancel");
+      const deleteName = document.getElementById("delete-file-name");
 
-      modalTitle.innerHTML =
-        "'" +
-        (element["file"]
-          ? element["name"] + "' ?"
-          : element["name"] + "' e tutto il suo contenuto?");
+      modalTitle.innerHTML = element["file"]
+        ? "Elimina file"
+        : "Elimina cartella";
+
+      deleteName.innerHTML = element["name"];
 
       modal.onclick = (event) => {
         if (event.target === modal) {

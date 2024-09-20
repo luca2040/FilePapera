@@ -540,12 +540,6 @@ body {
   white-space: normal;
 }
 
-.delete-text::before {
-  content: "Eliminare";
-  color: var(--error-not-found);
-  display: block;
-}
-
 .rename-modal-input {
   width: 100%;
   padding: 10px;
@@ -559,6 +553,21 @@ body {
 
 .rename-modal-input::placeholder {
   color: var(--bg-dark);
+}
+
+.delete-modal-name {
+  width: 100%;
+  padding: 10px;
+  font-size: 18;
+  border: none;
+  background-color: #d2d2d2;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  color: black;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  white-space: normal;
 }
 
 .modal-save-button {
