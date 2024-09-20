@@ -215,6 +215,7 @@ async function reloadFilesRequest() {
   const pageNotFound = "not_found" in fileListJson;
 
   reloadFiles(fileListJson, filepath, pageNotFound);
+  uploadButtons(filepath);
 
   if (pageNotFound) {
     const nodesGroup = document.getElementById("main-node-group");
@@ -641,6 +642,40 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
   filesList.forEach((element, index) => {
     main_files_div.appendChild(element);
   });
+}
+
+function uploadButtons(filepath) {
+  const buttonsContainer = document.getElementById("upload-buttons-container");
+
+  const uploadFileButton = document.createElement("button");
+  const newFolderButton = document.createElement("button");
+  uploadFileButton.className = "upload-file";
+  newFolderButton.className = "upload-folder";
+
+  const fileIconContainer = document.createElement("span");
+  fileIconContainer.className = "icon-container";
+  const folderIconContainer = fileIconContainer.cloneNode(true);
+
+  const fileIcon = document.createElement("i");
+  const folderIcon = document.createElement("i");
+  fileIcon.className = "fas fa-file-upload";
+  folderIcon.className = "fas fa-folder-plus";
+  fileIconContainer.appendChild(fileIcon);
+  folderIconContainer.appendChild(folderIcon);
+
+  const newFileNameSpan = document.createElement("span");
+  const newFolderNameSpan = document.createElement("span");
+  newFileNameSpan.innerHTML = "Carica file";
+  newFolderNameSpan.innerHTML = "Crea cartella";
+
+  uploadFileButton.appendChild(fileIconContainer);
+  newFolderButton.appendChild(folderIconContainer);
+  uploadFileButton.appendChild(newFileNameSpan);
+  newFolderButton.appendChild(newFolderNameSpan);
+
+  buttonsContainer.innerHTML = "";
+  buttonsContainer.appendChild(uploadFileButton);
+  buttonsContainer.appendChild(newFolderButton);
 }
 
 window.onload = reloadFilesRequest;
