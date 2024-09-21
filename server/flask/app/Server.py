@@ -121,17 +121,19 @@ def create_folder():
         return jsonify({"error": "Folder name is required"}), 400
 
     try:
-        path = unquote_plus(path)
-        folder_name = unquote_plus(path)
+        path = unquote_plus(path).lstrip("/")
+        folder_name = unquote_plus(folder_name)
 
-        full_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], path, folder_name)
+        full_path = os.path.join(app.config["UPLOAD_FOLDER"], path, folder_name)
         full_path = enc.encode(full_path)
 
-        os.makedirs(full_path, exist_ok=True)
+        if os.path.exists(full_path) and os.path.isdir(full_path):
+            return jsonify({"error": "Folder already exists"}), 409
+
+        os.makedirs(full_path, exist_ok=False)
         return jsonify({"message": "Folder created successfully"}), 200
     except Exception as _:
-        return jsonify({"error": "Exception creating a folder"}), 500
+        return jsonify({"error": "Exception creating folder"}), 500
 
 
 @app.route("/upload/file", methods=["POST"])
@@ -176,15 +178,16 @@ def rename_or_move():
         return jsonify({"message": "Same path"}), 200
 
     if not old_path or not new_path:
-        return jsonify({"error": "'old_path' and/or 'new_path' missing", "type": 1}), 400
+        return (
+            jsonify({"error": "'old_path' and/or 'new_path' missing", "type": 1}),
+            400,
+        )
 
     try:
         old_path = unquote_plus(old_path)
         new_path = unquote_plus(new_path)
-        old_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], old_path.lstrip("/"))
-        new_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], new_path.lstrip("/"))
+        old_path = os.path.join(app.config["UPLOAD_FOLDER"], old_path.lstrip("/"))
+        new_path = os.path.join(app.config["UPLOAD_FOLDER"], new_path.lstrip("/"))
         old_path = enc.encode(old_path)
         new_path = enc.encode(new_path)
 
@@ -192,14 +195,25 @@ def rename_or_move():
             return jsonify({"error": "File not found", "type": 2}), 404
 
         if os.path.exists(new_path):
-            return jsonify({"error": "A file or directory with the new name already exists", "type": 3}), 400
+            return (
+                jsonify(
+                    {
+                        "error": "A file or directory with the new name already exists",
+                        "type": 3,
+                    }
+                ),
+                400,
+            )
 
         os.rename(old_path, new_path)
 
         return jsonify({"message": "File or directory renamed/moved"}), 200
 
     except Exception as e:
-        return jsonify({"error": f"Exception moving/renaming folder/file", "type": 4}), 500
+        return (
+            jsonify({"error": f"Exception moving/renaming folder/file", "type": 4}),
+            500,
+        )
 
 
 def generate_large_file(filepath):
@@ -230,17 +244,16 @@ def download_file():
         full_file_path = enc.encode(full_file_path)
 
         if os.path.isdir(full_file_path):
+
             def generator():
-                z = zipstream.ZipFile(
-                    mode='w', compression=zipstream.ZIP_DEFLATED)
+                z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED)
 
                 for root, dirs, files in os.walk(full_file_path):
                     for file in files:
                         file_path = os.path.join(root, file)
                         arcname = os.path.relpath(file_path, full_file_path)
 
-                        z.write(file_path,
-                                arcname=enc.decode(arcname))
+                        z.write(file_path, arcname=enc.decode(arcname))
 
                 for chunk in z:
                     yield chunk
@@ -250,7 +263,7 @@ def download_file():
                 headers={
                     "Content-Disposition": f"attachment; filename={filename}.zip",
                 },
-                mimetype="application/zip"
+                mimetype="application/zip",
             )
 
         if not os.path.isfile(full_file_path):
@@ -307,7 +320,7 @@ def get_storage():
         max_size = app.config["MAX_STORAGE"]
 
         dir = Path(enc_path)
-        size = sum(f.stat().st_size for f in dir.glob('**/*') if f.is_file())
+        size = sum(f.stat().st_size for f in dir.glob("**/*") if f.is_file())
 
         return jsonify({"used_size": size, "max_size": max_size}), 200
     except Exception as _:

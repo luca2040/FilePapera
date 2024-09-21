@@ -652,6 +652,42 @@ function uploadButtons(filepath) {
   uploadFileButton.className = "upload-file";
   newFolderButton.className = "upload-folder";
 
+  newFolderButton.onclick = () => {
+    const modal = document.getElementById("folder-create-modal");
+    const newNameInput = document.getElementById("folder-create-input");
+    const closeButton = document.getElementById("folder-create-close");
+    const saveButton = document.getElementById("folder-create-save");
+    const errorMessage = document.getElementById("folder-create-error");
+
+    modal.onclick = (event) => {
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    };
+    closeButton.onclick = () => {
+      modal.style.display = "none";
+    };
+
+    newNameInput.addEventListener("input", () => {
+      newNameInput.value = newNameInput.value.replace(
+        /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
+        "_"
+      );
+      errorMessage.style.display = "none";
+    });
+
+    newNameInput.value = "";
+
+    saveButton.onclick = async () => {
+      console.log(filepath, newNameInput.value);
+
+      modal.style.display = "none";
+      reloadFilesRequest();
+    };
+
+    modal.style.display = "flex";
+  };
+
   const fileIconContainer = document.createElement("span");
   fileIconContainer.className = "icon-container";
   const folderIconContainer = fileIconContainer.cloneNode(true);
