@@ -96,6 +96,22 @@ async function deleteElement(path) {
   return null;
 }
 
+async function createFolder(basePath, name) {
+  const url = `/new/folder?path=${encodeURIComponent(
+    basePath
+  )}&name=${encodeURIComponent(name)}`;
+
+  try {
+    const response = await fetch(url, { method: "POST" });
+    return response;
+  } catch (error) {
+    alert(`Si è verificato un problema: ${error.message}`);
+    window.location.reload();
+  }
+
+  return null;
+}
+
 async function set_usage_bar() {
   const storage_json = await getStorage();
 
@@ -659,6 +675,8 @@ function uploadButtons(filepath) {
     const saveButton = document.getElementById("folder-create-save");
     const errorMessage = document.getElementById("folder-create-error");
 
+    errorMessage.style.display = "none";
+
     modal.onclick = (event) => {
       if (event.target === modal) {
         modal.style.display = "none";
@@ -679,10 +697,34 @@ function uploadButtons(filepath) {
     newNameInput.value = "";
 
     saveButton.onclick = async () => {
-      console.log(filepath, newNameInput.value);
+      const response = await createFolder(filepath, newNameInput.value);
 
-      modal.style.display = "none";
-      reloadFilesRequest();
+      if (response.ok) {
+        modal.style.display = "none";
+        reloadFilesRequest();
+      } else {
+        try {
+          const responseJSON = await response.json();
+          const responseType = responseJSON["type"];
+
+          switch (responseType) {
+            case 1:
+              errorMessage.innerHTML = "Nome cartella non valido";
+              break;
+            case 2:
+              errorMessage.innerHTML = "Cartella già esistente";
+              break;
+            default:
+              errorMessage.innerHTML = "Errore del server";
+              break;
+          }
+
+          errorMessage.style.display = "block";
+        } catch (error) {
+          alert(`Si è verificato un problema: ${error.message}`);
+          window.location.reload();
+        }
+      }
     };
 
     modal.style.display = "flex";

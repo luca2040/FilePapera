@@ -118,22 +118,23 @@ def create_folder():
     folder_name = request.args.get("name", None)
 
     if not folder_name:
-        return jsonify({"error": "Folder name is required"}), 400
+        return jsonify({"error": "Folder name is required", "type": 1}), 400
 
     try:
         path = unquote_plus(path).lstrip("/")
-        folder_name = unquote_plus(folder_name)
+        folder_name = unquote_plus(folder_name).lstrip("/")
 
-        full_path = os.path.join(app.config["UPLOAD_FOLDER"], path, folder_name)
+        full_path = os.path.join(
+            app.config["UPLOAD_FOLDER"], path, folder_name)
         full_path = enc.encode(full_path)
 
         if os.path.exists(full_path) and os.path.isdir(full_path):
-            return jsonify({"error": "Folder already exists"}), 409
+            return jsonify({"error": "Folder already exists", "type": 2}), 409
 
         os.makedirs(full_path, exist_ok=False)
         return jsonify({"message": "Folder created successfully"}), 200
     except Exception as _:
-        return jsonify({"error": "Exception creating folder"}), 500
+        return jsonify({"error": "Exception creating folder", "type": 3}), 500
 
 
 @app.route("/upload/file", methods=["POST"])
@@ -186,8 +187,10 @@ def rename_or_move():
     try:
         old_path = unquote_plus(old_path)
         new_path = unquote_plus(new_path)
-        old_path = os.path.join(app.config["UPLOAD_FOLDER"], old_path.lstrip("/"))
-        new_path = os.path.join(app.config["UPLOAD_FOLDER"], new_path.lstrip("/"))
+        old_path = os.path.join(
+            app.config["UPLOAD_FOLDER"], old_path.lstrip("/"))
+        new_path = os.path.join(
+            app.config["UPLOAD_FOLDER"], new_path.lstrip("/"))
         old_path = enc.encode(old_path)
         new_path = enc.encode(new_path)
 
@@ -246,7 +249,8 @@ def download_file():
         if os.path.isdir(full_file_path):
 
             def generator():
-                z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED)
+                z = zipstream.ZipFile(
+                    mode="w", compression=zipstream.ZIP_DEFLATED)
 
                 for root, dirs, files in os.walk(full_file_path):
                     for file in files:
