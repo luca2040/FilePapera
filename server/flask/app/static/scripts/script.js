@@ -247,10 +247,10 @@ async function reloadFilesRequest() {
 
   await set_usage_bar();
 
-  tree_auto_scroll(); // Function from script in HTML
+  tree_auto_scroll();
 }
 
-function generateFilePathHTML(filepath, pathNotFound) {
+function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   let folders = [];
 
   if (!(filepath === "" || filepath === "/")) {
@@ -291,12 +291,14 @@ function generateFilePathHTML(filepath, pathNotFound) {
       reloadFilesRequest();
     };
 
-    const returnIcon = document.createElement("i");
-    returnIcon.className = "fa fa-level-up return-span";
-    returnIcon.setAttribute("aria-hidden", "true");
+    if (completeMode) {
+      const returnIcon = document.createElement("i");
+      returnIcon.className = "fa fa-level-up return-span";
+      returnIcon.setAttribute("aria-hidden", "true");
 
-    returnButton.appendChild(returnIcon);
-    returnDiv.appendChild(returnButton);
+      returnButton.appendChild(returnIcon);
+      returnDiv.appendChild(returnButton);
+    }
   }
 
   const pathInfoDiv = document.createElement("div");
@@ -311,10 +313,15 @@ function generateFilePathHTML(filepath, pathNotFound) {
     const rootSpan = document.createElement("span");
     rootSpan.className = "path-folder";
     rootSpan.textContent = "/";
-    rootSpan.onclick = () => {
-      setPagePath("/");
-      reloadFilesRequest();
-    };
+    if (completeMode) {
+      rootSpan.onclick = () => {
+        setPagePath("/");
+        reloadFilesRequest();
+      };
+    } else {
+      rootSpan.classList.add("no-selection");
+    }
+
     pathInfoDiv.appendChild(rootSpan);
     const rootSeparatorSpan = document.createElement("span");
     rootSeparatorSpan.className = "path-separator";
@@ -325,10 +332,14 @@ function generateFilePathHTML(filepath, pathNotFound) {
       const folderSpan = document.createElement("span");
       folderSpan.className = "path-folder";
       folderSpan.textContent = folder;
-      folderSpan.onclick = () => {
-        setPagePath(getSubPaths(filepath)[index]);
-        reloadFilesRequest();
-      };
+      if (completeMode) {
+        folderSpan.onclick = () => {
+          setPagePath(getSubPaths(filepath)[index]);
+          reloadFilesRequest();
+        };
+      } else {
+        folderSpan.classList.add("no-selection");
+      }
       pathInfoDiv.appendChild(folderSpan);
 
       const separatorSpan = document.createElement("span");
@@ -641,7 +652,7 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
 
   // Add filepath
 
-  const titlePath = generateFilePathHTML(filepath, folderNotFound);
+  const titlePath = generateFilePathHTML(filepath, folderNotFound, true);
 
   if (folderNotFound) {
     main_files_div.innerHTML = "";
@@ -667,6 +678,32 @@ function uploadButtons(filepath) {
   const newFolderButton = document.createElement("button");
   uploadFileButton.className = "upload-file";
   newFolderButton.className = "upload-folder";
+
+  uploadFileButton.onclick = () => {
+    const modal = document.getElementById("upload-file-modal");
+    const closeButton = document.getElementById("upload-file-close");
+    const cancelButton = document.getElementById("upload-file-cancel");
+    const pathbar = document.getElementById("upload-file-pathbar");
+
+    const titlePath = generateFilePathHTML(filepath, false, false);
+    titlePath.id = "upload-file-pathbar";
+
+    pathbar.parentNode.replaceChild(titlePath, pathbar);
+
+    modal.onclick = (event) => {
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    };
+    closeButton.onclick = () => {
+      modal.style.display = "none";
+    };
+    cancelButton.onclick = () => {
+      modal.style.display = "none";
+    };
+
+    modal.style.display = "flex";
+  };
 
   newFolderButton.onclick = () => {
     const modal = document.getElementById("folder-create-modal");

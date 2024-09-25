@@ -463,6 +463,14 @@ body {
   text-decoration: underline;
 }
 
+.no-selection {
+  cursor: default;
+}
+
+.no-selection:hover {
+  text-decoration: none;
+}
+
 .path-separator {
   color: var(--accent-green);
   font-size: 16px;
@@ -512,6 +520,7 @@ body {
   margin-bottom: 20px;
 }
 
+.upload-modal,
 .delete-modal,
 .rename-modal {
   background: var(--bg-light);

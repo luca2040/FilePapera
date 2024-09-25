@@ -106,6 +106,24 @@
       </div>
     </div>
 
+    <div class="modal-background" id="upload-file-modal">
+      <div class="upload-modal">
+        <div class="modal-header">
+          <div class="modal-title">Carica file</div>
+          <button
+            class="file-action-button modal-close-button"
+            id="upload-file-close"
+          ></button>
+        </div>
+        <div id="upload-file-pathbar"></div>
+        <div style="align-items: left">
+          <button class="modal-save-button" id="upload-file-cancel">
+            Chiudi
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-background" id="folder-create-modal">
       <div class="rename-modal">
         <div class="modal-header">
@@ -125,52 +143,7 @@
       </div>
     </div>
 
-    <script>
-      // UI SIDEBAR FUNCTIONS
-
-      function toggleSidebar() {
-        const sidebar = document.querySelector(".sidebar");
-        sidebar.classList.toggle("active");
-      }
-
-      function closeSidebar() {
-        const sidebar = document.querySelector(".sidebar");
-        sidebar.classList.remove("active");
-      }
-
-      function handleClickOutside(event) {
-        const sidebar = document.querySelector(".sidebar");
-        const menuButton = document.querySelector(".menu-btn");
-
-        if (
-          !sidebar.contains(event.target) &&
-          !menuButton.contains(event.target)
-        ) {
-          closeSidebar();
-        }
-      }
-
-      document.addEventListener("click", handleClickOutside);
-
-      window.addEventListener("resize", function () {
-        const sidebar = document.querySelector(".sidebar");
-        if (window.innerWidth >= 768) {
-          sidebar.classList.remove("active");
-        }
-      });
-
-      const tree_container = document.querySelector(".tree");
-
-      function tree_auto_scroll() {
-        tree_container.scrollLeft = tree_container.scrollWidth;
-      }
-
-      tree_auto_scroll();
-
-      tree_container.addEventListener("scroll", function () {
-        tree_auto_scroll();
-      });
-    </script>
+    <script src="{{ url_for('static', filename='scripts/ui.js') }}"></script>
     <script src="{{ url_for('static', filename='scripts/script.js') }}"></script>
   </body>
 </html>
