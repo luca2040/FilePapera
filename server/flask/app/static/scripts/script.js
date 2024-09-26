@@ -304,6 +304,8 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   const pathInfoDiv = document.createElement("div");
   pathInfoDiv.className = "file-path-info";
 
+  if (!completeMode) pathInfoDiv.classList.add("dark");
+
   if (pathNotFound) {
     const rootSeparatorSpan = document.createElement("span");
     rootSeparatorSpan.className = "path-separator error";
