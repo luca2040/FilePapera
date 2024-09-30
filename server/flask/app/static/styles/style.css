@@ -22,6 +22,7 @@
   --scrollbar-thumb: #ffffff;
   --storage-bar-bg: #444;
   --bars-height: 8px;
+  --scrollbars-height: 4px;
 }
 
 body {
@@ -327,17 +328,17 @@ body {
 /* SCROLLBARS */
 
 .scrollable::-webkit-scrollbar {
-  width: var(--bars-height);
+  width: var(--scrollbars-height);
 }
 
 .scrollable::-webkit-scrollbar-track {
   background: var(--scrollbar-bg);
-  border-radius: var(--bars-height);
+  border-radius: var(--scrollbars-height);
 }
 
 .scrollable::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
-  border-radius: var(--bars-height);
+  border-radius: var(--scrollbars-height);
 }
 
 /* STORAGE BAR */
@@ -401,6 +402,21 @@ body {
   margin-bottom: 45px;
 }
 
+.files.modal-upload {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  padding: 0;
+  gap: 0px;
+  background-color: var(--bg-dark);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.files.modal-upload:last-child {
+  margin-bottom: 0;
+}
+
 .file-container {
   display: flex;
   justify-content: space-between;
@@ -411,6 +427,24 @@ body {
   border-radius: 5px;
   overflow: hidden;
   gap: 10px;
+}
+
+.file-container.modal-upload {
+  min-height: 27px;
+  padding: 10px 20px 10px 20px;
+  background: linear-gradient(
+    to right,
+    var(--accent-green-transparent) 50%,
+    transparent 50%
+  );
+  border-radius: 0px;
+  box-shadow: none;
+  border-radius: 2px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.files.modal-upload .file-container.modal-upload:last-child {
+  border-bottom: none;
 }
 
 .folder-clickable {
@@ -503,6 +537,14 @@ body {
 
 .file-action-button.show {
   transform: rotate(90deg);
+}
+
+.replace-files-colored {
+  color: var(--yellow-color);
+}
+
+.replace-files-colored:hover {
+  background-color: var(--yellow-color-transparent);
 }
 
 .file-path-return,
@@ -644,9 +686,12 @@ body {
   padding: 20px;
   min-width: 280px;
   max-width: 1000px;
+  max-height: 100%;
+  box-sizing: border-box !important;
   width: 60%;
   position: relative;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto !important;
 }
 
 .modal-close-button::before {
@@ -733,6 +778,10 @@ body {
     width: 100%;
     text-align: left;
     margin-bottom: 6px;
+  }
+
+  .file-name.no-margin {
+    margin-bottom: 0;
   }
 
   .file-size {
