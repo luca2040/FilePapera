@@ -118,14 +118,40 @@
         <div id="upload-file-pathbar"></div>
 
         <div class="modal-grid-wrapper">
-          <button class="upload-file file-input">Carica file</button>
-          <button class="upload-folder file-input">Carica cartella</button>
+          <button
+            class="upload-file file-input"
+            id="file-selection-input-button"
+          >
+            Carica file
+          </button>
+          <input
+            type="file"
+            id="file-selection-input"
+            style="display: none"
+            multiple
+          />
+
+          <button
+            class="upload-folder file-input"
+            id="folder-selection-input-button"
+          >
+            Carica cartella
+          </button>
+          <input
+            type="file"
+            id="folder-selection-input"
+            style="display: none"
+            webkitdirectory
+          />
+
           <button class="replace-files file-input"></button>
         </div>
 
-        <div class="files modal-upload scrollable">
+        <div class="files modal-upload scrollable" id="new-files-uploading-list">
           <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">Ciao test file</div>
+            <div class="file-name add-folder-icon no-margin">
+              Ciao test file
+            </div>
             <button
               class="file-action-button replace-files-colored"
               aria-label="Sovrascrivi"
@@ -134,7 +160,9 @@
             </button>
           </div>
           <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">Ciao test file</div>
+            <div class="file-name add-folder-icon no-margin">
+              Ciao test file
+            </div>
             <button
               class="file-action-button replace-files-colored"
               aria-label="Sovrascrivi"
@@ -143,7 +171,9 @@
             </button>
           </div>
           <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">Ciao test file</div>
+            <div class="file-name add-folder-icon no-margin">
+              Ciao test file
+            </div>
             <button
               class="file-action-button replace-files-colored"
               aria-label="Sovrascrivi"
@@ -152,7 +182,9 @@
             </button>
           </div>
           <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">Ciao test file</div>
+            <div class="file-name add-folder-icon no-margin">
+              Ciao test file
+            </div>
             <button
               class="file-action-button replace-files-colored"
               aria-label="Sovrascrivi"
@@ -161,7 +193,9 @@
             </button>
           </div>
           <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">Ciao test file</div>
+            <div class="file-name add-folder-icon no-margin">
+              Ciao test file
+            </div>
             <button
               class="file-action-button replace-files-colored"
               aria-label="Sovrascrivi"
@@ -170,7 +204,9 @@
             </button>
           </div>
           <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">Ciao test file</div>
+            <div class="file-name add-folder-icon no-margin">
+              Ciao test file
+            </div>
             <button
               class="file-action-button replace-files-colored"
               aria-label="Sovrascrivi"
@@ -179,7 +215,9 @@
             </button>
           </div>
           <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">Ciao test file</div>
+            <div class="file-name add-folder-icon no-margin">
+              Ciao test file
+            </div>
             <button
               class="file-action-button replace-files-colored"
               aria-label="Sovrascrivi"

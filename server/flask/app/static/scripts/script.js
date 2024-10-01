@@ -673,6 +673,72 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
   });
 }
 
+let filesToProcessList = [];
+let currentFileID = 1;
+
+function uploadFilesFromListRecursive() {
+  const elementToProcess = filesToProcessList.find(
+    (item) => item.waitingfor === false && item.alreadydone === false
+  );
+
+  if (!elementToProcess) {
+    setTimeout(uploadFilesFromListRecursive, 1000);
+    return;
+  }
+
+  updateUploadElement(elementToProcess).then(() => {
+    setTimeout(uploadFilesFromListRecursive, 1000);
+  });
+}
+
+function removeElementByIdFILELIST(id) {
+  const index = filesToProcessList.findIndex((item) => item.id === id);
+  if (index > -1) {
+    filesToProcessList.splice(index, 1);
+  }
+}
+
+function resetDoneFiles() {
+  const removeIDs = [];
+
+  for (const file of filesToProcessList) {
+    if (file.alreadydone) {
+      removeIDs.push(file.id);
+    }
+  }
+
+  for (const id of removeIDs) {
+    removeElementByIdFILELIST(id);
+  }
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function updateUploadElement(elementToProcess) {
+  for (let i = 0; i <= 100; i++) {
+    await delay(50);
+
+    const perc = i;
+    elementToProcess.container.style.background = `linear-gradient(to right, var(--accent-green-transparent) ${perc}%, transparent ${perc}%)`;
+  }
+
+  elementToProcess.container.style.background = "var(--transparent-blue)";
+  elementToProcess.alreadydone = true;
+}
+
+uploadFilesFromListRecursive();
+
+function documentDisplayFileList() {
+  const filesDIVelement = document.getElementById("new-files-uploading-list");
+  filesDIVelement.innerHTML = "";
+
+  for (let i = 0; i < filesToProcessList.length; i++) {
+    filesDIVelement.appendChild(filesToProcessList[i].container);
+  }
+}
+
 function uploadButtons(filepath) {
   const buttonsContainer = document.getElementById("upload-buttons-container");
 
@@ -687,10 +753,71 @@ function uploadButtons(filepath) {
     const cancelButton = document.getElementById("upload-file-cancel");
     const pathbar = document.getElementById("upload-file-pathbar");
 
+    // Generate path bar
+
     const titlePath = generateFilePathHTML(filepath, false, false);
     titlePath.id = "upload-file-pathbar";
 
     pathbar.parentNode.replaceChild(titlePath, pathbar);
+
+    // File select buttons
+
+    const uploadFileSelectButton = document.getElementById(
+      "file-selection-input-button"
+    );
+    const uploadFolderSelectButton = document.getElementById(
+      "folder-selection-input-button"
+    );
+
+    const uploadFileSelect = document.getElementById("file-selection-input");
+    const uploadFolderSelect = document.getElementById(
+      "folder-selection-input"
+    );
+
+    uploadFileSelectButton.onclick = () => uploadFileSelect.click();
+    uploadFolderSelectButton.onclick = () => uploadFolderSelect.click();
+
+    resetDoneFiles();
+    documentDisplayFileList();
+
+    uploadFileSelect.addEventListener("change", function (event) {
+      const files = event.target.files;
+      console.log("Files:", files);
+
+      for (let i = 0; i < files.length; i++) {
+        console.log(`File ${i + 1}:`, files[i].name);
+
+        const fileContainerDiv = document.createElement("div");
+        fileContainerDiv.className = "file-container modal-upload";
+
+        const fileTitleDiv = document.createElement("div");
+        fileTitleDiv.className = "file-name add-file-icon no-margin";
+        fileTitleDiv.innerHTML = files[i].name;
+
+        fileContainerDiv.appendChild(fileTitleDiv);
+
+        filesToProcessList.push({
+          id: currentFileID++,
+          file: files[i],
+          waitingfor: false,
+          alreadydone: false,
+          container: fileContainerDiv,
+        });
+      }
+
+      documentDisplayFileList();
+    });
+
+    uploadFolderSelect.addEventListener("change", function (event) {
+      const files = event.target.files;
+      console.log("FolderFiles:", files);
+
+      for (let i = 0; i < files.length; i++) {
+        console.log(`File ${i + 1}:`, files[i].name);
+      }
+    });
+
+    // Modal window
 
     modal.onclick = (event) => {
       if (event.target === modal) {

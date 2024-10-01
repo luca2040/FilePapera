@@ -9,6 +9,7 @@
   --accent-green-dark: rgb(66, 136, 21);
   --accent-green-transparent: rgb(40, 84, 12);
   --yellow-color-transparent: rgb(80, 61, 12);
+  --transparent-blue: rgb(12, 78, 84);
   --error-not-found: #ff0000;
   --storage-progress: var(--accent-green);
   --files-color: var(--accent-green);
@@ -404,6 +405,7 @@ body {
 
 .files.modal-upload {
   max-height: 300px;
+  min-height: 47px;
   overflow-y: auto;
   margin-bottom: 20px;
   border-radius: 5px;
@@ -432,15 +434,12 @@ body {
 .file-container.modal-upload {
   min-height: 27px;
   padding: 10px 20px 10px 20px;
-  background: linear-gradient(
-    to right,
-    var(--accent-green-transparent) 50%,
-    transparent 50%
-  );
+  background: transparent;
   border-radius: 0px;
   box-shadow: none;
   border-radius: 2px;
   border-bottom: 1px solid var(--border-color);
+  transition: background 0.3s ease-in-out;
 }
 
 .files.modal-upload .file-container.modal-upload:last-child {
