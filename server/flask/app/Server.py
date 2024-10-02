@@ -170,6 +170,41 @@ def upload_file():
         return jsonify({"error": "Exception uploading a file"}), 500
 
 
+@app.route("/upload/available-files", methods=['POST'])
+def available_files():
+    try:
+        data = request.get_json()
+        # [{id: int, filepath: str}, ...]
+
+        responseList = []
+        # [{id: int, isfolder: boolean, isfile: boolean}]
+
+        for element in data:
+            remotePath = element["filepath"]
+            serverPath = os.path.join(
+                app.config["UPLOAD_FOLDER"], remotePath.lstrip("/"))
+            serverPath = enc.encode(serverPath)
+
+            if os.path.exists(serverPath):
+                if os.path.isfile(serverPath):
+                    responseList.append(
+                        {"id": element["id"], "isfolder": False, "isfile": True})
+                else:
+                    responseList.append(
+                        {"id": element["id"], "isfolder": True, "isfile": False})
+
+        response = {
+            'message': 'done',
+            'storageError': False,
+            'responseJSON': responseList
+        }
+
+        return jsonify(response), 200
+
+    except Exception as _:
+        return jsonify({"error": "Exception checking files"}), 500
+
+
 @app.route("/reformat", methods=["GET"])
 def rename_or_move():
     old_path = request.args.get("old_path", None)

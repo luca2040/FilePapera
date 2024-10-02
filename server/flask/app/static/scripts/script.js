@@ -112,6 +112,26 @@ async function createFolder(basePath, name) {
   return null;
 }
 
+async function getAvailableFiles(query) {
+  const url = "/upload/available-files";
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(query),
+    });
+    return response;
+  } catch (error) {
+    alert(`Si è verificato un problema: ${error.message}`);
+    window.location.reload();
+  }
+
+  return null;
+}
+
 async function set_usage_bar() {
   const storage_json = await getStorage();
 
@@ -678,7 +698,10 @@ let currentFileID = 1;
 
 function uploadFilesFromListRecursive() {
   const elementToProcess = filesToProcessList.find(
-    (item) => item.waitingfor === false && item.alreadydone === false
+    (item) =>
+      item.waitingfor === false &&
+      item.alreadydone === false &&
+      item.replaceerror === false
   );
 
   if (!elementToProcess) {
@@ -702,7 +725,7 @@ function resetDoneFiles() {
   const removeIDs = [];
 
   for (const file of filesToProcessList) {
-    if (file.alreadydone) {
+    if (file.alreadydone || file.replaceerror) {
       removeIDs.push(file.id);
     }
   }
@@ -734,8 +757,29 @@ function documentDisplayFileList() {
   const filesDIVelement = document.getElementById("new-files-uploading-list");
   filesDIVelement.innerHTML = "";
 
-  for (let i = 0; i < filesToProcessList.length; i++) {
-    filesDIVelement.appendChild(filesToProcessList[i].container);
+  for (const file of filesToProcessList) {
+    if (file.waitingfor) {
+      const containerElements = file.container.children;
+      for (let i = containerElements.length - 1; i >= 0; i--) {
+        const el = containerElements[i];
+        if (el.id === "replace-file-button") {
+          file.container.removeChild(el);
+        }
+      }
+
+      const reloadButton = document.createElement("button");
+      reloadButton.className = "file-action-button replace-files-colored";
+      reloadButton.id = "replace-file-button";
+      reloadButton.ariaLabel = "Sovrascrivi";
+
+      const reloadIcon = document.createElement("i");
+      reloadIcon.className = "fa fa-rotate-right";
+
+      reloadButton.appendChild(reloadIcon);
+      file.container.appendChild(reloadButton);
+    }
+
+    filesDIVelement.appendChild(file.container);
   }
 }
 
@@ -780,42 +824,98 @@ function uploadButtons(filepath) {
     resetDoneFiles();
     documentDisplayFileList();
 
-    uploadFileSelect.addEventListener("change", function (event) {
+    const onFileSelect = async function (event) {
       const files = event.target.files;
       console.log("Files:", files);
 
-      for (let i = 0; i < files.length; i++) {
-        console.log(`File ${i + 1}:`, files[i].name);
+      let queryData = [];
+      let tempFilesToProcessList = [];
+
+      for (const singleFile of files) {
+        console.log(`File:`, singleFile.name);
 
         const fileContainerDiv = document.createElement("div");
         fileContainerDiv.className = "file-container modal-upload";
 
         const fileTitleDiv = document.createElement("div");
         fileTitleDiv.className = "file-name add-file-icon no-margin";
-        fileTitleDiv.innerHTML = files[i].name;
+        fileTitleDiv.innerHTML = singleFile.name;
 
         fileContainerDiv.appendChild(fileTitleDiv);
 
-        filesToProcessList.push({
+        const newFileElement = {
           id: currentFileID++,
-          file: files[i],
+          file: singleFile,
           waitingfor: false,
+          replaceerror: false,
           alreadydone: false,
           container: fileContainerDiv,
+        };
+
+        let completePath;
+
+        if (
+          singleFile.webkitRelativePath &&
+          singleFile.webkitRelativePath !== ""
+        )
+          completePath =
+            filepath.replace(/^\/+/, "") + "/" + singleFile.webkitRelativePath;
+        else
+          completePath = filepath.replace(/^\/+/, "") + "/" + singleFile.name;
+
+        queryData.push({
+          id: newFileElement.id,
+          filepath: completePath,
         });
+
+        tempFilesToProcessList.push(newFileElement);
       }
+
+      const response = await getAvailableFiles(queryData);
+      console.log(queryData);
+
+      try {
+        if (response.ok) {
+          const responseJSON = await response.json();
+
+          if (responseJSON["storageError"]) {
+            alert("Storage error");
+            tempFilesToProcessList = [];
+          } else {
+            const replacedFileList = responseJSON["responseJSON"];
+
+            for (const replacedFile of replacedFileList) {
+              const id = replacedFile.id;
+              const isFile = replacedFile.isfile;
+              const isFolder = replacedFile.isfolder;
+
+              const listElement = tempFilesToProcessList.find(
+                (item) => item.id === id
+              );
+
+              if (isFile) listElement.waitingfor = true;
+              else if (isFolder) listElement.replaceerror = true;
+            }
+          }
+        } else {
+          alert("Errore durante la preparazione al caricamento dei file");
+          window.location.reload();
+        }
+      } catch (error) {
+        alert(
+          "Errore durante la preparazione al caricamento dei file: " +
+            error.message
+        );
+        window.location.reload();
+      }
+
+      filesToProcessList = filesToProcessList.concat(tempFilesToProcessList);
 
       documentDisplayFileList();
-    });
+    };
 
-    uploadFolderSelect.addEventListener("change", function (event) {
-      const files = event.target.files;
-      console.log("FolderFiles:", files);
-
-      for (let i = 0; i < files.length; i++) {
-        console.log(`File ${i + 1}:`, files[i].name);
-      }
-    });
+    uploadFileSelect.addEventListener("change", onFileSelect);
+    uploadFolderSelect.addEventListener("change", onFileSelect);
 
     // Modal window
 
