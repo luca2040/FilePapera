@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Tuple
 import zipstream
 import time
 from flask import (
@@ -21,13 +22,30 @@ app = Flask(__name__)
 sockets = Sockets(app)
 
 
-UPLOAD_FOLDER = "./uploads"
 # Temporary parameters until docker compose is done
+UPLOAD_FOLDER = "./uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_STORAGE"] = 80000000  # 80 Mb max - example
+app.config["MAX_STORAGE"] = 800000000  # 800 Mb max - example
 
 enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def get_storage_size() -> Tuple[int, int]:
+    """
+    Returns:
+        int: Max size in bytes
+
+        int: Used storage in bytes
+    """
+
+    max_size = app.config["MAX_STORAGE"]
+
+    enc_path = enc.encode(app.config["UPLOAD_FOLDER"])
+    dir = Path(enc_path)
+    size = sum(f.stat().st_size for f in dir.glob("**/*") if f.is_file())
+
+    return max_size, size
 
 
 @app.route("/")
@@ -82,7 +100,7 @@ def list_files_and_folders():
                             "file": False,
                             "creation_date": readable_creation_time,
                             "path": "/"
-                            + enc.decode(full_path).lstrip(app.config["UPLOAD_FOLDER"]),
+                            + enc.decode(full_path).replace(app.config["UPLOAD_FOLDER"], "", 1).lstrip("/"),
                         }
                     )
                 else:
@@ -98,7 +116,7 @@ def list_files_and_folders():
                             "file": True,
                             "creation_date": readable_creation_time,
                             "path": "/"
-                            + enc.decode(full_path).lstrip(app.config["UPLOAD_FOLDER"]),
+                            + enc.decode(full_path).replace(app.config["UPLOAD_FOLDER"], "", 1).lstrip("/"),
                         }
                     )
 
@@ -174,28 +192,36 @@ def upload_file():
 def available_files():
     try:
         data = request.get_json()
-        # [{id: int, filepath: str}, ...]
+        # {data: [{id: int, filepath: str}, ...]}, size: int (Total bytes)}
 
         responseList = []
         # [{id: int, isfolder: boolean, isfile: boolean}]
+        size_error = False
 
-        for element in data:
-            remotePath = element["filepath"]
-            serverPath = os.path.join(
-                app.config["UPLOAD_FOLDER"], remotePath.lstrip("/"))
-            serverPath = enc.encode(serverPath)
+        new_files_size = data["size"]
+        max_size, used_size = get_storage_size()
+        free_size = max_size - used_size
 
-            if os.path.exists(serverPath):
-                if os.path.isfile(serverPath):
-                    responseList.append(
-                        {"id": element["id"], "isfolder": False, "isfile": True})
-                else:
-                    responseList.append(
-                        {"id": element["id"], "isfolder": True, "isfile": False})
+        if (new_files_size >= free_size):
+            size_error = True
+        else:
+            for element in data["data"]:
+                remotePath = element["filepath"]
+                serverPath = os.path.join(
+                    app.config["UPLOAD_FOLDER"], remotePath.lstrip("/"))
+                serverPath = enc.encode(serverPath)
+
+                if os.path.exists(serverPath):
+                    if os.path.isfile(serverPath):
+                        responseList.append(
+                            {"id": element["id"], "isfolder": False, "isfile": True})
+                    else:
+                        responseList.append(
+                            {"id": element["id"], "isfolder": True, "isfile": False})
 
         response = {
             'message': 'done',
-            'storageError': False,
+            'storageError': size_error,
             'responseJSON': responseList
         }
 
@@ -355,11 +381,7 @@ def delete_file_or_folder():
 @app.route("/storage", methods=["GET"])
 def get_storage():
     try:
-        enc_path = enc.encode(app.config["UPLOAD_FOLDER"])
-        max_size = app.config["MAX_STORAGE"]
-
-        dir = Path(enc_path)
-        size = sum(f.stat().st_size for f in dir.glob("**/*") if f.is_file())
+        max_size, size = get_storage_size()
 
         return jsonify({"used_size": size, "max_size": max_size}), 200
     except Exception as _:

@@ -714,7 +714,7 @@ function uploadFilesFromListRecursive() {
   });
 }
 
-function removeElementByIdFILELIST(id) {
+function removeFilesElementById(id) {
   const index = filesToProcessList.findIndex((item) => item.id === id);
   if (index > -1) {
     filesToProcessList.splice(index, 1);
@@ -731,7 +731,7 @@ function resetDoneFiles() {
   }
 
   for (const id of removeIDs) {
-    removeElementByIdFILELIST(id);
+    removeFilesElementById(id);
   }
 }
 
@@ -743,34 +743,53 @@ async function updateUploadElement(elementToProcess) {
   for (let i = 0; i <= 100; i++) {
     await delay(50);
 
+    let color = "transparent";
+    if (elementToProcess.wasreplaced) color = "var(--yellow-color-transparent)";
+
     const perc = i;
-    elementToProcess.container.style.background = `linear-gradient(to right, var(--accent-green-transparent) ${perc}%, transparent ${perc}%)`;
+    elementToProcess.container.style.background = `linear-gradient(to right, var(--accent-green-transparent) ${perc}%, ${color} ${perc}%)`;
   }
 
   elementToProcess.container.style.background = "var(--transparent-blue)";
   elementToProcess.alreadydone = true;
+
+  reloadFilesRequest();
 }
 
 uploadFilesFromListRecursive();
+
+function removeButtonFromReplaceContainer(container) {
+  const containerElements = container.children;
+  for (let i = containerElements.length - 1; i >= 0; i--) {
+    const el = containerElements[i];
+    if (el.id === "replace-file-button") {
+      container.removeChild(el);
+    }
+  }
+}
 
 function documentDisplayFileList() {
   const filesDIVelement = document.getElementById("new-files-uploading-list");
   filesDIVelement.innerHTML = "";
 
   for (const file of filesToProcessList) {
-    if (file.waitingfor) {
-      const containerElements = file.container.children;
-      for (let i = containerElements.length - 1; i >= 0; i--) {
-        const el = containerElements[i];
-        if (el.id === "replace-file-button") {
-          file.container.removeChild(el);
-        }
-      }
+    removeButtonFromReplaceContainer(file.container);
 
+    if (file.waitingfor) {
       const reloadButton = document.createElement("button");
       reloadButton.className = "file-action-button replace-files-colored";
       reloadButton.id = "replace-file-button";
       reloadButton.ariaLabel = "Sovrascrivi";
+
+      reloadButton.onclick = () => {
+        const index = filesToProcessList.findIndex(
+          (item) => item.id === file.id
+        );
+        filesToProcessList[index].waitingfor = false;
+        removeButtonFromReplaceContainer(filesToProcessList[index].container);
+
+        checkTotalReplaceButton();
+      };
 
       const reloadIcon = document.createElement("i");
       reloadIcon.className = "fa fa-rotate-right";
@@ -780,6 +799,31 @@ function documentDisplayFileList() {
     }
 
     filesDIVelement.appendChild(file.container);
+  }
+}
+
+function checkTotalReplaceButton() {
+  const index = filesToProcessList.findIndex(
+    (item) => item.waitingfor === true
+  );
+
+  replaceButton = document.getElementById("main-replace-button");
+
+  if (index !== -1) {
+    replaceButton.style = "display:flex";
+
+    replaceButton.onclick = () => {
+      for (const file of filesToProcessList) {
+        if (file.waitingfor) {
+          removeButtonFromReplaceContainer(file.container);
+          file.waitingfor = false;
+        }
+      }
+
+      checkTotalReplaceButton();
+    };
+  } else {
+    replaceButton.style.display = "none";
   }
 }
 
@@ -813,9 +857,34 @@ function uploadButtons(filepath) {
       "folder-selection-input-button"
     );
 
-    const uploadFileSelect = document.getElementById("file-selection-input");
-    const uploadFolderSelect = document.getElementById(
+    checkTotalReplaceButton();
+
+    const uploadFileSelect = document.createElement("input");
+    uploadFileSelect.type = "file";
+    uploadFileSelect.id = "file-selection-input";
+    uploadFileSelect.style.display = "none";
+    uploadFileSelect.multiple = true;
+
+    const uploadFolderSelect = document.createElement("input");
+    uploadFolderSelect.type = "file";
+    uploadFolderSelect.id = "folder-selection-input";
+    uploadFolderSelect.style.display = "none";
+    uploadFolderSelect.webkitdirectory = true;
+
+    const oldUploadFileSelect = document.getElementById("file-selection-input");
+    const oldUploadFolderSelect = document.getElementById(
       "folder-selection-input"
+    );
+
+    // Replace to prevent eventListeners accumulating
+
+    oldUploadFileSelect.parentNode.replaceChild(
+      uploadFileSelect,
+      oldUploadFileSelect
+    );
+    oldUploadFolderSelect.parentNode.replaceChild(
+      uploadFolderSelect,
+      oldUploadFolderSelect
     );
 
     uploadFileSelectButton.onclick = () => uploadFileSelect.click();
@@ -830,6 +899,8 @@ function uploadButtons(filepath) {
 
       let queryData = [];
       let tempFilesToProcessList = [];
+
+      let size = 0;
 
       for (const singleFile of files) {
         console.log(`File:`, singleFile.name);
@@ -847,6 +918,7 @@ function uploadButtons(filepath) {
           id: currentFileID++,
           file: singleFile,
           waitingfor: false,
+          wasreplaced: false,
           replaceerror: false,
           alreadydone: false,
           container: fileContainerDiv,
@@ -867,12 +939,12 @@ function uploadButtons(filepath) {
           id: newFileElement.id,
           filepath: completePath,
         });
+        size += singleFile.size;
 
         tempFilesToProcessList.push(newFileElement);
       }
 
-      const response = await getAvailableFiles(queryData);
-      console.log(queryData);
+      const response = await getAvailableFiles({ data: queryData, size: size });
 
       try {
         if (response.ok) {
@@ -893,8 +965,10 @@ function uploadButtons(filepath) {
                 (item) => item.id === id
               );
 
-              if (isFile) listElement.waitingfor = true;
-              else if (isFolder) listElement.replaceerror = true;
+              if (isFile) {
+                listElement.waitingfor = true;
+                listElement.wasreplaced = true;
+              } else if (isFolder) listElement.replaceerror = true;
             }
           }
         } else {
@@ -912,6 +986,7 @@ function uploadButtons(filepath) {
       filesToProcessList = filesToProcessList.concat(tempFilesToProcessList);
 
       documentDisplayFileList();
+      checkTotalReplaceButton();
     };
 
     uploadFileSelect.addEventListener("change", onFileSelect);
