@@ -699,9 +699,10 @@ let currentFileID = 1;
 function uploadFilesFromListRecursive() {
   const elementToProcess = filesToProcessList.find(
     (item) =>
-      item.waitingfor === false &&
-      item.alreadydone === false &&
-      item.replaceerror === false
+      !item.waitingfor &&
+      !item.alreadydone &&
+      !item.replaceerror &&
+      !item.storageerror
   );
 
   if (!elementToProcess) {
@@ -722,17 +723,9 @@ function removeFilesElementById(id) {
 }
 
 function resetDoneFiles() {
-  const removeIDs = [];
-
-  for (const file of filesToProcessList) {
-    if (file.alreadydone || file.replaceerror) {
-      removeIDs.push(file.id);
-    }
-  }
-
-  for (const id of removeIDs) {
-    removeFilesElementById(id);
-  }
+  filesToProcessList = filesToProcessList.filter(
+    (file) => !(file.alreadydone || file.replaceerror || file.storageerror)
+  );
 }
 
 function delay(ms) {
@@ -744,7 +737,7 @@ async function updateUploadElement(elementToProcess) {
     await delay(50);
 
     let color = "transparent";
-    if (elementToProcess.wasreplaced) color = "var(--yellow-color-transparent)";
+    if (elementToProcess.wasreplaced) color = "var(--yellow-color-transparent-bg)";
 
     const perc = i;
     elementToProcess.container.style.background = `linear-gradient(to right, var(--accent-green-transparent) ${perc}%, ${color} ${perc}%)`;
@@ -762,7 +755,7 @@ function removeButtonFromReplaceContainer(container) {
   const containerElements = container.children;
   for (let i = containerElements.length - 1; i >= 0; i--) {
     const el = containerElements[i];
-    if (el.id === "replace-file-button") {
+    if (el.id === "replace-file-button" || el.id === "cancel-file-button") {
       container.removeChild(el);
     }
   }
@@ -775,6 +768,24 @@ function documentDisplayFileList() {
   for (const file of filesToProcessList) {
     removeButtonFromReplaceContainer(file.container);
 
+    if (file.waitingfor || file.replaceerror) {
+      const cancelButton = document.createElement("button");
+      cancelButton.className = "file-action-button cancel-files-colored";
+      cancelButton.id = "cancel-file-button";
+      cancelButton.ariaLabel = "Annulla";
+
+      cancelButton.onclick = () => {
+        removeFilesElementById(file.id);
+        checkTotalReplaceButton();
+        documentDisplayFileList();
+      };
+
+      const cancelIcon = document.createElement("i");
+      cancelIcon.className = "fa-solid fa-xmark";
+
+      cancelButton.appendChild(cancelIcon);
+      file.container.appendChild(cancelButton);
+    }
     if (file.waitingfor) {
       const reloadButton = document.createElement("button");
       reloadButton.className = "file-action-button replace-files-colored";
@@ -921,6 +932,7 @@ function uploadButtons(filepath) {
           wasreplaced: false,
           replaceerror: false,
           alreadydone: false,
+          storageerror: false,
           container: fileContainerDiv,
         };
 
@@ -951,8 +963,29 @@ function uploadButtons(filepath) {
           const responseJSON = await response.json();
 
           if (responseJSON["storageError"]) {
-            alert("Storage error");
-            tempFilesToProcessList = [];
+            const storageErrorDiv = document.createElement("div");
+            storageErrorDiv.className =
+              "file-container modal-upload transparent-red";
+
+            const fileTitleDiv = document.createElement("div");
+            fileTitleDiv.className =
+              "file-name storageerror add-error-icon no-margin";
+            fileTitleDiv.innerHTML = "Memoria esaurita";
+
+            storageErrorDiv.appendChild(fileTitleDiv);
+
+            tempFilesToProcessList = [
+              {
+                id: currentFileID++,
+                file: null,
+                waitingfor: false,
+                wasreplaced: false,
+                replaceerror: true,
+                alreadydone: false,
+                storageerror: true,
+                container: storageErrorDiv,
+              },
+            ];
           } else {
             const replacedFileList = responseJSON["responseJSON"];
 
@@ -968,7 +1001,11 @@ function uploadButtons(filepath) {
               if (isFile) {
                 listElement.waitingfor = true;
                 listElement.wasreplaced = true;
-              } else if (isFolder) listElement.replaceerror = true;
+                listElement.container.classList.add("yellow-transparent-bg");
+              } else if (isFolder) {
+                listElement.replaceerror = true;
+                listElement.container.classList.add("red-transparent-bg");
+              }
             }
           }
         } else {

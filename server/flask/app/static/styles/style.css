@@ -9,6 +9,9 @@
   --accent-green-dark: rgb(66, 136, 21);
   --accent-green-transparent: rgb(40, 84, 12);
   --yellow-color-transparent: rgb(80, 61, 12);
+  --red-color-transparent: rgb(62, 11, 11);
+  --yellow-color-transparent-bg: rgb(55, 42, 8);
+  --red-color-transparent-bg: rgb(42, 8, 8);
   --transparent-blue: rgb(12, 78, 84);
   --error-not-found: #ff0000;
   --storage-progress: var(--accent-green);
@@ -434,12 +437,25 @@ body {
 .file-container.modal-upload {
   min-height: 27px;
   padding: 10px 20px 10px 20px;
-  background: transparent;
   border-radius: 0px;
   box-shadow: none;
   border-radius: 2px;
   border-bottom: 1px solid var(--border-color);
   transition: background 0.3s ease-in-out;
+  gap: 2px;
+}
+
+.file-container.modal-upload:not(.yellow-transparent-bg) {
+  background: transparent;
+}
+
+.red-transparent-bg,
+.file-container.modal-upload.transparent-red {
+  background-color: var(--red-color-transparent-bg) !important;
+}
+
+.yellow-transparent-bg {
+  background-color: var(--yellow-color-transparent-bg);
 }
 
 .files.modal-upload .file-container.modal-upload:last-child {
@@ -469,6 +485,11 @@ body {
   text-overflow: ellipsis;
   word-break: break-word;
   white-space: normal;
+}
+
+.file-name.storageerror {
+  display: flex;
+  align-items: center;
 }
 
 .file-date,
@@ -544,6 +565,14 @@ body {
 
 .replace-files-colored:hover {
   background-color: var(--yellow-color-transparent);
+}
+
+.cancel-files-colored {
+  color: var(--error-not-found);
+}
+
+.cancel-files-colored:hover {
+  background-color: var(--red-color-transparent);
 }
 
 .file-path-return,
@@ -627,7 +656,8 @@ body {
 }
 
 .add-folder-icon::before,
-.add-file-icon::before {
+.add-file-icon::before,
+.add-error-icon::before {
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
   margin-right: 8px;
@@ -639,6 +669,12 @@ body {
 
 .add-folder-icon::before {
   content: "\f07c";
+}
+
+.add-error-icon::before {
+  content: "\f00d";
+  font-size: 20px;
+  color: var(--error-not-found);
 }
 
 /* FILE MODAL WINDOWS */
