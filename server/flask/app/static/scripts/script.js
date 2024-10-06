@@ -632,7 +632,9 @@ function generateFilesHTML(filesJson) {
       const openButtonRect = openDropdown.getBoundingClientRect();
 
       if (fileDropdown.classList.contains("show")) {
-        fileDropdown.style.top = `${openButtonRect.bottom}px`;
+        if (index >= filesList.length - 1)
+          fileDropdown.style.top = `${openButtonRect.bottom - 50}px`;
+        else fileDropdown.style.top = `${openButtonRect.bottom}px`;
         fileDropdown.style.left = `${openButtonRect.left - 0.875}px`;
       }
     };
@@ -731,6 +733,8 @@ function resetDoneFiles() {
 async function updateUploadElement(elementToProcess) {
   const container = elementToProcess.container;
   const fileToSend = elementToProcess.file;
+
+  // Checking file hash would be too slow for large files, just upload it.
 
   const formData = new FormData();
   formData.append("file", fileToSend);
