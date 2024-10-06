@@ -485,6 +485,10 @@ body {
   text-overflow: ellipsis;
   word-break: break-word;
   white-space: normal;
+
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
 }
 
 .file-name.storageerror {

@@ -56,3 +56,33 @@ function setLoadingFileComplete(container) {
     container.style.background = "var(--transparent-blue)";
   }, 300);
 }
+
+function isTouchDevice() {
+  return (
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    navigator.msMaxTouchPoints > 0
+  );
+}
+
+const MAX_TEXT_FILE_SIZE = 1 * 1024 * 1024;
+
+function handleFileOpenExtension(element, extension, size, path) {
+  switch (extension) {
+    case ".txt":
+      if (size < MAX_TEXT_FILE_SIZE) {
+        element.classList.add("folder-clickable");
+
+        clickFunc = () => {
+          console.log(path, extension);
+        };
+
+        if (isTouchDevice()) {
+          nameSpan.onclick = clickFunc;
+        } else {
+          nameSpan.ondblclick = clickFunc;
+        }
+        break;
+      }
+  }
+}

@@ -399,6 +399,17 @@ function generateFilesHTML(filesJson) {
       nameSpan.className = "file-name add-file-icon";
       nameSpan.innerHTML = element["name"];
 
+      const fileExtensionParts = element["name"].split(".");
+      const fileExtension =
+        fileExtensionParts.length > 1 ? fileExtensionParts.pop() : "";
+
+      handleFileOpenExtension(
+        nameSpan,
+        fileExtension,
+        element["size"],
+        element["path"]
+      );
+
       const sizeSpan = document.createElement("span");
       sizeSpan.className = "file-size";
       sizeSpan.innerHTML = formatFileSize(element["size"]);
@@ -414,10 +425,17 @@ function generateFilesHTML(filesJson) {
       const nameSpan = document.createElement("span");
       nameSpan.className = "file-name add-folder-icon folder-clickable";
       nameSpan.innerHTML = element["name"];
-      nameSpan.onclick = () => {
+
+      clickFunc = () => {
         setPagePath(element["path"]);
         reloadFilesRequest();
       };
+
+      if (isTouchDevice()) {
+        nameSpan.onclick = clickFunc;
+      } else {
+        nameSpan.ondblclick = clickFunc;
+      }
 
       const dateSpan = document.createElement("span");
       dateSpan.className = "file-date";
