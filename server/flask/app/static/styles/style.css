@@ -436,13 +436,13 @@ body {
 
 .file-container.modal-upload {
   min-height: 27px;
-  padding: 10px 20px 10px 20px;
-  border-radius: 0px;
-  box-shadow: none;
+  padding: 10px 20px;
   border-radius: 2px;
   border-bottom: 1px solid var(--border-color);
-  transition: background 0.3s ease-in-out;
+  transition: background-size 0.5s ease, background-color 0.3s ease-in-out;
   gap: 2px;
+  background-size: 0% 100%;
+  background-repeat: no-repeat !important;
 }
 
 .file-container.modal-upload:not(.yellow-transparent-bg) {

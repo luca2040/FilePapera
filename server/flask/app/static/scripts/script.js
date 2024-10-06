@@ -733,14 +733,17 @@ function delay(ms) {
 }
 
 async function updateUploadElement(elementToProcess) {
-  for (let i = 0; i <= 100; i++) {
-    await delay(50);
+  for (let i = 0; i <= 100; i += 10) {
+    await delay(500);
 
     let color = "transparent";
-    if (elementToProcess.wasreplaced) color = "var(--yellow-color-transparent-bg)";
+    if (elementToProcess.wasreplaced) {
+      color = "var(--yellow-color-transparent-bg)";
+    }
 
     const perc = i;
-    elementToProcess.container.style.background = `linear-gradient(to right, var(--accent-green-transparent) ${perc}%, ${color} ${perc}%)`;
+    elementToProcess.container.style.background = `linear-gradient(to right, var(--accent-green-transparent) 100%, ${color} 100%)`;
+    elementToProcess.container.style.backgroundSize = `${perc}% 100%`;
   }
 
   elementToProcess.container.style.background = "var(--transparent-blue)";
