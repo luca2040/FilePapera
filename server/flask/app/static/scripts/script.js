@@ -696,23 +696,23 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
 let filesToProcessList = [];
 let currentFileID = 1;
 
-function uploadFilesFromListRecursive() {
-  const elementToProcess = filesToProcessList.find(
-    (item) =>
-      !item.waitingfor &&
-      !item.alreadydone &&
-      !item.replaceerror &&
-      !item.storageerror
-  );
+async function uploadFilesFromListRecursive() {
+  while (true) {
+    const elementToProcess = filesToProcessList.find(
+      (item) =>
+        !item.waitingfor &&
+        !item.alreadydone &&
+        !item.replaceerror &&
+        !item.storageerror
+    );
 
-  if (!elementToProcess) {
-    setTimeout(uploadFilesFromListRecursive, 1000);
-    return;
+    if (!elementToProcess) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      continue;
+    }
+
+    await updateUploadElement(elementToProcess);
   }
-
-  updateUploadElement(elementToProcess).then(() => {
-    setTimeout(uploadFilesFromListRecursive, 1000);
-  });
 }
 
 function removeFilesElementById(id) {
@@ -728,31 +728,21 @@ function resetDoneFiles() {
   );
 }
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function updateUploadElement(elementToProcess) {
+  const container = elementToProcess.container;
+
   for (let i = 0; i <= 100; i += 10) {
-    await delay(500);
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
-    let color = "transparent";
-    if (elementToProcess.wasreplaced) {
-      color = "var(--yellow-color-transparent-bg)";
-    }
-
-    const perc = i;
-    elementToProcess.container.style.background = `linear-gradient(to right, var(--accent-green-transparent) 100%, ${color} 100%)`;
-    elementToProcess.container.style.backgroundSize = `${perc}% 100%`;
+    setLoadingFilePercentage(container, i);
   }
 
-  elementToProcess.container.style.background = "var(--transparent-blue)";
+  setLoadingFileComplete(container);
+
   elementToProcess.alreadydone = true;
 
   reloadFilesRequest();
 }
-
-uploadFilesFromListRecursive();
 
 function removeButtonFromReplaceContainer(container) {
   const containerElements = container.children;
@@ -909,7 +899,6 @@ function uploadButtons(filepath) {
 
     const onFileSelect = async function (event) {
       const files = event.target.files;
-      console.log("Files:", files);
 
       let queryData = [];
       let tempFilesToProcessList = [];
@@ -917,8 +906,6 @@ function uploadButtons(filepath) {
       let size = 0;
 
       for (const singleFile of files) {
-        console.log(`File:`, singleFile.name);
-
         const fileContainerDiv = document.createElement("div");
         fileContainerDiv.className = "file-container modal-upload";
 
@@ -1136,6 +1123,8 @@ function uploadButtons(filepath) {
   buttonsContainer.appendChild(uploadFileButton);
   buttonsContainer.appendChild(newFolderButton);
 }
+
+uploadFilesFromListRecursive();
 
 window.onload = reloadFilesRequest;
 window.onpopstate = reloadFilesRequest;

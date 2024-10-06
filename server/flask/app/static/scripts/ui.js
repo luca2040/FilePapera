@@ -37,3 +37,22 @@ tree_auto_scroll();
 tree_container.addEventListener("scroll", function () {
   tree_auto_scroll();
 });
+
+function setLoadingFilePercentage(container, perc) {
+  container.style.background = `linear-gradient(to right, var(--accent-green-transparent) 100%, transparent 0%)`;
+  container.style.backgroundSize = `${perc}% 100%`;
+  container.style.backgroundPosition = "left";
+}
+
+function setLoadingFileComplete(container) {
+  container.style.transition =
+    "background-size 0.3s ease, background-position 0.3s ease";
+  container.style.backgroundSize = `100% 0%`;
+  container.style.backgroundPosition = "right";
+
+  setTimeout(() => {
+    if (!container) return;
+    container.style.transition = "background-color 0.5s ease";
+    container.style.background = "var(--transparent-blue)";
+  }, 300);
+}
