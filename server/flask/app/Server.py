@@ -2,6 +2,7 @@ import os
 import shutil
 from typing import Tuple
 import zipstream
+import hashlib
 import time
 from flask import (
     Flask,
@@ -157,15 +158,13 @@ def create_folder():
 
 @app.route("/upload/file", methods=["POST"])
 def upload_file():
-    folder = request.args.get("folder", None)
-    folder_path = app.config["UPLOAD_FOLDER"]
+    path = request.args.get("path", "")
 
     try:
-        if folder:
-            folder = unquote_plus(folder)
-            folder_path = os.path.join(folder_path, folder)
+        path = unquote_plus(path).lstrip("/")
+        full_path = os.path.join(app.config["UPLOAD_FOLDER"], path)
 
-        os.makedirs(enc.encode(folder_path), exist_ok=True)
+        os.makedirs(enc.encode(full_path), exist_ok=True)
 
         if "file" not in request.files:
             return jsonify({"error": "No file part"}), 400
@@ -175,17 +174,21 @@ def upload_file():
             return jsonify({"error": "No file part"}), 400
         filename = file.filename
 
-        final_file_path = os.path.join(folder_path, filename)
+        final_file_path = os.path.join(full_path, filename)
         final_file_path = enc.encode(final_file_path)
+
+        sha256_hash = hashlib.sha256()
 
         with open(final_file_path, "wb") as f:
             while chunk := file.stream.read(262144):
-
                 f.write(chunk)
+                sha256_hash.update(chunk)
 
-        return jsonify({"message": "File uploaded successfully."}), 200
+        received_hash = sha256_hash.hexdigest()
+
+        return jsonify({"message": "File uploaded successfully.", "sha256": received_hash}), 200
     except Exception as _:
-        return jsonify({"error": "Exception uploading a file"}), 500
+        return jsonify({"error": "Exception uploading file"}), 500
 
 
 @app.route("/upload/available-files", methods=['POST'])

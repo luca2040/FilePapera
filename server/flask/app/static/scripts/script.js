@@ -730,9 +730,10 @@ function resetDoneFiles() {
 
 async function updateUploadElement(elementToProcess) {
   const container = elementToProcess.container;
+  const fileToSend = elementToProcess.file;
 
   for (let i = 0; i <= 100; i += 10) {
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200)); // simulate 262144 byte chunk send
 
     setLoadingFilePercentage(container, i);
   }
@@ -917,6 +918,7 @@ function uploadButtons(filepath) {
 
         const newFileElement = {
           id: currentFileID++,
+          path: filepath,
           file: singleFile,
           waitingfor: false,
           wasreplaced: false,
