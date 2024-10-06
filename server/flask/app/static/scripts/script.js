@@ -732,17 +732,49 @@ async function updateUploadElement(elementToProcess) {
   const container = elementToProcess.container;
   const fileToSend = elementToProcess.file;
 
-  for (let i = 0; i <= 100; i += 10) {
-    await new Promise((resolve) => setTimeout(resolve, 200)); // simulate 262144 byte chunk send
+  const formData = new FormData();
+  formData.append("file", fileToSend);
+  const path = elementToProcess.path;
 
-    setLoadingFilePercentage(container, i);
+  const uploadPromise = new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("POST", `/upload/file?path=${encodeURIComponent(path)}`, true);
+
+    xhr.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = (event.loaded / event.total) * 100;
+        setLoadingFilePercentage(container, percentComplete);
+      }
+    });
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const result = JSON.parse(xhr.responseText);
+        setLoadingFileComplete(container);
+
+        elementToProcess.alreadydone = true;
+        reloadFilesRequest();
+
+        resolve(result);
+      } else {
+        reject(new Error(`Upload failed: ${xhr.statusText}`));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error("Network error"));
+    };
+
+    xhr.send(formData);
+  });
+
+  try {
+    await uploadPromise;
+  } catch (error) {
+    alert("Error uploading file");
+    window.location.reload();
   }
-
-  setLoadingFileComplete(container);
-
-  elementToProcess.alreadydone = true;
-
-  reloadFilesRequest();
 }
 
 function removeButtonFromReplaceContainer(container) {

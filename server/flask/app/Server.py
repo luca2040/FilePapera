@@ -26,7 +26,7 @@ sockets = Sockets(app)
 # Temporary parameters until docker compose is done
 UPLOAD_FOLDER = "./uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_STORAGE"] = 800000000  # 800 Mb max - example
+app.config["MAX_STORAGE"] = 8000000000  # 8 Gb max - example
 
 enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
