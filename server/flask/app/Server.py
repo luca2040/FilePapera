@@ -179,6 +179,8 @@ def upload_file():
 
         sha256_hash = hashlib.md5()
 
+        os.makedirs(os.path.dirname(final_file_path), exist_ok=True)
+
         with open(final_file_path, "wb") as f:
             while chunk := file.stream.read(262144):
                 f.write(chunk)
