@@ -407,7 +407,8 @@ function generateFilesHTML(filesJson) {
         nameSpan,
         fileExtension,
         element["size"],
-        element["path"]
+        element["path"],
+        element["name"]
       );
 
       const sizeSpan = document.createElement("span");

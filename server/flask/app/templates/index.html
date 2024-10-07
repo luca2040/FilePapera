@@ -13,6 +13,16 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='styles/style.css') }}"
     />
+    <script src="{{ url_for('static', filename='scripts/marked.min.js') }}"></script>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles/dracula.css') }}"
+    />
+    <script
+      async
+      src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"
+    ></script>
   </head>
   <body>
     <div class="container">
@@ -144,88 +154,16 @@
             webkitdirectory
           />
 
-          <button class="replace-files file-input" id="main-replace-button"></button>
+          <button
+            class="replace-files file-input"
+            id="main-replace-button"
+          ></button>
         </div>
 
-        <div class="files modal-upload scrollable" id="new-files-uploading-list">
-          <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">
-              Ciao test file
-            </div>
-            <button
-              class="file-action-button replace-files-colored"
-              aria-label="Sovrascrivi"
-            >
-              <i class="fa fa-rotate-right"></i>
-            </button>
-          </div>
-          <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">
-              Ciao test file
-            </div>
-            <button
-              class="file-action-button replace-files-colored"
-              aria-label="Sovrascrivi"
-            >
-              <i class="fa fa-rotate-right"></i>
-            </button>
-          </div>
-          <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">
-              Ciao test file
-            </div>
-            <button
-              class="file-action-button replace-files-colored"
-              aria-label="Sovrascrivi"
-            >
-              <i class="fa fa-rotate-right"></i>
-            </button>
-          </div>
-          <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">
-              Ciao test file
-            </div>
-            <button
-              class="file-action-button replace-files-colored"
-              aria-label="Sovrascrivi"
-            >
-              <i class="fa fa-rotate-right"></i>
-            </button>
-          </div>
-          <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">
-              Ciao test file
-            </div>
-            <button
-              class="file-action-button replace-files-colored"
-              aria-label="Sovrascrivi"
-            >
-              <i class="fa fa-rotate-right"></i>
-            </button>
-          </div>
-          <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">
-              Ciao test file
-            </div>
-            <button
-              class="file-action-button replace-files-colored"
-              aria-label="Sovrascrivi"
-            >
-              <i class="fa fa-rotate-right"></i>
-            </button>
-          </div>
-          <div class="file-container modal-upload">
-            <div class="file-name add-folder-icon no-margin">
-              Ciao test file
-            </div>
-            <button
-              class="file-action-button replace-files-colored"
-              aria-label="Sovrascrivi"
-            >
-              <i class="fa fa-rotate-right"></i>
-            </button>
-          </div>
-        </div>
+        <div
+          class="files modal-upload scrollable"
+          id="new-files-uploading-list"
+        ></div>
 
         <div style="align-items: left">
           <button class="modal-save-button" id="upload-file-cancel">
@@ -251,6 +189,19 @@
         ></div>
         <input class="rename-modal-input" id="folder-create-input" />
         <button class="modal-save-button" id="folder-create-save">Ok</button>
+      </div>
+    </div>
+
+    <div class="modal-background" id="view-file-modal">
+      <div class="view-modal">
+        <div class="modal-header">
+          <div class="modal-title" id="view-file-title"></div>
+          <button
+            class="file-action-button modal-close-button"
+            id="view-file-close"
+          ></button>
+        </div>
+        <div class="view-modal-element scrollable" id="view-file-content"></div>
       </div>
     </div>
 

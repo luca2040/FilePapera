@@ -4,6 +4,7 @@
   --bg-dark: #1e1e1e;
   --bg-light: #2a2a2a;
   --bg-white: #d2d2d2;
+  --code-bg: #282a36;
   --accent-green: rgba(99, 209, 32);
   --yellow-color: rgb(209, 159, 32);
   --accent-green-dark: rgb(66, 136, 21);
@@ -27,6 +28,10 @@
   --storage-bar-bg: #444;
   --bars-height: 8px;
   --scrollbars-height: 4px;
+}
+
+a {
+  color: #66b3ff;
 }
 
 body {
@@ -719,7 +724,8 @@ body {
 
 .upload-modal,
 .delete-modal,
-.rename-modal {
+.rename-modal,
+.view-modal {
   background: var(--bg-light);
   border-radius: 8px;
   padding: 20px;
@@ -731,6 +737,10 @@ body {
   position: relative;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   overflow-y: auto !important;
+}
+
+.view-modal {
+  overflow-y: hidden !important;
 }
 
 .modal-close-button::before {
@@ -747,6 +757,45 @@ body {
   overflow-wrap: break-word;
   word-wrap: break-word;
   white-space: normal;
+}
+
+.view-modal-element {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  max-height: calc(100vh - 87px);
+  border: none;
+  background-color: var(--bg-dark);
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: var(--text-light);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.x {
+  overflow-x: auto !important;
+}
+
+.y {
+  overflow-y: auto !important;
+}
+
+.nx {
+  overflow: hidden !important;
+  width: 100vh;
+}
+
+.nw {
+  white-space: nowrap !important;
+}
+
+.w {
+  white-space: break-word !important;
+}
+
+.cdbg {
+  background-color: var(--code-bg) !important;
 }
 
 .rename-modal-input {
@@ -862,9 +911,15 @@ body {
 
   .upload-modal,
   .delete-modal,
-  .rename-modal {
+  .rename-modal,
+  .view-modal {
     max-width: 100%;
     width: 100%;
+  }
+
+  .view-modal-element {
+    max-height: calc(100vh - 137px);
+    margin-bottom: 50px;
   }
 }
 

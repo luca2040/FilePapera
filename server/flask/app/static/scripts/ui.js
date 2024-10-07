@@ -67,22 +67,92 @@ function isTouchDevice() {
 
 const MAX_TEXT_FILE_SIZE = 1 * 1024 * 1024;
 
-function handleFileOpenExtension(element, extension, size, path) {
+function handleFileOpenExtension(element, extension, size, path, filename) {
+  let addClasses = "";
+  let codeBlockClass = false;
+
   switch (extension) {
-    case ".txt":
-      if (size < MAX_TEXT_FILE_SIZE) {
-        element.classList.add("folder-clickable");
-
-        clickFunc = () => {
-          console.log(path, extension);
-        };
-
-        if (isTouchDevice()) {
-          nameSpan.onclick = clickFunc;
-        } else {
-          nameSpan.ondblclick = clickFunc;
-        }
-        break;
-      }
+    case "md":
+      addClasses = " y w";
+      if (size > MAX_TEXT_FILE_SIZE) return;
+      break;
+    case "txt":
+      addClasses = " x y nw";
+      if (size > MAX_TEXT_FILE_SIZE) return;
+      break;
+    case "css":
+      addClasses = " x y nw cdbg";
+      codeBlockClass = "nx";
+      if (size > MAX_TEXT_FILE_SIZE) return;
+      break;
+    default:
+      return;
   }
+
+  element.classList.add("folder-clickable");
+
+  clickFunc = async () => {
+    const fileViewElement = await getFileViewElement(extension, path);
+
+    const modal = document.getElementById("view-file-modal");
+    const modalTitle = document.getElementById("view-file-title");
+    const closeButton = document.getElementById("view-file-close");
+    const viewContent = document.getElementById("view-file-content");
+    viewContent.className = "view-modal-element scrollable" + addClasses;
+
+    modalTitle.innerHTML = filename;
+    viewContent.innerHTML = fileViewElement;
+
+    if (codeBlockClass) {
+      const codeElements = viewContent.querySelectorAll("code");
+      codeElements.forEach((code) => {
+        code.classList.add(codeBlockClass);
+      });
+    }
+
+    hljs.highlightAll();
+
+    modal.onclick = (event) => {
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    };
+    closeButton.onclick = () => {
+      modal.style.display = "none";
+    };
+
+    modal.style.display = "flex";
+  };
+
+  if (isTouchDevice()) {
+    element.onclick = clickFunc;
+  } else {
+    element.ondblclick = clickFunc;
+  }
+}
+
+async function getFileViewElement(extension, path) {
+  switch (extension) {
+    case "txt":
+      return (
+        await (
+          await fetch(`/download?filepath=${encodeURIComponent(path)}`)
+        ).text()
+      ).replace(/\n/g, "<br/>");
+    case "md":
+      return marked.parse(
+        await (
+          await fetch(`/download?filepath=${encodeURIComponent(path)}`)
+        ).text()
+      );
+    case "css":
+      return marked.parse(
+        "```css" +
+          (await (
+            await fetch(`/download?filepath=${encodeURIComponent(path)}`)
+          ).text()) +
+          "```"
+      );
+  }
+  return null;
 }
