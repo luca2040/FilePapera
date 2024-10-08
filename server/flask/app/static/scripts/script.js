@@ -717,6 +717,8 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
 let filesToProcessList = [];
 let currentFileID = 1;
 
+let newFilesLoaded = false;
+
 async function uploadFilesFromListRecursive() {
   while (true) {
     const elementToProcess = filesToProcessList.find(
@@ -728,9 +730,16 @@ async function uploadFilesFromListRecursive() {
     );
 
     if (!elementToProcess) {
+      if (!newFilesLoaded) {
+        reloadFilesRequest();
+        newFilesLoaded = true;
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 100));
       continue;
     }
+
+    newFilesLoaded = false;
 
     await updateUploadElement(elementToProcess);
   }
@@ -777,7 +786,6 @@ async function updateUploadElement(elementToProcess) {
         setLoadingFileComplete(container);
 
         elementToProcess.alreadydone = true;
-        reloadFilesRequest();
 
         resolve(result);
       } else {
