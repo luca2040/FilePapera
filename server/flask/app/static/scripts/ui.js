@@ -258,50 +258,48 @@ async function fetchText(path) {
   return await response.text();
 }
 
-async function getFileViewElement(extension, lang, path, element) {
-  if (lang) {
-    // First check if language is known
+function getFileViewElement(extension, lang, path, element) {
+  const createLoader = () => {
     const loaderContainer = document.createElement("div");
     const loader = document.createElement("div");
     loader.className = "loading-icon";
     loaderContainer.className = "loading-container";
-
-    element.innerHTML = "";
-
-    const completePath = `/download?filepath=${encodeURIComponent(path)}`;
-    fetchText(completePath).then((content) => {
-      loaderContainer.style.display = "none";
-      element.innerHTML = marked.parse(`\`\`\`${lang}\n${content}\n\`\`\``);
-
-      hljs.highlightAll();
-    });
-
     loaderContainer.appendChild(loader);
-    element.appendChild(loaderContainer);
+    return loaderContainer;
+  };
+
+  const displayContent = (content, loaderContainer, markdown) => {
+    loaderContainer.style.display = "none";
+
+    element.innerHTML = lang
+      ? marked.parse(`\`\`\`${lang}\n${content}\n\`\`\``)
+      : markdown
+      ? marked.parse(content)
+      : content.replace(/\n/g, "<br/>");
+
+    hljs.highlightAll();
+  };
+
+  const fetchAndDisplay = (completePath, loaderContainer, markdown) => {
+    fetchText(completePath).then((content) =>
+      displayContent(content, loaderContainer, markdown)
+    );
+  };
+
+  const loaderContainer = createLoader();
+  element.innerHTML = "";
+  element.appendChild(loaderContainer);
+
+  const completePath = `/download?filepath=${encodeURIComponent(path)}`;
+
+  if (lang) {
+    fetchAndDisplay(completePath, loaderContainer, false);
     return;
   }
 
-  // Check other extensions
   switch (extension) {
     case "md":
-      // First check if language is known
-      const loaderContainer_ = document.createElement("div");
-      const loader_ = document.createElement("div");
-      loader_.className = "loading-icon";
-      loaderContainer_.className = "loading-container";
-
-      element.innerHTML = "";
-
-      const completePath = `/download?filepath=${encodeURIComponent(path)}`;
-      fetchText(completePath).then((content) => {
-        loaderContainer_.style.display = "none";
-        element.innerHTML = marked.parse(content);
-
-        hljs.highlightAll();
-      });
-
-      loaderContainer_.appendChild(loader_);
-      element.appendChild(loaderContainer_);
+      fetchAndDisplay(completePath, loaderContainer, true);
       return;
 
     case "jpg":
@@ -313,48 +311,25 @@ async function getFileViewElement(extension, lang, path, element) {
     case "webp":
     case "ico":
       const imageElement = document.createElement("img");
-      imageElement.src = `/download?filepath=${encodeURIComponent(path)}`;
+      imageElement.src = completePath;
       imageElement.className = "view-image";
-
-      const loaderContainer = document.createElement("div");
-      const loader = document.createElement("div");
-      loader.className = "loading-icon";
-      loaderContainer.className = "loading-container";
-
       imageElement.style.display = "none";
 
-      imageElement.onload = function () {
+      imageElement.onload = () => {
         loaderContainer.style.display = "none";
         imageElement.style.display = "block";
       };
-      imageElement.onerror = function () {
+
+      imageElement.onerror = () => {
         loaderContainer.style.display = "none";
         element.innerText = "Errore nel caricamento dell'immagine.";
       };
 
-      element.innerHTML = "";
       element.appendChild(imageElement);
-      loaderContainer.appendChild(loader);
-      element.appendChild(loaderContainer);
+      return;
+
+    default:
+      fetchAndDisplay(completePath, loaderContainer, false);
       return;
   }
-
-  // Default is simple text
-  const loaderContainer = document.createElement("div");
-  const loader = document.createElement("div");
-  loader.className = "loading-icon";
-  loaderContainer.className = "loading-container";
-
-  element.innerHTML = "";
-
-  const completePath = `/download?filepath=${encodeURIComponent(path)}`;
-  fetchText(completePath).then((content) => {
-    loaderContainer.style.display = "none";
-    element.innerHTML = content.replace(/\n/g, "<br/>");
-
-    hljs.highlightAll();
-  });
-
-  loaderContainer.appendChild(loader);
-  element.appendChild(loaderContainer);
 }
