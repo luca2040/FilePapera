@@ -767,7 +767,7 @@ body {
   width: 100%;
   padding: 10px;
   font-size: 14px;
-  max-height: calc(100vh - 87px);
+  max-height: calc(100vh - 101px);
   border: none;
   background-color: var(--bg-dark);
   border-radius: 8px;
@@ -805,6 +805,13 @@ body {
 .view-image {
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.view-pdf {
+  width: 100%;
+  height: calc(100vh - 121px);
   object-fit: contain;
   border-radius: 8px;
 }
@@ -955,8 +962,15 @@ body {
   }
 
   .view-modal-element {
-    max-height: calc(100vh - 137px);
+    max-height: calc(100vh - 151px);
     margin-bottom: 50px;
+  }
+
+  .view-pdf {
+    width: 100%;
+    height: calc(100vh - 171px);
+    object-fit: contain;
+    border-radius: 8px;
   }
 }
 

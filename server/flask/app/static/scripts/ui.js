@@ -65,8 +65,6 @@ function isTouchDevice() {
   );
 }
 
-const MAX_TEXT_FILE_SIZE = 1 * 1024 * 1024;
-const MAX_IMAGE_FILE_SIZE = 50 * 1024 * 1024;
 const MD_LANGUAGES = [
   { lang: "abap", ext: ["abap"] },
   { lang: "actionscript", ext: ["as"] },
@@ -159,6 +157,10 @@ const MD_LANGUAGES = [
   { lang: "yaml", ext: ["yml", "yaml"] },
 ];
 
+const MAX_TEXT_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+const MAX_IMAGE_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_PDF_FILE_SIZE = 500 * 1024 * 1024; // 0.5 GB
+
 function getLanguageByExtension(extension, filename) {
   for (const langElement of MD_LANGUAGES) {
     if (langElement.ext?.includes(extension)) {
@@ -202,6 +204,11 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
       addClasses = " y";
       break;
 
+    case "pdf":
+      if (size > MAX_PDF_FILE_SIZE) return;
+      // addClasses = " y";
+      break;
+
     default:
       fileLang = getLanguageByExtension(extension, filename);
       if (fileLang) {
@@ -219,7 +226,7 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
     const viewContent = document.getElementById("view-file-content");
     viewContent.className = "view-modal-element scrollable" + addClasses;
 
-    await getFileViewElement(extension, fileLang, path, viewContent);
+    getFileViewElement(extension, fileLang, path, viewContent);
 
     const modal = document.getElementById("view-file-modal");
     const modalTitle = document.getElementById("view-file-title");
@@ -326,6 +333,25 @@ function getFileViewElement(extension, lang, path, element) {
       };
 
       element.appendChild(imageElement);
+      return;
+
+    case "pdf":
+      const pdfElement = document.createElement("iframe");
+      pdfElement.src = `${completePath}&pdf=true`;
+      pdfElement.className = "view-pdf";
+      pdfElement.style.display = "none";
+
+      pdfElement.onload = () => {
+        loaderContainer.style.display = "none";
+        pdfElement.style.display = "block";
+      };
+
+      pdfElement.onerror = () => {
+        loaderContainer.style.display = "none";
+        element.innerText = "Errore durante il caricamento del file PDF.";
+      };
+
+      element.appendChild(pdfElement);
       return;
 
     default:

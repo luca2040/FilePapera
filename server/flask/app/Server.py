@@ -15,6 +15,7 @@ from flask import (
 )
 from flask_sockets import Sockets
 from urllib.parse import unquote_plus
+from urllib.parse import quote
 from pathlib import Path
 from app.FilenameEncoder import FilenameEncoder
 
@@ -294,6 +295,7 @@ def generate_large_file(filepath):
 @app.route("/download", methods=["GET"])
 def download_file():
     filepath = request.args.get("filepath", None)
+    pdf = request.args.get("pdf", False)
 
     try:
         if not filepath:
@@ -328,10 +330,12 @@ def download_file():
                 for chunk in z:
                     yield chunk
 
+            encoded_filename = quote(filename)
+
             return Response(
                 generator(),
                 headers={
-                    "Content-Disposition": f"attachment; filename={filename}.zip",
+                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}.zip",
                 },
                 mimetype="application/zip",
             )
@@ -341,14 +345,26 @@ def download_file():
 
         file_size = os.path.getsize(full_file_path)
 
-        return Response(
-            generate_large_file(full_file_path),
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}",
-                "Content-Length": str(file_size),
-            },
-            mimetype="application/octet-stream",
-        )
+        encoded_filename = quote(filename)
+
+        if not pdf:
+            return Response(
+                generate_large_file(full_file_path),
+                headers={
+                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                    "Content-Length": str(file_size),
+                },
+                mimetype="application/octet-stream",
+            )
+        else:
+            return Response(
+                generate_large_file(full_file_path),
+                headers={
+                    "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}",
+                    "Content-Length": str(file_size),
+                },
+                mimetype="application/pdf",
+            )
 
     except Exception as _:
         return jsonify({"error": "Exception downloading"}), 500
