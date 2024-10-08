@@ -66,6 +66,7 @@ function isTouchDevice() {
 }
 
 const MAX_TEXT_FILE_SIZE = 1 * 1024 * 1024;
+const MAX_IMAGE_FILE_SIZE = 50 * 1024 * 1024;
 const MD_LANGUAGES = [
   { lang: "abap", ext: ["abap"] },
   { lang: "actionscript", ext: ["as"] },
@@ -182,11 +183,25 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
       if (size > MAX_TEXT_FILE_SIZE) return;
       addClasses = " y w";
       break;
+
     case "txt":
     case "gitignore":
       if (size > MAX_TEXT_FILE_SIZE) return;
       addClasses = " x y nw";
       break;
+
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "gif":
+    case "bmp":
+    case "svg":
+    case "webp":
+    case "ico":
+      if (size > MAX_IMAGE_FILE_SIZE) return;
+      addClasses = " y";
+      break;
+
     default:
       fileLang = getLanguageByExtension(extension, filename);
       if (fileLang) {
@@ -201,16 +216,16 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
   element.classList.add("folder-clickable");
 
   clickFunc = async () => {
-    const fileViewElement = await getFileViewElement(extension, fileLang, path);
+    const viewContent = document.getElementById("view-file-content");
+    viewContent.className = "view-modal-element scrollable" + addClasses;
+
+    await getFileViewElement(extension, fileLang, path, viewContent);
 
     const modal = document.getElementById("view-file-modal");
     const modalTitle = document.getElementById("view-file-title");
     const closeButton = document.getElementById("view-file-close");
-    const viewContent = document.getElementById("view-file-content");
-    viewContent.className = "view-modal-element scrollable" + addClasses;
 
     modalTitle.innerHTML = filename;
-    viewContent.innerHTML = fileViewElement;
 
     if (codeBlockClass) {
       const codeElements = viewContent.querySelectorAll("code");
@@ -240,30 +255,65 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
   }
 }
 
-async function getFileViewElement(extension, lang, path) {
+async function getFileViewElement(extension, lang, path, element) {
   if (lang) {
     // First check if language is known
-    return marked.parse(
+    element.innerHTML = marked.parse(
       `\`\`\`${lang}\n` +
         (await (
           await fetch(`/download?filepath=${encodeURIComponent(path)}`)
         ).text()) +
         `\n\`\`\``
     );
+    return;
   }
 
   // Check other extensions
   switch (extension) {
     case "md":
-      return marked.parse(
+      element.innerHTML = marked.parse(
         await (
           await fetch(`/download?filepath=${encodeURIComponent(path)}`)
         ).text()
       );
+      return;
+
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "gif":
+    case "bmp":
+    case "svg":
+    case "webp":
+    case "ico":
+      const imageElement = document.createElement("img");
+      imageElement.src = `/download?filepath=${encodeURIComponent(path)}`;
+
+      const loaderContainer = document.createElement("div");
+      const loader = document.createElement("div");
+      loader.className = "loading-icon";
+      loaderContainer.className = "loading-container";
+
+      imageElement.style.display = "none";
+
+      imageElement.onload = function () {
+        loaderContainer.style.display = "none";
+        imageElement.style.display = "block";
+      };
+      imageElement.onerror = function () {
+        loaderContainer.style.display = "none";
+        element.innerText = "Errore nel caricamento dell'immagine.";
+      };
+
+      element.innerHTML = "";
+      element.appendChild(imageElement);
+      loaderContainer.appendChild(loader);
+      element.appendChild(loaderContainer);
+      return;
   }
 
   // Default is simple text
-  return (
+  element.innerHTML = (
     await (await fetch(`/download?filepath=${encodeURIComponent(path)}`)).text()
   ).replace(/\n/g, "<br/>");
 }
