@@ -34,6 +34,10 @@ a {
   color: #66b3ff;
 }
 
+code {
+  border-radius: 4px;
+}
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -798,7 +802,7 @@ body {
   background-color: var(--code-bg) !important;
 }
 
-img {
+.view-image {
   width: 100%;
   height: 100%;
   object-fit: contain;

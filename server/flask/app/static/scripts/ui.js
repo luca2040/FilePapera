@@ -234,8 +234,6 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
       });
     }
 
-    hljs.highlightAll();
-
     modal.onclick = (event) => {
       if (event.target === modal) {
         modal.style.display = "none";
@@ -255,27 +253,55 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
   }
 }
 
+async function fetchText(path) {
+  const response = await fetch(path);
+  return await response.text();
+}
+
 async function getFileViewElement(extension, lang, path, element) {
   if (lang) {
     // First check if language is known
-    element.innerHTML = marked.parse(
-      `\`\`\`${lang}\n` +
-        (await (
-          await fetch(`/download?filepath=${encodeURIComponent(path)}`)
-        ).text()) +
-        `\n\`\`\``
-    );
+    const loaderContainer = document.createElement("div");
+    const loader = document.createElement("div");
+    loader.className = "loading-icon";
+    loaderContainer.className = "loading-container";
+
+    element.innerHTML = "";
+
+    const completePath = `/download?filepath=${encodeURIComponent(path)}`;
+    fetchText(completePath).then((content) => {
+      loaderContainer.style.display = "none";
+      element.innerHTML = marked.parse(`\`\`\`${lang}\n${content}\n\`\`\``);
+
+      hljs.highlightAll();
+    });
+
+    loaderContainer.appendChild(loader);
+    element.appendChild(loaderContainer);
     return;
   }
 
   // Check other extensions
   switch (extension) {
     case "md":
-      element.innerHTML = marked.parse(
-        await (
-          await fetch(`/download?filepath=${encodeURIComponent(path)}`)
-        ).text()
-      );
+      // First check if language is known
+      const loaderContainer_ = document.createElement("div");
+      const loader_ = document.createElement("div");
+      loader_.className = "loading-icon";
+      loaderContainer_.className = "loading-container";
+
+      element.innerHTML = "";
+
+      const completePath = `/download?filepath=${encodeURIComponent(path)}`;
+      fetchText(completePath).then((content) => {
+        loaderContainer_.style.display = "none";
+        element.innerHTML = marked.parse(content);
+
+        hljs.highlightAll();
+      });
+
+      loaderContainer_.appendChild(loader_);
+      element.appendChild(loaderContainer_);
       return;
 
     case "jpg":
@@ -288,6 +314,7 @@ async function getFileViewElement(extension, lang, path, element) {
     case "ico":
       const imageElement = document.createElement("img");
       imageElement.src = `/download?filepath=${encodeURIComponent(path)}`;
+      imageElement.className = "view-image";
 
       const loaderContainer = document.createElement("div");
       const loader = document.createElement("div");
@@ -313,7 +340,21 @@ async function getFileViewElement(extension, lang, path, element) {
   }
 
   // Default is simple text
-  element.innerHTML = (
-    await (await fetch(`/download?filepath=${encodeURIComponent(path)}`)).text()
-  ).replace(/\n/g, "<br/>");
+  const loaderContainer = document.createElement("div");
+  const loader = document.createElement("div");
+  loader.className = "loading-icon";
+  loaderContainer.className = "loading-container";
+
+  element.innerHTML = "";
+
+  const completePath = `/download?filepath=${encodeURIComponent(path)}`;
+  fetchText(completePath).then((content) => {
+    loaderContainer.style.display = "none";
+    element.innerHTML = content.replace(/\n/g, "<br/>");
+
+    hljs.highlightAll();
+  });
+
+  loaderContainer.appendChild(loader);
+  element.appendChild(loaderContainer);
 }
