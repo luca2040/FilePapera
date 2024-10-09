@@ -499,7 +499,9 @@ body {
   text-overflow: ellipsis;
   word-break: break-word;
   white-space: normal;
+}
 
+.no-text-select {
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;

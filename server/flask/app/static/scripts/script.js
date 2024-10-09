@@ -21,6 +21,16 @@ function setPagePath(path) {
   history.pushState(null, "", newUrl);
 }
 
+function toggleLinkAttribute(attrName, shouldAdd) {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  if (shouldAdd) urlParams.set(attrName, "");
+  else urlParams.delete(attrName);
+
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
+}
+
 function getSubPaths(filepath) {
   if (!filepath.startsWith("/")) {
     filepath = "/" + filepath;
@@ -396,7 +406,7 @@ function generateFilesHTML(filesJson) {
 
     if (element["file"]) {
       const nameSpan = document.createElement("span");
-      nameSpan.className = "file-name add-file-icon filemargin";
+      nameSpan.className = "file-name no-text-select add-file-icon filemargin";
       nameSpan.innerHTML = element["name"];
 
       const fileExtensionParts = element["name"].split(".");
@@ -404,7 +414,7 @@ function generateFilesHTML(filesJson) {
         fileExtensionParts.length > 1 ? fileExtensionParts.pop() : "";
 
       handleFileOpenExtension(
-        nameSpan,
+        fileInfo,
         fileExtension,
         element["size"],
         element["path"],
@@ -412,11 +422,11 @@ function generateFilesHTML(filesJson) {
       );
 
       const sizeSpan = document.createElement("span");
-      sizeSpan.className = "file-size";
+      sizeSpan.className = "file-size no-text-select";
       sizeSpan.innerHTML = formatFileSize(element["size"]);
 
       const dateSpan = document.createElement("span");
-      dateSpan.className = "file-date";
+      dateSpan.className = "file-date no-text-select";
       dateSpan.innerHTML = element["creation_date"];
 
       fileInfo.appendChild(nameSpan);
@@ -425,7 +435,7 @@ function generateFilesHTML(filesJson) {
     } else {
       const nameSpan = document.createElement("span");
       nameSpan.className =
-        "file-name add-folder-icon folder-clickable filemargin";
+        "file-name no-text-select add-folder-icon filemargin";
       nameSpan.innerHTML = element["name"];
 
       clickFunc = () => {
@@ -434,13 +444,13 @@ function generateFilesHTML(filesJson) {
       };
 
       if (isTouchDevice()) {
-        nameSpan.onclick = clickFunc;
+        fileInfo.onclick = clickFunc;
       } else {
-        nameSpan.ondblclick = clickFunc;
+        fileInfo.ondblclick = clickFunc;
       }
 
       const dateSpan = document.createElement("span");
-      dateSpan.className = "file-date";
+      dateSpan.className = "file-date no-text-select";
       dateSpan.innerHTML = element["creation_date"];
 
       fileInfo.appendChild(nameSpan);
@@ -504,13 +514,18 @@ function generateFilesHTML(filesJson) {
 
       errorElement.style.display = "none";
 
+      const closeModal = () => {
+        toggleLinkAttribute("modalOpen", false);
+        modal.style.display = "none";
+      };
+
       modal.onclick = (event) => {
         if (event.target === modal) {
-          modal.style.display = "none";
+          closeModal();
         }
       };
       closeButton.onclick = () => {
-        modal.style.display = "none";
+        closeModal();
       };
 
       saveButton.onclick = async () => {
@@ -526,7 +541,7 @@ function generateFilesHTML(filesJson) {
         );
 
         if (connectionResponse.ok) {
-          modal.style.display = "none";
+          closeModal();
           reloadFilesRequest();
         } else {
           try {
@@ -557,6 +572,7 @@ function generateFilesHTML(filesJson) {
         }
       };
 
+      toggleLinkAttribute("modalOpen", true);
       modal.style.display = "flex";
     }
 
@@ -590,25 +606,29 @@ function generateFilesHTML(filesJson) {
 
       deleteName.innerHTML = element["name"];
 
+      const closeModal = () => {
+        toggleLinkAttribute("modalOpen", false);
+        modal.style.display = "none";
+      };
+
       modal.onclick = (event) => {
-        if (event.target === modal) {
-          modal.style.display = "none";
-        }
+        if (event.target === modal) closeModal();
       };
       closeButton.onclick = () => {
-        modal.style.display = "none";
+        closeModal();
       };
       cancelButton.onclick = () => {
-        modal.style.display = "none";
+        closeModal();
       };
 
       saveButton.onclick = async () => {
         await deleteElement(element["path"]);
 
-        modal.style.display = "none";
+        closeModal();
         reloadFilesRequest();
       };
 
+      toggleLinkAttribute("modalOpen", true);
       modal.style.display = "flex";
     }
 
@@ -975,7 +995,8 @@ function uploadButtons(filepath) {
         fileContainerDiv.className = "file-container modal-upload";
 
         const fileTitleDiv = document.createElement("div");
-        fileTitleDiv.className = "file-name add-file-icon no-margin";
+        fileTitleDiv.className =
+          "file-name no-text-select add-file-icon no-margin";
         fileTitleDiv.innerHTML = singleFile.name;
 
         fileContainerDiv.appendChild(fileTitleDiv);
@@ -1025,7 +1046,7 @@ function uploadButtons(filepath) {
 
             const fileTitleDiv = document.createElement("div");
             fileTitleDiv.className =
-              "file-name storageerror add-error-icon no-margin";
+              "file-name no-text-select storageerror add-error-icon no-margin";
             fileTitleDiv.innerHTML = "Memoria esaurita";
 
             storageErrorDiv.appendChild(fileTitleDiv);
@@ -1193,4 +1214,15 @@ function uploadButtons(filepath) {
 uploadFilesFromListRecursive();
 
 window.onload = reloadFilesRequest;
-window.onpopstate = reloadFilesRequest;
+window.onpopstate = () => {
+  reloadFilesRequest();
+
+  // so you can close modals when you press return
+  const urlParams = new URLSearchParams(window.location.search);
+  if (!urlParams.has("modalOpen")) {
+    const modals = document.querySelectorAll(".modal-background");
+    modals.forEach((modal) => {
+      modal.style.display = "none";
+    });
+  }
+};
