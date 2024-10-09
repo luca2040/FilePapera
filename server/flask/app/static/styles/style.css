@@ -505,6 +505,11 @@ body {
   -moz-user-select: none;
 }
 
+.filemargin {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
 .vertical-center {
   align-items: center;
   height: 100%;
@@ -519,9 +524,6 @@ body {
 .file-size {
   font-size: 14px;
   color: var(--light-text);
-
-  margin-top: 10px;
-  margin-bottom: 10px;
 }
 
 .file-actions-dropdown-open,

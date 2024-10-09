@@ -396,7 +396,7 @@ function generateFilesHTML(filesJson) {
 
     if (element["file"]) {
       const nameSpan = document.createElement("span");
-      nameSpan.className = "file-name add-file-icon";
+      nameSpan.className = "file-name add-file-icon filemargin";
       nameSpan.innerHTML = element["name"];
 
       const fileExtensionParts = element["name"].split(".");
@@ -424,7 +424,8 @@ function generateFilesHTML(filesJson) {
       fileInfo.appendChild(dateSpan);
     } else {
       const nameSpan = document.createElement("span");
-      nameSpan.className = "file-name add-folder-icon folder-clickable";
+      nameSpan.className =
+        "file-name add-folder-icon folder-clickable filemargin";
       nameSpan.innerHTML = element["name"];
 
       clickFunc = () => {
