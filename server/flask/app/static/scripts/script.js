@@ -392,7 +392,7 @@ function generateFilesHTML(filesJson) {
 
   filesList.forEach((element, index) => {
     const fileInfo = document.createElement("div");
-    fileInfo.className = "file-info";
+    fileInfo.className = "file-info vertical-center";
 
     if (element["file"]) {
       const nameSpan = document.createElement("span");
@@ -677,7 +677,7 @@ function generateFilesHTML(filesJson) {
     fileDropdownButtonContainer.appendChild(openDropdown);
 
     const fileContainer = document.createElement("div");
-    fileContainer.className = "file-container";
+    fileContainer.className = "file-container nopadding";
 
     fileContainer.appendChild(fileInfo);
     fileContainer.appendChild(fileButtons);

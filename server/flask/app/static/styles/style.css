@@ -443,6 +443,11 @@ body {
   gap: 10px;
 }
 
+.nopadding {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
 .file-container.modal-upload {
   min-height: 27px;
   padding: 10px 20px;
@@ -500,6 +505,11 @@ body {
   -moz-user-select: none;
 }
 
+.vertical-center {
+  align-items: center;
+  height: 100%;
+}
+
 .file-name.storageerror {
   display: flex;
   align-items: center;
@@ -509,6 +519,9 @@ body {
 .file-size {
   font-size: 14px;
   color: var(--light-text);
+
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .file-actions-dropdown-open,
