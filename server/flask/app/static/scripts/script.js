@@ -332,7 +332,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   }
 
   const pathInfoDiv = document.createElement("div");
-  pathInfoDiv.className = "file-path-info";
+  pathInfoDiv.className = "file-path-info no-text-select";
 
   if (!completeMode) pathInfoDiv.classList.add("dark");
 
@@ -404,6 +404,9 @@ function generateFilesHTML(filesJson) {
     const fileContainer = document.createElement("div");
     fileContainer.className = "file-container nopadding";
 
+    fileContainer.setAttribute("index", index);
+    fileContainer.setAttribute("filePath", element["path"]);
+
     const fileInfo = document.createElement("div");
     fileInfo.className = "file-info vertical-center";
 
@@ -411,7 +414,42 @@ function generateFilesHTML(filesJson) {
       if (event.ctrlKey) {
         toggleSelected(fileContainer, true);
       } else if (event.shiftKey) {
-        console.log("Shift pressed");
+        let filesElements = document
+          .getElementById("main-files-div")
+          .querySelectorAll(".file-container");
+
+        let lastElementIndex = -1;
+        let firstElementIndex = -1;
+        filesElements.forEach((element) => {
+          let elementIndex = parseInt(element.getAttribute("index"), 10);
+
+          if (element.hasAttribute("selected")) {
+            if (firstElementIndex === -1) {
+              firstElementIndex = elementIndex;
+            }
+            lastElementIndex = elementIndex;
+          }
+        });
+
+        if (
+          lastElementIndex !== -1 &&
+          lastElementIndex !== index &&
+          firstElementIndex !== index
+        ) {
+          filesElements.forEach((element) => {
+            let elementIndex = parseInt(element.getAttribute("index"), 10);
+
+            if (index > lastElementIndex) {
+              if (elementIndex >= lastElementIndex && elementIndex <= index) {
+                element.setAttribute("selected", "");
+              }
+            } else {
+              if (elementIndex <= firstElementIndex && elementIndex >= index) {
+                element.setAttribute("selected", "");
+              }
+            }
+          });
+        }
       } else {
         deselectAll();
         toggleSelected(fileContainer, true);
