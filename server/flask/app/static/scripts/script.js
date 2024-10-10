@@ -401,8 +401,22 @@ function generateFilesHTML(filesJson) {
   let fileList = [];
 
   filesList.forEach((element, index) => {
+    const fileContainer = document.createElement("div");
+    fileContainer.className = "file-container nopadding";
+
     const fileInfo = document.createElement("div");
     fileInfo.className = "file-info vertical-center";
+
+    const noTouchOnclick = (event) => {
+      if (event.ctrlKey) {
+        toggleSelected(fileContainer, true);
+      } else if (event.shiftKey) {
+        console.log("Shift pressed");
+      } else {
+        deselectAll();
+        toggleSelected(fileContainer, true);
+      }
+    };
 
     if (element["file"]) {
       const nameSpan = document.createElement("span");
@@ -420,6 +434,10 @@ function generateFilesHTML(filesJson) {
         element["path"],
         element["name"]
       );
+
+      if (!isTouchDevice()) {
+        fileInfo.onclick = noTouchOnclick;
+      }
 
       const sizeSpan = document.createElement("span");
       sizeSpan.className = "file-size no-text-select";
@@ -447,6 +465,7 @@ function generateFilesHTML(filesJson) {
         fileInfo.onclick = clickFunc;
       } else {
         fileInfo.ondblclick = clickFunc;
+        fileInfo.onclick = noTouchOnclick;
       }
 
       const dateSpan = document.createElement("span");
@@ -696,9 +715,6 @@ function generateFilesHTML(filesJson) {
     });
 
     fileDropdownButtonContainer.appendChild(openDropdown);
-
-    const fileContainer = document.createElement("div");
-    fileContainer.className = "file-container nopadding";
 
     fileContainer.appendChild(fileInfo);
     fileContainer.appendChild(fileButtons);

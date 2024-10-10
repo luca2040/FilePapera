@@ -443,6 +443,10 @@ body {
   gap: 10px;
 }
 
+div[selected] {
+  background-color: var(--transparent-blue) !important;
+}
+
 .nopadding {
   padding-top: 0px;
   padding-bottom: 0px;

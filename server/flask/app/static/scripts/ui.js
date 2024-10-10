@@ -81,6 +81,29 @@ files.addEventListener(
   true
 );
 
+function toggleSelected(element, isSelected) {
+  if (isSelected) {
+    element.setAttribute("selected", "");
+  } else {
+    element.removeAttribute("selected");
+  }
+}
+
+function deselectAll() {
+  const files = document.querySelectorAll(".file-container");
+  files.forEach((file) => {
+    toggleSelected(file, false);
+  });
+}
+
+document.body.addEventListener("click", function (event) {
+  const fileContainer = event.target.closest(".file-container");
+
+  if (!fileContainer && !event.shiftKey && !event.ctrlKey) {
+    deselectAll();
+  }
+});
+
 function isTouchDevice() {
   return (
     "ontouchstart" in window ||
