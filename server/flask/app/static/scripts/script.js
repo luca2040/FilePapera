@@ -89,7 +89,7 @@ async function deleteElement(path) {
   const url = `/delete?target=${encodeURIComponent(path)}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { method: "DELETE" });
     if (!response.ok) {
       const errorText = `Errore: ${response.status} - ${response.statusText}`;
       alert(errorText);
@@ -406,6 +406,7 @@ function generateFilesHTML(filesJson) {
 
     fileContainer.setAttribute("index", index);
     fileContainer.setAttribute("filePath", element["path"]);
+    fileContainer.setAttribute("fileName", element["name"]);
 
     const fileInfo = document.createElement("div");
     fileInfo.className = "file-info vertical-center";
@@ -666,7 +667,12 @@ function generateFilesHTML(filesJson) {
         ? "Elimina file"
         : "Elimina cartella";
 
-      deleteName.innerHTML = element["name"];
+      const nameTag = document.createElement("div");
+      nameTag.className = "file-container modal-upload";
+      nameTag.innerHTML = element["name"];
+
+      deleteName.innerHTML = "";
+      deleteName.appendChild(nameTag);
 
       const closeModal = () => {
         toggleLinkAttribute("modalOpen", false);
@@ -1272,7 +1278,61 @@ function uploadButtons(filepath) {
 
 uploadFilesFromListRecursive();
 
-window.onload = reloadFilesRequest;
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Delete") {
+    const selectedPaths = Array.from(
+      document.querySelectorAll(".files .file-container[selected]"),
+      (file) => [file.getAttribute("filePath"), file.getAttribute("fileName")]
+    );
+
+    const modal = document.getElementById("delete-file-modal");
+    const modalTitle = document.getElementById("delete-file-title");
+    const closeButton = document.getElementById("delete-file-close");
+    const saveButton = document.getElementById("delete-file-save");
+    const cancelButton = document.getElementById("delete-file-cancel");
+    const deleteName = document.getElementById("delete-file-name");
+
+    modalTitle.innerHTML = "Elimina";
+
+    selectedPaths.forEach(([path, name], index) => {
+      nameTag = document.createElement("div");
+      nameTag.classList = "file-container modal-upload";
+
+      nameTag.innerHTML = name;
+
+      deleteName.appendChild(nameTag);
+    });
+
+    const closeModal = () => {
+      toggleLinkAttribute("modalOpen", false);
+      modal.style.display = "none";
+    };
+
+    modal.onclick = (event) => {
+      if (event.target === modal) closeModal();
+    };
+    closeButton.onclick = () => {
+      closeModal();
+    };
+    cancelButton.onclick = () => {
+      closeModal();
+    };
+
+    saveButton.onclick = async () => {
+      selectedPaths.forEach(async ([path, name], index) => {
+        await deleteElement(path);
+      });
+
+      closeModal();
+      reloadFilesRequest();
+    };
+
+    toggleLinkAttribute("modalOpen", true);
+    modal.style.display = "flex";
+  }
+});
+
+// window.onload = reloadFilesRequest;
 window.onpopstate = () => {
   reloadFilesRequest();
 
