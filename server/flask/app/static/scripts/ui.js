@@ -81,6 +81,51 @@ files.addEventListener(
   true
 );
 
+function multipleSelected() {
+  const selectedPaths = document.querySelectorAll(
+    ".files .file-container[selected]"
+  );
+  return selectedPaths.length >= 2;
+}
+
+files.addEventListener(
+  "dragstart",
+  (event) => {
+    if (event.target.classList.contains("file-container")) {
+      const fileOverlay = event.target.cloneNode(true);
+      const fileInfo = event.target.querySelector(".file-info").cloneNode(true);
+
+      fileOverlay.innerHTML = "";
+      fileOverlay.appendChild(fileInfo);
+
+      const overlayContainer = document.createElement("div");
+      overlayContainer.style.position = "absolute";
+      overlayContainer.style.top = "-9999px";
+
+      if (multipleSelected()) {
+        const secondOverlay = fileOverlay.cloneNode(true);
+
+        secondOverlay.style.position = "absolute";
+        secondOverlay.style.top = "5px";
+        secondOverlay.style.left = "5px";
+        secondOverlay.style.opacity = "0.5";
+
+        secondOverlay.innerHTML = `<div class="file-info vertical-center"><span class="file-name no-text-select add-file-icon filemargin">........</span></div>`;
+
+        overlayContainer.appendChild(secondOverlay);
+      }
+      overlayContainer.appendChild(fileOverlay);
+
+      document.body.appendChild(overlayContainer);
+      event.dataTransfer.setDragImage(overlayContainer, 0, 0);
+      setTimeout(() => {
+        document.body.removeChild(overlayContainer);
+      }, 0);
+    }
+  },
+  true
+);
+
 function toggleSelected(element, isSelected) {
   if (isSelected) {
     element.setAttribute("selected", "");

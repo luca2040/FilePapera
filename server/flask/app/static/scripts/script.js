@@ -408,6 +408,8 @@ function generateFilesHTML(filesJson) {
     fileContainer.setAttribute("filePath", element["path"]);
     fileContainer.setAttribute("fileName", element["name"]);
 
+    fileContainer.draggable = true;
+
     const fileInfo = document.createElement("div");
     fileInfo.className = "file-info vertical-center";
 
@@ -508,8 +510,8 @@ function generateFilesHTML(filesJson) {
       if (isTouchDevice()) {
         fileInfo.onclick = clickFunc;
       } else {
-        fileInfo.ondblclick = clickFunc;
         fileInfo.onclick = noTouchOnclick;
+        fileInfo.ondblclick = clickFunc;
       }
 
       const dateSpan = document.createElement("span");
@@ -1293,6 +1295,7 @@ document.addEventListener("keydown", (event) => {
     const deleteName = document.getElementById("delete-file-name");
 
     modalTitle.innerHTML = "Elimina";
+    deleteName.innerHTML = "";
 
     selectedPaths.forEach(([path, name], index) => {
       nameTag = document.createElement("div");
