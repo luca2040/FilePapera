@@ -412,7 +412,9 @@ function generateFilesHTML(filesJson) {
 
     const noTouchOnclick = (event) => {
       if (event.ctrlKey) {
-        toggleSelected(fileContainer, true);
+        if (fileContainer.hasAttribute("selected"))
+          toggleSelected(fileContainer, false);
+        else toggleSelected(fileContainer, true);
       } else if (event.shiftKey) {
         let filesElements = document
           .getElementById("main-files-div")
@@ -465,7 +467,7 @@ function generateFilesHTML(filesJson) {
       const fileExtension =
         fileExtensionParts.length > 1 ? fileExtensionParts.pop() : "";
 
-      handleFileOpenExtension(
+      const clickFunc = handleFileOpenExtension(
         fileInfo,
         fileExtension,
         element["size"],
@@ -473,8 +475,11 @@ function generateFilesHTML(filesJson) {
         element["name"]
       );
 
-      if (!isTouchDevice()) {
+      if (isTouchDevice()) {
+        fileInfo.onclick = clickFunc;
+      } else {
         fileInfo.onclick = noTouchOnclick;
+        fileInfo.ondblclick = clickFunc;
       }
 
       const sizeSpan = document.createElement("span");
@@ -494,7 +499,7 @@ function generateFilesHTML(filesJson) {
         "file-name no-text-select add-folder-icon filemargin";
       nameSpan.innerHTML = element["name"];
 
-      clickFunc = () => {
+      const clickFunc = () => {
         setPagePath(element["path"]);
         reloadFilesRequest();
       };

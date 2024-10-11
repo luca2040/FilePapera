@@ -267,7 +267,7 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
       return;
   }
 
-  clickFunc = async () => {
+  const clickFunc = async () => {
     const viewContent = document.getElementById("view-file-content");
     viewContent.className = "view-modal-element scrollable" + addClasses;
 
@@ -301,11 +301,7 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
     modal.style.display = "flex";
   };
 
-  if (isTouchDevice()) {
-    element.onclick = clickFunc;
-  } else {
-    element.ondblclick = clickFunc;
-  }
+  return clickFunc;
 }
 
 async function fetchText(path) {
