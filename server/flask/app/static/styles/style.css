@@ -443,6 +443,15 @@ body {
   gap: 10px;
 }
 
+div[selected] {
+  background-color: var(--transparent-blue) !important;
+}
+
+.nopadding {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
 .file-container.modal-upload {
   min-height: 27px;
   padding: 10px 20px;
@@ -494,10 +503,22 @@ body {
   text-overflow: ellipsis;
   word-break: break-word;
   white-space: normal;
+}
 
+.no-text-select {
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
+}
+
+.filemargin {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.vertical-center {
+  align-items: center;
+  height: 100%;
 }
 
 .file-name.storageerror {

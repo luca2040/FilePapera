@@ -370,7 +370,7 @@ def download_file():
         return jsonify({"error": "Exception downloading"}), 500
 
 
-@app.route("/delete", methods=["GET"])
+@app.route("/delete", methods=["DELETE"])
 def delete_file_or_folder():
     target = request.args.get("target", None)
 

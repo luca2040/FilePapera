@@ -21,6 +21,16 @@ function setPagePath(path) {
   history.pushState(null, "", newUrl);
 }
 
+function toggleLinkAttribute(attrName, shouldAdd) {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  if (shouldAdd) urlParams.set(attrName, "");
+  else urlParams.delete(attrName);
+
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
+}
+
 function getSubPaths(filepath) {
   if (!filepath.startsWith("/")) {
     filepath = "/" + filepath;
@@ -79,7 +89,7 @@ async function deleteElement(path) {
   const url = `/delete?target=${encodeURIComponent(path)}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { method: "DELETE" });
     if (!response.ok) {
       const errorText = `Errore: ${response.status} - ${response.statusText}`;
       alert(errorText);
@@ -322,7 +332,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   }
 
   const pathInfoDiv = document.createElement("div");
-  pathInfoDiv.className = "file-path-info";
+  pathInfoDiv.className = "file-path-info no-text-select";
 
   if (!completeMode) pathInfoDiv.classList.add("dark");
 
@@ -391,32 +401,94 @@ function generateFilesHTML(filesJson) {
   let fileList = [];
 
   filesList.forEach((element, index) => {
+    const fileContainer = document.createElement("div");
+    fileContainer.className = "file-container nopadding";
+
+    fileContainer.setAttribute("index", index);
+    fileContainer.setAttribute("filePath", element["path"]);
+    fileContainer.setAttribute("fileName", element["name"]);
+
     const fileInfo = document.createElement("div");
-    fileInfo.className = "file-info";
+    fileInfo.className = "file-info vertical-center";
+
+    const noTouchOnclick = (event) => {
+      if (event.ctrlKey) {
+        if (fileContainer.hasAttribute("selected"))
+          toggleSelected(fileContainer, false);
+        else toggleSelected(fileContainer, true);
+      } else if (event.shiftKey) {
+        let filesElements = document
+          .getElementById("main-files-div")
+          .querySelectorAll(".file-container");
+
+        let lastElementIndex = -1;
+        let firstElementIndex = -1;
+        filesElements.forEach((element) => {
+          let elementIndex = parseInt(element.getAttribute("index"), 10);
+
+          if (element.hasAttribute("selected")) {
+            if (firstElementIndex === -1) {
+              firstElementIndex = elementIndex;
+            }
+            lastElementIndex = elementIndex;
+          }
+        });
+
+        if (
+          lastElementIndex !== -1 &&
+          lastElementIndex !== index &&
+          firstElementIndex !== index
+        ) {
+          filesElements.forEach((element) => {
+            let elementIndex = parseInt(element.getAttribute("index"), 10);
+
+            if (index > lastElementIndex) {
+              if (elementIndex >= lastElementIndex && elementIndex <= index) {
+                element.setAttribute("selected", "");
+              }
+            } else {
+              if (elementIndex <= firstElementIndex && elementIndex >= index) {
+                element.setAttribute("selected", "");
+              }
+            }
+          });
+        }
+      } else {
+        deselectAll();
+        toggleSelected(fileContainer, true);
+      }
+    };
 
     if (element["file"]) {
       const nameSpan = document.createElement("span");
-      nameSpan.className = "file-name add-file-icon";
+      nameSpan.className = "file-name no-text-select add-file-icon filemargin";
       nameSpan.innerHTML = element["name"];
 
       const fileExtensionParts = element["name"].split(".");
       const fileExtension =
         fileExtensionParts.length > 1 ? fileExtensionParts.pop() : "";
 
-      handleFileOpenExtension(
-        nameSpan,
+      const clickFunc = handleFileOpenExtension(
+        fileInfo,
         fileExtension,
         element["size"],
         element["path"],
         element["name"]
       );
 
+      if (isTouchDevice()) {
+        fileInfo.onclick = clickFunc;
+      } else {
+        fileInfo.onclick = noTouchOnclick;
+        fileInfo.ondblclick = clickFunc;
+      }
+
       const sizeSpan = document.createElement("span");
-      sizeSpan.className = "file-size";
+      sizeSpan.className = "file-size no-text-select";
       sizeSpan.innerHTML = formatFileSize(element["size"]);
 
       const dateSpan = document.createElement("span");
-      dateSpan.className = "file-date";
+      dateSpan.className = "file-date no-text-select";
       dateSpan.innerHTML = element["creation_date"];
 
       fileInfo.appendChild(nameSpan);
@@ -424,22 +496,24 @@ function generateFilesHTML(filesJson) {
       fileInfo.appendChild(dateSpan);
     } else {
       const nameSpan = document.createElement("span");
-      nameSpan.className = "file-name add-folder-icon folder-clickable";
+      nameSpan.className =
+        "file-name no-text-select add-folder-icon filemargin";
       nameSpan.innerHTML = element["name"];
 
-      clickFunc = () => {
+      const clickFunc = () => {
         setPagePath(element["path"]);
         reloadFilesRequest();
       };
 
       if (isTouchDevice()) {
-        nameSpan.onclick = clickFunc;
+        fileInfo.onclick = clickFunc;
       } else {
-        nameSpan.ondblclick = clickFunc;
+        fileInfo.ondblclick = clickFunc;
+        fileInfo.onclick = noTouchOnclick;
       }
 
       const dateSpan = document.createElement("span");
-      dateSpan.className = "file-date";
+      dateSpan.className = "file-date no-text-select";
       dateSpan.innerHTML = element["creation_date"];
 
       fileInfo.appendChild(nameSpan);
@@ -503,13 +577,18 @@ function generateFilesHTML(filesJson) {
 
       errorElement.style.display = "none";
 
+      const closeModal = () => {
+        toggleLinkAttribute("modalOpen", false);
+        modal.style.display = "none";
+      };
+
       modal.onclick = (event) => {
         if (event.target === modal) {
-          modal.style.display = "none";
+          closeModal();
         }
       };
       closeButton.onclick = () => {
-        modal.style.display = "none";
+        closeModal();
       };
 
       saveButton.onclick = async () => {
@@ -525,7 +604,7 @@ function generateFilesHTML(filesJson) {
         );
 
         if (connectionResponse.ok) {
-          modal.style.display = "none";
+          closeModal();
           reloadFilesRequest();
         } else {
           try {
@@ -556,6 +635,7 @@ function generateFilesHTML(filesJson) {
         }
       };
 
+      toggleLinkAttribute("modalOpen", true);
       modal.style.display = "flex";
     }
 
@@ -587,27 +667,36 @@ function generateFilesHTML(filesJson) {
         ? "Elimina file"
         : "Elimina cartella";
 
-      deleteName.innerHTML = element["name"];
+      const nameTag = document.createElement("div");
+      nameTag.className = "file-container modal-upload";
+      nameTag.innerHTML = element["name"];
+
+      deleteName.innerHTML = "";
+      deleteName.appendChild(nameTag);
+
+      const closeModal = () => {
+        toggleLinkAttribute("modalOpen", false);
+        modal.style.display = "none";
+      };
 
       modal.onclick = (event) => {
-        if (event.target === modal) {
-          modal.style.display = "none";
-        }
+        if (event.target === modal) closeModal();
       };
       closeButton.onclick = () => {
-        modal.style.display = "none";
+        closeModal();
       };
       cancelButton.onclick = () => {
-        modal.style.display = "none";
+        closeModal();
       };
 
       saveButton.onclick = async () => {
         await deleteElement(element["path"]);
 
-        modal.style.display = "none";
+        closeModal();
         reloadFilesRequest();
       };
 
+      toggleLinkAttribute("modalOpen", true);
       modal.style.display = "flex";
     }
 
@@ -675,9 +764,6 @@ function generateFilesHTML(filesJson) {
     });
 
     fileDropdownButtonContainer.appendChild(openDropdown);
-
-    const fileContainer = document.createElement("div");
-    fileContainer.className = "file-container";
 
     fileContainer.appendChild(fileInfo);
     fileContainer.appendChild(fileButtons);
@@ -974,7 +1060,8 @@ function uploadButtons(filepath) {
         fileContainerDiv.className = "file-container modal-upload";
 
         const fileTitleDiv = document.createElement("div");
-        fileTitleDiv.className = "file-name add-file-icon no-margin";
+        fileTitleDiv.className =
+          "file-name no-text-select add-file-icon no-margin";
         fileTitleDiv.innerHTML = singleFile.name;
 
         fileContainerDiv.appendChild(fileTitleDiv);
@@ -1024,7 +1111,7 @@ function uploadButtons(filepath) {
 
             const fileTitleDiv = document.createElement("div");
             fileTitleDiv.className =
-              "file-name storageerror add-error-icon no-margin";
+              "file-name no-text-select storageerror add-error-icon no-margin";
             fileTitleDiv.innerHTML = "Memoria esaurita";
 
             storageErrorDiv.appendChild(fileTitleDiv);
@@ -1191,5 +1278,70 @@ function uploadButtons(filepath) {
 
 uploadFilesFromListRecursive();
 
-window.onload = reloadFilesRequest;
-window.onpopstate = reloadFilesRequest;
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Delete") {
+    const selectedPaths = Array.from(
+      document.querySelectorAll(".files .file-container[selected]"),
+      (file) => [file.getAttribute("filePath"), file.getAttribute("fileName")]
+    );
+
+    const modal = document.getElementById("delete-file-modal");
+    const modalTitle = document.getElementById("delete-file-title");
+    const closeButton = document.getElementById("delete-file-close");
+    const saveButton = document.getElementById("delete-file-save");
+    const cancelButton = document.getElementById("delete-file-cancel");
+    const deleteName = document.getElementById("delete-file-name");
+
+    modalTitle.innerHTML = "Elimina";
+
+    selectedPaths.forEach(([path, name], index) => {
+      nameTag = document.createElement("div");
+      nameTag.classList = "file-container modal-upload";
+
+      nameTag.innerHTML = name;
+
+      deleteName.appendChild(nameTag);
+    });
+
+    const closeModal = () => {
+      toggleLinkAttribute("modalOpen", false);
+      modal.style.display = "none";
+    };
+
+    modal.onclick = (event) => {
+      if (event.target === modal) closeModal();
+    };
+    closeButton.onclick = () => {
+      closeModal();
+    };
+    cancelButton.onclick = () => {
+      closeModal();
+    };
+
+    saveButton.onclick = async () => {
+      selectedPaths.forEach(async ([path, name], index) => {
+        await deleteElement(path);
+      });
+
+      closeModal();
+      reloadFilesRequest();
+    };
+
+    toggleLinkAttribute("modalOpen", true);
+    modal.style.display = "flex";
+  }
+});
+
+// window.onload = reloadFilesRequest;
+window.onpopstate = () => {
+  reloadFilesRequest();
+
+  // so you can close modals when you press return
+  const urlParams = new URLSearchParams(window.location.search);
+  if (!urlParams.has("modalOpen")) {
+    const modals = document.querySelectorAll(".modal-background");
+    modals.forEach((modal) => {
+      modal.style.display = "none";
+    });
+  }
+};

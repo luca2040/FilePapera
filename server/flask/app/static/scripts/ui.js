@@ -57,6 +57,53 @@ function setLoadingFileComplete(container) {
   }, 300);
 }
 
+const files = document.querySelector(".files");
+
+files.addEventListener(
+  "mouseenter",
+  (event) => {
+    if (event.target.classList.contains("file-info")) {
+      const parent = event.target.closest(".file-container");
+      parent.style.backgroundColor = "var(--accent-green-transparent)";
+    }
+  },
+  true
+);
+
+files.addEventListener(
+  "mouseleave",
+  (event) => {
+    if (event.target.classList.contains("file-info")) {
+      const parent = event.target.closest(".file-container");
+      parent.style.backgroundColor = "var(--bg-light)";
+    }
+  },
+  true
+);
+
+function toggleSelected(element, isSelected) {
+  if (isSelected) {
+    element.setAttribute("selected", "");
+  } else {
+    element.removeAttribute("selected");
+  }
+}
+
+function deselectAll() {
+  const files = document.querySelectorAll(".file-container");
+  files.forEach((file) => {
+    toggleSelected(file, false);
+  });
+}
+
+document.body.addEventListener("click", function (event) {
+  const fileContainer = event.target.closest(".file-container");
+
+  if (!fileContainer && !event.shiftKey && !event.ctrlKey) {
+    deselectAll();
+  }
+});
+
 function isTouchDevice() {
   return (
     "ontouchstart" in window ||
@@ -220,9 +267,7 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
       return;
   }
 
-  element.classList.add("folder-clickable");
-
-  clickFunc = async () => {
+  const clickFunc = async () => {
     const viewContent = document.getElementById("view-file-content");
     viewContent.className = "view-modal-element scrollable" + addClasses;
 
@@ -243,21 +288,20 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
 
     modal.onclick = (event) => {
       if (event.target === modal) {
+        toggleLinkAttribute("modalOpen", false);
         modal.style.display = "none";
       }
     };
     closeButton.onclick = () => {
+      toggleLinkAttribute("modalOpen", false);
       modal.style.display = "none";
     };
 
+    toggleLinkAttribute("modalOpen", true);
     modal.style.display = "flex";
   };
 
-  if (isTouchDevice()) {
-    element.onclick = clickFunc;
-  } else {
-    element.ondblclick = clickFunc;
-  }
+  return clickFunc;
 }
 
 async function fetchText(path) {
