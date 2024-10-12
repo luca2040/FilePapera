@@ -88,49 +88,55 @@ function multipleSelected() {
   return selectedPaths.length >= 2;
 }
 
-files.addEventListener(
-  "dragstart",
-  (event) => {
-    if (event.target.classList.contains("file-container")) {
-      const fileOverlay = event.target.cloneNode(true);
-      const fileInfo = event.target.querySelector(".file-info").cloneNode(true);
+files.addEventListener("dragstart", (event) => {
+  if (!event.target.classList.contains("file-container")) return;
 
-      fileOverlay.innerHTML = "";
-      fileOverlay.appendChild(fileInfo);
+  const fileOverlay = createOverlay(event.target);
+  const overlayContainer = createOverlayContainer(fileOverlay);
 
-      const overlayContainer = document.createElement("div");
-      overlayContainer.style.position = "absolute";
-      overlayContainer.style.top = "-9999px";
+  if (multipleSelected()) {
+    const secondOverlay = createSecondOverlay(fileOverlay);
+    overlayContainer.appendChild(secondOverlay);
+  }
 
-      overlayContainer.appendChild(fileOverlay);
-      document.body.appendChild(overlayContainer);
+  event.dataTransfer.setDragImage(overlayContainer, 0, 0);
 
-      if (multipleSelected()) {
-        const secondOverlay = fileOverlay.cloneNode(true);
+  setTimeout(() => {
+    document.body.removeChild(overlayContainer);
+  }, 0);
+});
 
-        secondOverlay.style.position = "absolute";
-        secondOverlay.style.top = "15px";
-        secondOverlay.style.left = "15px";
-        secondOverlay.style.opacity = "0.8";
+function createOverlay(target) {
+  const overlay = target.cloneNode(true);
+  const fileInfo = target.querySelector(".file-info").cloneNode(true);
+  overlay.innerHTML = "";
+  overlay.appendChild(fileInfo);
+  return overlay;
+}
 
-        targetStyle = window.getComputedStyle(fileOverlay);
+function createOverlayContainer(overlay) {
+  const container = document.createElement("div");
+  container.style.position = "absolute";
+  container.style.top = "-9999px";
+  container.appendChild(overlay);
+  document.body.appendChild(container);
+  return container;
+}
 
-        secondOverlay.style.width = targetStyle.width;
-        secondOverlay.style.height = targetStyle.height;
+function createSecondOverlay(originalOverlay) {
+  const secondOverlay = originalOverlay.cloneNode(true);
+  const targetStyle = window.getComputedStyle(originalOverlay);
 
-        secondOverlay.innerHTML = "";
+  secondOverlay.style.position = "absolute";
+  secondOverlay.style.top = "15px";
+  secondOverlay.style.left = "15px";
+  secondOverlay.style.opacity = "0.8";
+  secondOverlay.style.width = targetStyle.width;
+  secondOverlay.style.height = targetStyle.height;
+  secondOverlay.innerHTML = "";
 
-        overlayContainer.appendChild(secondOverlay);
-      }
-
-      event.dataTransfer.setDragImage(overlayContainer, 0, 0);
-      setTimeout(() => {
-        document.body.removeChild(overlayContainer);
-      }, 0);
-    }
-  },
-  true
-);
+  return secondOverlay;
+}
 
 function toggleSelected(element, isSelected) {
   if (isSelected) {
