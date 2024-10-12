@@ -102,21 +102,27 @@ files.addEventListener(
       overlayContainer.style.position = "absolute";
       overlayContainer.style.top = "-9999px";
 
+      overlayContainer.appendChild(fileOverlay);
+      document.body.appendChild(overlayContainer);
+
       if (multipleSelected()) {
         const secondOverlay = fileOverlay.cloneNode(true);
 
         secondOverlay.style.position = "absolute";
-        secondOverlay.style.top = "5px";
-        secondOverlay.style.left = "5px";
-        secondOverlay.style.opacity = "0.5";
+        secondOverlay.style.top = "15px";
+        secondOverlay.style.left = "15px";
+        secondOverlay.style.opacity = "0.8";
 
-        secondOverlay.innerHTML = `<div class="file-info vertical-center"><span class="file-name no-text-select add-file-icon filemargin">........</span></div>`;
+        targetStyle = window.getComputedStyle(fileOverlay);
+
+        secondOverlay.style.width = targetStyle.width;
+        secondOverlay.style.height = targetStyle.height;
+
+        secondOverlay.innerHTML = "";
 
         overlayContainer.appendChild(secondOverlay);
       }
-      overlayContainer.appendChild(fileOverlay);
 
-      document.body.appendChild(overlayContainer);
       event.dataTransfer.setDragImage(overlayContainer, 0, 0);
       setTimeout(() => {
         document.body.removeChild(overlayContainer);

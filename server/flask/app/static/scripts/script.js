@@ -1299,7 +1299,7 @@ document.addEventListener("keydown", (event) => {
 
     selectedPaths.forEach(([path, name], index) => {
       nameTag = document.createElement("div");
-      nameTag.classList = "file-container modal-upload";
+      nameTag.classList = "file-container modal-upload no-text-select";
 
       nameTag.innerHTML = name;
 
