@@ -705,6 +705,8 @@ function generateFilesHTML(filesJson) {
       deleteName.innerHTML = "";
       deleteName.appendChild(nameTag);
 
+      cancelButton.style.display = "inline-block";
+
       const closeModal = () => {
         toggleLinkAttribute("modalOpen", false);
         modal.style.display = "none";
@@ -1330,6 +1332,8 @@ document.addEventListener("keydown", (event) => {
     modalTitle.innerHTML = "Elimina";
     deleteName.innerHTML = "";
 
+    cancelButton.style.display = "inline-block";
+
     selectedPaths.forEach(([path, name], index) => {
       nameTag = document.createElement("div");
       nameTag.classList = "file-container modal-upload no-text-select";
@@ -1395,21 +1399,62 @@ async function moveSelectedTo(newPath) {
 
   reloadFilesRequest();
 
+  let alreadyPresentFiles = [];
+
   for (const elementError of errors) {
     switch (elementError.type) {
+      case 3:
+        alreadyPresentFiles.push(elementError.name);
+        break;
+      // Other errors should not happen, so it is useless to make a UI for them.
       case 1:
         console.log("Request error", elementError.name);
         break;
       case 2:
         console.log("File not found", elementError.name);
         break;
-      case 3:
-        console.log("File already present", elementError.name);
-        break;
       default:
         console.log("Server error", elementError.name);
         break;
     }
+  }
+
+  if (alreadyPresentFiles.length > 0) {
+    const modal = document.getElementById("delete-file-modal");
+    const modalTitle = document.getElementById("delete-file-title");
+    const closeButton = document.getElementById("delete-file-close");
+    const saveButton = document.getElementById("delete-file-save");
+    const cancelButton = document.getElementById("delete-file-cancel");
+    const deleteName = document.getElementById("delete-file-name");
+
+    modalTitle.innerHTML = "File già presenti";
+    deleteName.innerHTML = "";
+
+    cancelButton.style.display = "none";
+
+    alreadyPresentFiles.forEach((name, index) => {
+      nameTag = document.createElement("div");
+      nameTag.classList = "file-container modal-upload no-text-select";
+
+      nameTag.innerHTML = name;
+
+      deleteName.appendChild(nameTag);
+    });
+
+    const closeModal = () => {
+      toggleLinkAttribute("modalOpen", false);
+      modal.style.display = "none";
+    };
+
+    modal.onclick = (event) => {
+      if (event.target === modal) closeModal();
+    };
+
+    closeButton.onclick = closeModal;
+    saveButton.onclick = closeModal;
+
+    toggleLinkAttribute("modalOpen", true);
+    modal.style.display = "flex";
   }
 }
 
