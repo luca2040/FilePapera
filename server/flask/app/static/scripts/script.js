@@ -215,6 +215,21 @@ async function loadFolderStructure(parent, paths, index) {
       reloadFilesRequest();
     };
 
+    rootNode.ondragover = function (event) {
+      event.preventDefault();
+      rootNode.classList.add("dragged-over");
+    };
+
+    rootNode.ondragleave = function (event) {
+      rootNode.classList.remove("dragged-over");
+    };
+
+    rootNode.ondrop = async function (event) {
+      event.preventDefault();
+      rootNode.classList.remove("dragged-over");
+      await moveSelectedTo("/");
+    };
+
     if (paths.length <= 1) {
       rootNode.className = "node node-main current";
       return;
@@ -234,6 +249,21 @@ async function loadFolderStructure(parent, paths, index) {
       node.onclick = () => {
         setPagePath(element["path"]);
         reloadFilesRequest();
+      };
+
+      node.ondragover = function (event) {
+        event.preventDefault();
+        node.classList.add("dragged-over");
+      };
+
+      node.ondragleave = function (event) {
+        node.classList.remove("dragged-over");
+      };
+
+      node.ondrop = async function (event) {
+        event.preventDefault();
+        node.classList.remove("dragged-over");
+        await moveSelectedTo(element["path"]);
       };
 
       const isCurrentFolder = element["path"] === paths[index + 1];
@@ -256,9 +286,17 @@ async function loadFolderStructure(parent, paths, index) {
 
 async function reloadFilesRequest() {
   filepath = checkPath();
-  fileListJson = await loadFileList(filepath);
 
-  const pageNotFound = "not_found" in fileListJson;
+  const urlParams = new URLSearchParams(window.location.search);
+  const isNotFoundInURL = urlParams.get("notfound", "false") === "true";
+
+  let pageNotFound = true;
+  let fileListJson = [];
+
+  if (!isNotFoundInURL) {
+    fileListJson = await loadFileList(filepath);
+    pageNotFound = "not_found" in fileListJson;
+  }
 
   reloadFiles(fileListJson, filepath, pageNotFound);
   uploadButtons(filepath);
@@ -350,6 +388,21 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
         setPagePath("/");
         reloadFilesRequest();
       };
+
+      rootSpan.ondragover = function (event) {
+        event.preventDefault();
+        rootSpan.classList.add("dragged-over");
+      };
+
+      rootSpan.ondragleave = function (event) {
+        rootSpan.classList.remove("dragged-over");
+      };
+
+      rootSpan.ondrop = async function (event) {
+        event.preventDefault();
+        rootSpan.classList.remove("dragged-over");
+        await moveSelectedTo("/");
+      };
     } else {
       rootSpan.classList.add("no-selection");
     }
@@ -368,6 +421,21 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
         folderSpan.onclick = () => {
           setPagePath(getSubPaths(filepath)[index]);
           reloadFilesRequest();
+        };
+
+        folderSpan.ondragover = function (event) {
+          event.preventDefault();
+          folderSpan.classList.add("dragged-over");
+        };
+
+        folderSpan.ondragleave = function (event) {
+          folderSpan.classList.remove("dragged-over");
+        };
+
+        folderSpan.ondrop = async function (event) {
+          event.preventDefault();
+          folderSpan.classList.remove("dragged-over");
+          await moveSelectedTo(getSubPaths(filepath)[index]);
         };
       } else {
         folderSpan.classList.add("no-selection");
@@ -407,6 +475,8 @@ function generateFilesHTML(filesJson) {
     fileContainer.setAttribute("index", index);
     fileContainer.setAttribute("filePath", element["path"]);
     fileContainer.setAttribute("fileName", element["name"]);
+
+    fileContainer.draggable = true;
 
     const fileInfo = document.createElement("div");
     fileInfo.className = "file-info vertical-center";
@@ -508,8 +578,8 @@ function generateFilesHTML(filesJson) {
       if (isTouchDevice()) {
         fileInfo.onclick = clickFunc;
       } else {
-        fileInfo.ondblclick = clickFunc;
         fileInfo.onclick = noTouchOnclick;
+        fileInfo.ondblclick = clickFunc;
       }
 
       const dateSpan = document.createElement("span");
@@ -518,6 +588,27 @@ function generateFilesHTML(filesJson) {
 
       fileInfo.appendChild(nameSpan);
       fileInfo.appendChild(dateSpan);
+
+      // Add ondrop
+
+      fileInfo.ondragover = function (event) {
+        if (!fileContainer.hasAttribute("selected")) {
+          event.preventDefault();
+          fileContainer.classList.add("dragged-over");
+        }
+      };
+
+      fileInfo.ondragleave = function (event) {
+        if (!fileContainer.hasAttribute("selected")) {
+          fileContainer.classList.remove("dragged-over");
+        }
+      };
+
+      fileInfo.ondrop = async function (event) {
+        event.preventDefault();
+        fileContainer.classList.remove("dragged-over");
+        await moveSelectedTo(element["path"]);
+      };
     }
 
     const fileButtons = document.createElement("div");
@@ -547,7 +638,7 @@ function generateFilesHTML(filesJson) {
       downloadFile(element["path"]);
     };
 
-    // Edit
+    // Rename
 
     const renameButton = document.createElement("button");
     renameButton.className = "file-action-button";
@@ -673,6 +764,8 @@ function generateFilesHTML(filesJson) {
 
       deleteName.innerHTML = "";
       deleteName.appendChild(nameTag);
+
+      cancelButton.style.display = "inline-block";
 
       const closeModal = () => {
         toggleLinkAttribute("modalOpen", false);
@@ -1278,12 +1371,16 @@ function uploadButtons(filepath) {
 
 uploadFilesFromListRecursive();
 
+function getSelectedElementsPaths() {
+  return Array.from(
+    document.querySelectorAll(".files .file-container[selected]"),
+    (file) => [file.getAttribute("filePath"), file.getAttribute("fileName")]
+  );
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Delete") {
-    const selectedPaths = Array.from(
-      document.querySelectorAll(".files .file-container[selected]"),
-      (file) => [file.getAttribute("filePath"), file.getAttribute("fileName")]
-    );
+    const selectedPaths = getSelectedElementsPaths();
 
     const modal = document.getElementById("delete-file-modal");
     const modalTitle = document.getElementById("delete-file-title");
@@ -1293,10 +1390,13 @@ document.addEventListener("keydown", (event) => {
     const deleteName = document.getElementById("delete-file-name");
 
     modalTitle.innerHTML = "Elimina";
+    deleteName.innerHTML = "";
+
+    cancelButton.style.display = "inline-block";
 
     selectedPaths.forEach(([path, name], index) => {
       nameTag = document.createElement("div");
-      nameTag.classList = "file-container modal-upload";
+      nameTag.classList = "file-container modal-upload no-text-select";
 
       nameTag.innerHTML = name;
 
@@ -1331,6 +1431,92 @@ document.addEventListener("keydown", (event) => {
     modal.style.display = "flex";
   }
 });
+
+async function moveSelectedTo(newPath) {
+  if (!newPath.endsWith("/")) {
+    newPath += "/";
+  }
+
+  const selectedPaths = getSelectedElementsPaths();
+
+  let errors = [];
+
+  for (const [path, name] of selectedPaths) {
+    const connectionResponse = await reformatRequest(path, newPath + name);
+
+    if (!connectionResponse.ok) {
+      try {
+        const responseJSON = await connectionResponse.json();
+        const responseType = responseJSON["type"];
+
+        errors.push({ name: name, path: path, type: responseType });
+      } catch (error) {
+        alert(`Si è verificato un problema: ${error.message}`);
+        window.location.reload();
+      }
+    }
+  }
+
+  reloadFilesRequest();
+
+  let alreadyPresentFiles = [];
+
+  for (const elementError of errors) {
+    switch (elementError.type) {
+      case 3:
+        alreadyPresentFiles.push(elementError.name);
+        break;
+      // Other errors should not happen, so it is useless to make a UI for them.
+      case 1:
+        console.log("Request error", elementError.name);
+        break;
+      case 2:
+        console.log("File not found", elementError.name);
+        break;
+      default:
+        console.log("Server error", elementError.name);
+        break;
+    }
+  }
+
+  if (alreadyPresentFiles.length > 0) {
+    const modal = document.getElementById("delete-file-modal");
+    const modalTitle = document.getElementById("delete-file-title");
+    const closeButton = document.getElementById("delete-file-close");
+    const saveButton = document.getElementById("delete-file-save");
+    const cancelButton = document.getElementById("delete-file-cancel");
+    const deleteName = document.getElementById("delete-file-name");
+
+    modalTitle.innerHTML = "File già presenti";
+    deleteName.innerHTML = "";
+
+    cancelButton.style.display = "none";
+
+    alreadyPresentFiles.forEach((name, index) => {
+      nameTag = document.createElement("div");
+      nameTag.classList = "file-container modal-upload no-text-select";
+
+      nameTag.innerHTML = name;
+
+      deleteName.appendChild(nameTag);
+    });
+
+    const closeModal = () => {
+      toggleLinkAttribute("modalOpen", false);
+      modal.style.display = "none";
+    };
+
+    modal.onclick = (event) => {
+      if (event.target === modal) closeModal();
+    };
+
+    closeButton.onclick = closeModal;
+    saveButton.onclick = closeModal;
+
+    toggleLinkAttribute("modalOpen", true);
+    modal.style.display = "flex";
+  }
+}
 
 // window.onload = reloadFilesRequest;
 window.onpopstate = () => {

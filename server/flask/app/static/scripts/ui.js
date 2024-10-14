@@ -81,6 +81,65 @@ files.addEventListener(
   true
 );
 
+function multipleSelected() {
+  const selectedPaths = document.querySelectorAll(
+    ".files .file-container[selected]"
+  );
+  return selectedPaths.length >= 2;
+}
+
+files.addEventListener("dragstart", (event) => {
+  if (!event.target.classList.contains("file-container")) return;
+
+  toggleSelected(event.target, true);
+
+  const fileOverlay = createOverlay(event.target);
+  const overlayContainer = createOverlayContainer(fileOverlay);
+
+  if (multipleSelected()) {
+    const secondOverlay = createSecondOverlay(fileOverlay);
+    overlayContainer.appendChild(secondOverlay);
+  }
+
+  event.dataTransfer.setDragImage(overlayContainer, 0, 0);
+
+  setTimeout(() => {
+    document.body.removeChild(overlayContainer);
+  }, 0);
+});
+
+function createOverlay(target) {
+  const overlay = target.cloneNode(true);
+  const fileInfo = target.querySelector(".file-info").cloneNode(true);
+  overlay.innerHTML = "";
+  overlay.appendChild(fileInfo);
+  return overlay;
+}
+
+function createOverlayContainer(overlay) {
+  const container = document.createElement("div");
+  container.style.position = "absolute";
+  container.style.top = "-9999px";
+  container.appendChild(overlay);
+  document.body.appendChild(container);
+  return container;
+}
+
+function createSecondOverlay(originalOverlay) {
+  const secondOverlay = originalOverlay.cloneNode(true);
+  const targetStyle = window.getComputedStyle(originalOverlay);
+
+  secondOverlay.style.position = "absolute";
+  secondOverlay.style.top = "15px";
+  secondOverlay.style.left = "15px";
+  secondOverlay.style.opacity = "0.8";
+  secondOverlay.style.width = targetStyle.width;
+  secondOverlay.style.height = targetStyle.height;
+  secondOverlay.innerHTML = "";
+
+  return secondOverlay;
+}
+
 function toggleSelected(element, isSelected) {
   if (isSelected) {
     element.setAttribute("selected", "");

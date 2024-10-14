@@ -338,6 +338,10 @@ body {
   background-color: var(--accent-green-transparent);
 }
 
+.node.dragged-over {
+  background-color: var(--error-not-found);
+  border: 2px solid var(--error-not-found);
+}
 /* SCROLLBARS */
 
 .scrollable::-webkit-scrollbar {
@@ -445,6 +449,11 @@ body {
 
 div[selected] {
   background-color: var(--transparent-blue) !important;
+}
+
+.file-container.dragged-over {
+  outline: 2px solid var(--accent-green);
+  outline-offset: -3px;
 }
 
 .nopadding {
@@ -667,6 +676,11 @@ div[selected] {
 
 .path-folder:hover {
   text-decoration: underline;
+}
+
+.path-folder.dragged-over {
+  text-decoration: underline;
+  color: var(--error-not-found);
 }
 
 .no-selection {
