@@ -215,6 +215,21 @@ async function loadFolderStructure(parent, paths, index) {
       reloadFilesRequest();
     };
 
+    rootNode.ondragover = function (event) {
+      event.preventDefault();
+      rootNode.classList.add("dragged-over");
+    };
+
+    rootNode.ondragleave = function (event) {
+      rootNode.classList.remove("dragged-over");
+    };
+
+    rootNode.ondrop = async function (event) {
+      event.preventDefault();
+      rootNode.classList.remove("dragged-over");
+      await moveSelectedTo("/");
+    };
+
     if (paths.length <= 1) {
       rootNode.className = "node node-main current";
       return;
@@ -234,6 +249,21 @@ async function loadFolderStructure(parent, paths, index) {
       node.onclick = () => {
         setPagePath(element["path"]);
         reloadFilesRequest();
+      };
+
+      node.ondragover = function (event) {
+        event.preventDefault();
+        node.classList.add("dragged-over");
+      };
+
+      node.ondragleave = function (event) {
+        node.classList.remove("dragged-over");
+      };
+
+      node.ondrop = async function (event) {
+        event.preventDefault();
+        node.classList.remove("dragged-over");
+        await moveSelectedTo(element["path"]);
       };
 
       const isCurrentFolder = element["path"] === paths[index + 1];

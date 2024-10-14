@@ -338,6 +338,10 @@ body {
   background-color: var(--accent-green-transparent);
 }
 
+.node.dragged-over {
+  background-color: var(--error-not-found);
+  border: 2px solid var(--error-not-found);
+}
 /* SCROLLBARS */
 
 .scrollable::-webkit-scrollbar {
