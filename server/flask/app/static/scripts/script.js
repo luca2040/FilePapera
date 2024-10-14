@@ -358,6 +358,21 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
         setPagePath("/");
         reloadFilesRequest();
       };
+
+      rootSpan.ondragover = function (event) {
+        event.preventDefault();
+        rootSpan.classList.add("dragged-over");
+      };
+
+      rootSpan.ondragleave = function (event) {
+        rootSpan.classList.remove("dragged-over");
+      };
+
+      rootSpan.ondrop = async function (event) {
+        event.preventDefault();
+        rootSpan.classList.remove("dragged-over");
+        await moveSelectedTo("/");
+      };
     } else {
       rootSpan.classList.add("no-selection");
     }
@@ -376,6 +391,21 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
         folderSpan.onclick = () => {
           setPagePath(getSubPaths(filepath)[index]);
           reloadFilesRequest();
+        };
+
+        folderSpan.ondragover = function (event) {
+          event.preventDefault();
+          folderSpan.classList.add("dragged-over");
+        };
+
+        folderSpan.ondragleave = function (event) {
+          folderSpan.classList.remove("dragged-over");
+        };
+
+        folderSpan.ondrop = async function (event) {
+          event.preventDefault();
+          folderSpan.classList.remove("dragged-over");
+          await moveSelectedTo(getSubPaths(filepath)[index]);
         };
       } else {
         folderSpan.classList.add("no-selection");

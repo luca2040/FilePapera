@@ -447,7 +447,7 @@ div[selected] {
   background-color: var(--transparent-blue) !important;
 }
 
-.dragged-over {
+.file-container.dragged-over {
   outline: 2px solid var(--accent-green);
   outline-offset: -3px;
 }
@@ -672,6 +672,11 @@ div[selected] {
 
 .path-folder:hover {
   text-decoration: underline;
+}
+
+.path-folder.dragged-over {
+  text-decoration: underline;
+  color: var(--error-not-found);
 }
 
 .no-selection {
