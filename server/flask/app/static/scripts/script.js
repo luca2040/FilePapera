@@ -256,9 +256,17 @@ async function loadFolderStructure(parent, paths, index) {
 
 async function reloadFilesRequest() {
   filepath = checkPath();
-  fileListJson = await loadFileList(filepath);
 
-  const pageNotFound = "not_found" in fileListJson;
+  const urlParams = new URLSearchParams(window.location.search);
+  const isNotFoundInURL = urlParams.get("notfound", "false") === "true";
+
+  let pageNotFound = true;
+  let fileListJson = [];
+
+  if (!isNotFoundInURL) {
+    fileListJson = await loadFileList(filepath);
+    pageNotFound = "not_found" in fileListJson;
+  }
 
   reloadFiles(fileListJson, filepath, pageNotFound);
   uploadButtons(filepath);
@@ -520,6 +528,27 @@ function generateFilesHTML(filesJson) {
 
       fileInfo.appendChild(nameSpan);
       fileInfo.appendChild(dateSpan);
+
+      // Add ondrop
+
+      fileInfo.ondragover = function (event) {
+        if (!fileContainer.hasAttribute("selected")) {
+          event.preventDefault();
+          fileContainer.classList.add("dragged-over");
+        }
+      };
+
+      fileInfo.ondragleave = function (event) {
+        if (!fileContainer.hasAttribute("selected")) {
+          fileContainer.classList.remove("dragged-over");
+        }
+      };
+
+      fileInfo.ondrop = async function (event) {
+        event.preventDefault();
+        fileContainer.classList.remove("dragged-over");
+        await moveSelectedTo(element["path"]);
+      };
     }
 
     const fileButtons = document.createElement("div");
@@ -549,7 +578,7 @@ function generateFilesHTML(filesJson) {
       downloadFile(element["path"]);
     };
 
-    // Edit
+    // Rename
 
     const renameButton = document.createElement("button");
     renameButton.className = "file-action-button";
@@ -1280,12 +1309,16 @@ function uploadButtons(filepath) {
 
 uploadFilesFromListRecursive();
 
+function getSelectedElementsPaths() {
+  return Array.from(
+    document.querySelectorAll(".files .file-container[selected]"),
+    (file) => [file.getAttribute("filePath"), file.getAttribute("fileName")]
+  );
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Delete") {
-    const selectedPaths = Array.from(
-      document.querySelectorAll(".files .file-container[selected]"),
-      (file) => [file.getAttribute("filePath"), file.getAttribute("fileName")]
-    );
+    const selectedPaths = getSelectedElementsPaths();
 
     const modal = document.getElementById("delete-file-modal");
     const modalTitle = document.getElementById("delete-file-title");
@@ -1334,6 +1367,51 @@ document.addEventListener("keydown", (event) => {
     modal.style.display = "flex";
   }
 });
+
+async function moveSelectedTo(newPath) {
+  if (!newPath.endsWith("/")) {
+    newPath += "/";
+  }
+
+  const selectedPaths = getSelectedElementsPaths();
+
+  let errors = [];
+
+  for (const [path, name] of selectedPaths) {
+    const connectionResponse = await reformatRequest(path, newPath + name);
+
+    if (!connectionResponse.ok) {
+      try {
+        const responseJSON = await connectionResponse.json();
+        const responseType = responseJSON["type"];
+
+        errors.push({ name: name, path: path, type: responseType });
+      } catch (error) {
+        alert(`Si è verificato un problema: ${error.message}`);
+        window.location.reload();
+      }
+    }
+  }
+
+  reloadFilesRequest();
+
+  for (const elementError of errors) {
+    switch (elementError.type) {
+      case 1:
+        console.log("Request error", elementError.name);
+        break;
+      case 2:
+        console.log("File not found", elementError.name);
+        break;
+      case 3:
+        console.log("File already present", elementError.name);
+        break;
+      default:
+        console.log("Server error", elementError.name);
+        break;
+    }
+  }
+}
 
 // window.onload = reloadFilesRequest;
 window.onpopstate = () => {

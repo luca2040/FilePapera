@@ -50,6 +50,11 @@ def get_storage_size() -> Tuple[int, int]:
     return max_size, size
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return redirect("/index?notfound=true")
+
+
 @app.route("/")
 def index():
     return redirect("/index")
@@ -65,12 +70,18 @@ def favicon():
     return send_from_directory("static", "icons/favicon.ico")
 
 
+def list_dir(folder_path):
+    return [entry.name for entry in os.scandir(folder_path)]
+
+
 @app.route("/list", methods=["GET"])
 def list_files_and_folders():
     folder = request.args.get("path", "")
     folder = folder.lstrip("/")
 
     try:
+        os.sync()
+
         folder = unquote_plus(folder)
         folder_path = os.path.join(app.config["UPLOAD_FOLDER"], folder)
 
@@ -81,7 +92,7 @@ def list_files_and_folders():
             return jsonify({"not_found": True}), 200
 
         if os.path.isdir(folder_path):
-            files = os.listdir(folder_path)
+            files = list_dir(folder_path)
             file_details = []
             folder_details = []
 

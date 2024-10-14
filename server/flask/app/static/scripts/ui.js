@@ -91,6 +91,8 @@ function multipleSelected() {
 files.addEventListener("dragstart", (event) => {
   if (!event.target.classList.contains("file-container")) return;
 
+  toggleSelected(event.target, true);
+
   const fileOverlay = createOverlay(event.target);
   const overlayContainer = createOverlayContainer(fileOverlay);
 
