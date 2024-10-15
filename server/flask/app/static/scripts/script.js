@@ -227,7 +227,9 @@ async function loadFolderStructure(parent, paths, index) {
     rootNode.ondrop = async function (event) {
       event.preventDefault();
       rootNode.classList.remove("dragged-over");
-      await moveSelectedTo("/");
+
+      if (event.dataTransfer.items) await uploadFilesFromDragEvent(event, "/");
+      else await moveSelectedTo("/");
     };
 
     if (paths.length <= 1) {
@@ -263,7 +265,10 @@ async function loadFolderStructure(parent, paths, index) {
       node.ondrop = async function (event) {
         event.preventDefault();
         node.classList.remove("dragged-over");
-        await moveSelectedTo(element["path"]);
+
+        if (event.dataTransfer.items)
+          await uploadFilesFromDragEvent(event, element["path"]);
+        else await moveSelectedTo(element["path"]);
       };
 
       const isCurrentFolder = element["path"] === paths[index + 1];
@@ -401,7 +406,10 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
       rootSpan.ondrop = async function (event) {
         event.preventDefault();
         rootSpan.classList.remove("dragged-over");
-        await moveSelectedTo("/");
+
+        if (event.dataTransfer.items)
+          await uploadFilesFromDragEvent(event, "/");
+        else await moveSelectedTo("/");
       };
     } else {
       rootSpan.classList.add("no-selection");
@@ -435,7 +443,10 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
         folderSpan.ondrop = async function (event) {
           event.preventDefault();
           folderSpan.classList.remove("dragged-over");
-          await moveSelectedTo(getSubPaths(filepath)[index]);
+
+          if (event.dataTransfer.items)
+            await uploadFilesFromDragEvent(event, getSubPaths(filepath)[index]);
+          else await moveSelectedTo(getSubPaths(filepath)[index]);
         };
       } else {
         folderSpan.classList.add("no-selection");
@@ -607,7 +618,10 @@ function generateFilesHTML(filesJson) {
       fileInfo.ondrop = async function (event) {
         event.preventDefault();
         fileContainer.classList.remove("dragged-over");
-        await moveSelectedTo(element["path"]);
+
+        if (event.dataTransfer.items)
+          await uploadFilesFromDragEvent(event, element["path"]);
+        else await moveSelectedTo(element["path"]);
       };
     }
 
@@ -1074,6 +1088,124 @@ function checkTotalReplaceButton() {
   }
 }
 
+async function onFileSelect(filepath, event, files_) {
+  let files = [];
+
+  if (event) files = event.target.files;
+  else files = files_;
+
+  let queryData = [];
+  let tempFilesToProcessList = [];
+
+  let size = 0;
+
+  for (const singleFile of files) {
+    const fileContainerDiv = document.createElement("div");
+    fileContainerDiv.className = "file-container modal-upload";
+
+    const fileTitleDiv = document.createElement("div");
+    fileTitleDiv.className = "file-name no-text-select add-file-icon no-margin";
+    fileTitleDiv.innerHTML = singleFile.name;
+
+    fileContainerDiv.appendChild(fileTitleDiv);
+
+    const newFileElement = {
+      id: currentFileID++,
+      path: filepath,
+      file: singleFile,
+      waitingfor: false,
+      wasreplaced: false,
+      replaceerror: false,
+      alreadydone: false,
+      storageerror: false,
+      container: fileContainerDiv,
+    };
+
+    let completePath;
+
+    if (singleFile.webkitRelativePath && singleFile.webkitRelativePath !== "")
+      completePath =
+        filepath.replace(/^\/+/, "") + "/" + singleFile.webkitRelativePath;
+    else completePath = filepath.replace(/^\/+/, "") + "/" + singleFile.name;
+
+    queryData.push({
+      id: newFileElement.id,
+      filepath: completePath,
+    });
+    size += singleFile.size;
+
+    tempFilesToProcessList.push(newFileElement);
+  }
+
+  const response = await getAvailableFiles({ data: queryData, size: size });
+
+  try {
+    if (response.ok) {
+      const responseJSON = await response.json();
+
+      if (responseJSON["storageError"]) {
+        const storageErrorDiv = document.createElement("div");
+        storageErrorDiv.className =
+          "file-container modal-upload transparent-red";
+
+        const fileTitleDiv = document.createElement("div");
+        fileTitleDiv.className =
+          "file-name no-text-select storageerror add-error-icon no-margin";
+        fileTitleDiv.innerHTML = "Memoria esaurita";
+
+        storageErrorDiv.appendChild(fileTitleDiv);
+
+        tempFilesToProcessList = [
+          {
+            id: currentFileID++,
+            file: null,
+            waitingfor: false,
+            wasreplaced: false,
+            replaceerror: true,
+            alreadydone: false,
+            storageerror: true,
+            container: storageErrorDiv,
+          },
+        ];
+      } else {
+        const replacedFileList = responseJSON["responseJSON"];
+
+        for (const replacedFile of replacedFileList) {
+          const id = replacedFile.id;
+          const isFile = replacedFile.isfile;
+          const isFolder = replacedFile.isfolder;
+
+          const listElement = tempFilesToProcessList.find(
+            (item) => item.id === id
+          );
+
+          if (isFile) {
+            listElement.waitingfor = true;
+            listElement.wasreplaced = true;
+            listElement.container.classList.add("yellow-transparent-bg");
+          } else if (isFolder) {
+            listElement.replaceerror = true;
+            listElement.container.classList.add("red-transparent-bg");
+          }
+        }
+      }
+    } else {
+      alert("Errore durante la preparazione al caricamento dei file");
+      window.location.reload();
+    }
+  } catch (error) {
+    alert(
+      "Errore durante la preparazione al caricamento dei file: " + error.message
+    );
+    window.location.reload();
+  }
+
+  filesToProcessList = filesToProcessList.concat(tempFilesToProcessList);
+
+  documentDisplayFileList();
+  checkTotalReplaceButton();
+}
+
 function uploadButtons(filepath) {
   const buttonsContainer = document.getElementById("upload-buttons-container");
 
@@ -1081,6 +1213,8 @@ function uploadButtons(filepath) {
   const newFolderButton = document.createElement("button");
   uploadFileButton.className = "upload-file";
   newFolderButton.className = "upload-folder";
+
+  uploadFileButton.id = "upload-file-button";
 
   uploadFileButton.onclick = () => {
     const modal = document.getElementById("upload-file-modal");
@@ -1140,129 +1274,12 @@ function uploadButtons(filepath) {
     resetDoneFiles();
     documentDisplayFileList();
 
-    const onFileSelect = async function (event) {
-      const files = event.target.files;
-
-      let queryData = [];
-      let tempFilesToProcessList = [];
-
-      let size = 0;
-
-      for (const singleFile of files) {
-        const fileContainerDiv = document.createElement("div");
-        fileContainerDiv.className = "file-container modal-upload";
-
-        const fileTitleDiv = document.createElement("div");
-        fileTitleDiv.className =
-          "file-name no-text-select add-file-icon no-margin";
-        fileTitleDiv.innerHTML = singleFile.name;
-
-        fileContainerDiv.appendChild(fileTitleDiv);
-
-        const newFileElement = {
-          id: currentFileID++,
-          path: filepath,
-          file: singleFile,
-          waitingfor: false,
-          wasreplaced: false,
-          replaceerror: false,
-          alreadydone: false,
-          storageerror: false,
-          container: fileContainerDiv,
-        };
-
-        let completePath;
-
-        if (
-          singleFile.webkitRelativePath &&
-          singleFile.webkitRelativePath !== ""
-        )
-          completePath =
-            filepath.replace(/^\/+/, "") + "/" + singleFile.webkitRelativePath;
-        else
-          completePath = filepath.replace(/^\/+/, "") + "/" + singleFile.name;
-
-        queryData.push({
-          id: newFileElement.id,
-          filepath: completePath,
-        });
-        size += singleFile.size;
-
-        tempFilesToProcessList.push(newFileElement);
-      }
-
-      const response = await getAvailableFiles({ data: queryData, size: size });
-
-      try {
-        if (response.ok) {
-          const responseJSON = await response.json();
-
-          if (responseJSON["storageError"]) {
-            const storageErrorDiv = document.createElement("div");
-            storageErrorDiv.className =
-              "file-container modal-upload transparent-red";
-
-            const fileTitleDiv = document.createElement("div");
-            fileTitleDiv.className =
-              "file-name no-text-select storageerror add-error-icon no-margin";
-            fileTitleDiv.innerHTML = "Memoria esaurita";
-
-            storageErrorDiv.appendChild(fileTitleDiv);
-
-            tempFilesToProcessList = [
-              {
-                id: currentFileID++,
-                file: null,
-                waitingfor: false,
-                wasreplaced: false,
-                replaceerror: true,
-                alreadydone: false,
-                storageerror: true,
-                container: storageErrorDiv,
-              },
-            ];
-          } else {
-            const replacedFileList = responseJSON["responseJSON"];
-
-            for (const replacedFile of replacedFileList) {
-              const id = replacedFile.id;
-              const isFile = replacedFile.isfile;
-              const isFolder = replacedFile.isfolder;
-
-              const listElement = tempFilesToProcessList.find(
-                (item) => item.id === id
-              );
-
-              if (isFile) {
-                listElement.waitingfor = true;
-                listElement.wasreplaced = true;
-                listElement.container.classList.add("yellow-transparent-bg");
-              } else if (isFolder) {
-                listElement.replaceerror = true;
-                listElement.container.classList.add("red-transparent-bg");
-              }
-            }
-          }
-        } else {
-          alert("Errore durante la preparazione al caricamento dei file");
-          window.location.reload();
-        }
-      } catch (error) {
-        alert(
-          "Errore durante la preparazione al caricamento dei file: " +
-            error.message
-        );
-        window.location.reload();
-      }
-
-      filesToProcessList = filesToProcessList.concat(tempFilesToProcessList);
-
-      documentDisplayFileList();
-      checkTotalReplaceButton();
-    };
-
-    uploadFileSelect.addEventListener("change", onFileSelect);
-    uploadFolderSelect.addEventListener("change", onFileSelect);
+    uploadFileSelect.addEventListener("change", async (event) =>
+      onFileSelect(filepath, event)
+    );
+    uploadFolderSelect.addEventListener("change", async (event) =>
+      onFileSelect(filepath, event)
+    );
 
     // Modal window
 
@@ -1516,6 +1533,50 @@ async function moveSelectedTo(newPath) {
     toggleLinkAttribute("modalOpen", true);
     modal.style.display = "flex";
   }
+}
+
+function readWebKitEntry(item, path = "") {
+  return new Promise((resolve, reject) => {
+    if (item.isFile) {
+      item.file(
+        (file) => resolve([file]),
+        (error) => reject(error)
+      );
+    } else if (item.isDirectory) {
+      const dirReader = item.createReader();
+      dirReader.readEntries((entries) => {
+        const promises = entries.map((entry) =>
+          readWebKitEntry(entry, path + item.name + "/")
+        );
+        Promise.all(promises).then((results) => {
+          resolve(results.flat());
+        });
+      });
+    } else {
+      resolve([]);
+    }
+  });
+}
+
+async function uploadFilesFromDragEvent(event, filepath) {
+  let files = [];
+
+  const items = event.dataTransfer.items;
+  const promises = [];
+
+  for (const item_ of items) {
+    const item = item_.webkitGetAsEntry();
+    if (item) {
+      promises.push(readWebKitEntry(item));
+    }
+  }
+
+  const results = await Promise.all(promises);
+  files = results.flat();
+
+  const fileButton = document.getElementById("upload-file-button");
+  fileButton.click();
+  await onFileSelect(filepath, null, files);
 }
 
 // window.onload = reloadFilesRequest;
