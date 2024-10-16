@@ -179,6 +179,7 @@ function downloadFile(filePath) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filePath.split("/").pop();
+  anchor.target = "_blank";
 
   document.body.appendChild(anchor);
   anchor.click();
@@ -207,6 +208,31 @@ async function loadFileList(filePath) {
   return null;
 }
 
+function setMainDragDrop(path) {
+  const filesMainDiv = document.getElementById("main-total-div");
+  filesMainDiv.ondragover = function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    filesMainDiv.classList.add("dragged-over");
+  };
+
+  filesMainDiv.ondragleave = function (event) {
+    filesMainDiv.classList.remove("dragged-over");
+  };
+
+  filesMainDiv.ondrop = async function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    filesMainDiv.classList.remove("dragged-over");
+
+    const isFile = Array.from(event.dataTransfer.items).some(
+      (item) => item.kind === "file"
+    );
+
+    if (isFile) await uploadFilesFromDragEvent(event, path);
+  };
+}
+
 async function loadFolderStructure(parent, paths, index) {
   if (index === 0) {
     const rootNode = document.getElementById("root-node");
@@ -217,6 +243,7 @@ async function loadFolderStructure(parent, paths, index) {
 
     rootNode.ondragover = function (event) {
       event.preventDefault();
+      event.stopPropagation();
       rootNode.classList.add("dragged-over");
     };
 
@@ -226,9 +253,14 @@ async function loadFolderStructure(parent, paths, index) {
 
     rootNode.ondrop = async function (event) {
       event.preventDefault();
+      event.stopPropagation();
       rootNode.classList.remove("dragged-over");
 
-      if (event.dataTransfer.items) await uploadFilesFromDragEvent(event, "/");
+      const isFile = Array.from(event.dataTransfer.items).some(
+        (item) => item.kind === "file"
+      );
+
+      if (isFile) await uploadFilesFromDragEvent(event, "/");
       else await moveSelectedTo("/");
     };
 
@@ -255,6 +287,7 @@ async function loadFolderStructure(parent, paths, index) {
 
       node.ondragover = function (event) {
         event.preventDefault();
+        event.stopPropagation();
         node.classList.add("dragged-over");
       };
 
@@ -264,10 +297,14 @@ async function loadFolderStructure(parent, paths, index) {
 
       node.ondrop = async function (event) {
         event.preventDefault();
+        event.stopPropagation();
         node.classList.remove("dragged-over");
 
-        if (event.dataTransfer.items)
-          await uploadFilesFromDragEvent(event, element["path"]);
+        const isFile = Array.from(event.dataTransfer.items).some(
+          (item) => item.kind === "file"
+        );
+
+        if (isFile) await uploadFilesFromDragEvent(event, element["path"]);
         else await moveSelectedTo(element["path"]);
       };
 
@@ -396,6 +433,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
 
       rootSpan.ondragover = function (event) {
         event.preventDefault();
+        event.stopPropagation();
         rootSpan.classList.add("dragged-over");
       };
 
@@ -405,10 +443,14 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
 
       rootSpan.ondrop = async function (event) {
         event.preventDefault();
+        event.stopPropagation();
         rootSpan.classList.remove("dragged-over");
 
-        if (event.dataTransfer.items)
-          await uploadFilesFromDragEvent(event, "/");
+        const isFile = Array.from(event.dataTransfer.items).some(
+          (item) => item.kind === "file"
+        );
+
+        if (isFile) await uploadFilesFromDragEvent(event, "/");
         else await moveSelectedTo("/");
       };
     } else {
@@ -433,6 +475,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
 
         folderSpan.ondragover = function (event) {
           event.preventDefault();
+          event.stopPropagation();
           folderSpan.classList.add("dragged-over");
         };
 
@@ -442,9 +485,14 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
 
         folderSpan.ondrop = async function (event) {
           event.preventDefault();
+          event.stopPropagation();
           folderSpan.classList.remove("dragged-over");
 
-          if (event.dataTransfer.items)
+          const isFile = Array.from(event.dataTransfer.items).some(
+            (item) => item.kind === "file"
+          );
+
+          if (isFile)
             await uploadFilesFromDragEvent(event, getSubPaths(filepath)[index]);
           else await moveSelectedTo(getSubPaths(filepath)[index]);
         };
@@ -605,6 +653,7 @@ function generateFilesHTML(filesJson) {
       fileInfo.ondragover = function (event) {
         if (!fileContainer.hasAttribute("selected")) {
           event.preventDefault();
+          event.stopPropagation();
           fileContainer.classList.add("dragged-over");
         }
       };
@@ -617,10 +666,14 @@ function generateFilesHTML(filesJson) {
 
       fileInfo.ondrop = async function (event) {
         event.preventDefault();
+        event.stopPropagation();
         fileContainer.classList.remove("dragged-over");
 
-        if (event.dataTransfer.items)
-          await uploadFilesFromDragEvent(event, element["path"]);
+        const isFile = Array.from(event.dataTransfer.items).some(
+          (item) => item.kind === "file"
+        );
+
+        if (isFile) await uploadFilesFromDragEvent(event, element["path"]);
         else await moveSelectedTo(element["path"]);
       };
     }
@@ -905,6 +958,10 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
   filesList.forEach((element, index) => {
     main_files_div.appendChild(element);
   });
+
+  // Set drag and drop files
+
+  setMainDragDrop(filepath);
 }
 
 let filesToProcessList = [];
