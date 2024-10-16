@@ -329,7 +329,7 @@ def download_file():
 
             def generator():
                 z = zipstream.ZipFile(
-                    mode="w", compression=zipstream.ZIP_DEFLATED)
+                    mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True)
 
                 for root, dirs, files in os.walk(full_file_path):
                     for file in files:
@@ -358,6 +358,7 @@ def download_file():
 
         encoded_filename = quote(filename)
 
+        # This is bad but is the simplest thing.
         if not pdf:
             return Response(
                 generate_large_file(full_file_path),
