@@ -189,7 +189,7 @@ def upload_file():
         final_file_path = os.path.join(full_path, filename)
         final_file_path = enc.encode(final_file_path)
 
-        sha256_hash = hashlib.md5()
+        sha256_hash = hashlib.sha256()
 
         os.makedirs(os.path.dirname(final_file_path), exist_ok=True)
 
@@ -200,7 +200,7 @@ def upload_file():
 
         received_hash = sha256_hash.hexdigest()
 
-        return jsonify({"message": "File uploaded successfully.", "md5": received_hash}), 200
+        return jsonify({"message": "File uploaded successfully.", "sha256": received_hash}), 200
     except Exception as _:
         return jsonify({"error": "Exception uploading file"}), 500
 
