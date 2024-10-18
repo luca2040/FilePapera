@@ -213,11 +213,19 @@ function setMainDragDrop(path) {
   filesMainDiv.ondragover = function (event) {
     event.preventDefault();
     event.stopPropagation();
-    filesMainDiv.classList.add("dragged-over");
+    const isFile = Array.from(event.dataTransfer.items).some(
+      (item) => item.kind === "file"
+    );
+
+    if (isFile) filesMainDiv.classList.add("dragged-over");
   };
 
   filesMainDiv.ondragleave = function (event) {
-    filesMainDiv.classList.remove("dragged-over");
+    const isFile = Array.from(event.dataTransfer.items).some(
+      (item) => item.kind === "file"
+    );
+
+    if (isFile) filesMainDiv.classList.remove("dragged-over");
   };
 
   filesMainDiv.ondrop = async function (event) {
