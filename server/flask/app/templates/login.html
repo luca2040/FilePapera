@@ -27,7 +27,7 @@
       </div>
       <div class="modal-background transparent">
         <div class="login-modal">
-          <h2>Login</h2>
+          <div class="modal-title">Login</div>
           {% with messages = get_flashed_messages(with_categories=true) %} {% if
           messages %}
           <ul>
@@ -41,7 +41,7 @@
             <input type="text" name="username" required /><br /><br />
             <label for="password">Password:</label>
             <input type="password" name="password" required /><br /><br />
-            <input type="submit" value="Login" />
+            <input type="submit" value="Accedi" class="modal-save-button" />
           </form>
         </div>
       </div>
