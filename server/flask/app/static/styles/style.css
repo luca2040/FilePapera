@@ -745,6 +745,11 @@ div[selected] {
   z-index: 1025;
 }
 
+.modal-background.transparent {
+  background: none !important;
+  display: flex !important;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -769,7 +774,8 @@ div[selected] {
 .upload-modal,
 .delete-modal,
 .rename-modal,
-.view-modal {
+.view-modal,
+.login-modal {
   background: var(--bg-light);
   border-radius: 8px;
   padding: 20px;
@@ -996,7 +1002,8 @@ div[selected] {
   .upload-modal,
   .delete-modal,
   .rename-modal,
-  .view-modal {
+  .view-modal,
+  .login-modal {
     max-width: 100%;
     width: 100%;
   }

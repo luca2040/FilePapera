@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FilePapera Login</title>
+    <link rel="icon" href="favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles/style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="main-inner">
+      <div class="titlebar">
+        <div class="title-container">
+          <img
+            src="{{ url_for('static', filename='icons/favicon.png') }}"
+            alt="FilePapera"
+            class="title-icon"
+          />
+          <div class="title">
+            <span class="title-light">File</span
+            ><span class="title-dark">Papera</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-background transparent">
+        <div class="login-modal">
+          <h2>Login</h2>
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %}
+          <ul>
+            {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %} {% endwith %}
+          <form method="POST">
+            <label for="username">Username:</label>
+            <input type="text" name="username" required /><br /><br />
+            <label for="password">Password:</label>
+            <input type="password" name="password" required /><br /><br />
+            <input type="submit" value="Login" />
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

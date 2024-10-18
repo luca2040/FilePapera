@@ -12,12 +12,15 @@ from flask import (
     render_template,
     send_from_directory,
     redirect,
+    session,
+    flash
 )
 from flask_sockets import Sockets
 from urllib.parse import unquote_plus
 from urllib.parse import quote
 from pathlib import Path
 from app.FilenameEncoder import FilenameEncoder
+from functools import wraps
 
 
 app = Flask(__name__)
@@ -28,8 +31,48 @@ app.config["UPLOAD_FOLDER"] = os.getenv("UPLOAD_FOLDER")
 app.config["COMPLETE_UPLOAD_FOLDER"] = os.getenv("COMPLETE_UPLOAD_FOLDER")
 app.config["MAX_STORAGE"] = int(os.getenv("MAX_STORAGE"))
 
+app.secret_key = os.getenv('FLASK_SECRET_KEY')
+app.config["USERNAME"] = os.getenv('USERNAME')
+app.config["PASSWORD_HASH"] = os.getenv('PASSWORD_HASH')
+
 enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+
+def check_valid_path(path: str) -> bool:
+    return os.path.commonprefix((os.path.realpath(path), app.config["COMPLETE_UPLOAD_FOLDER"])) != app.config["COMPLETE_UPLOAD_FOLDER"]
+
+
+def check_password_hash(hash: str, psw: str) -> bool:
+    hash2 = hashlib.sha512(psw.encode("UTF-8")).hexdigest()
+    return hash2 == hash
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_func(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect("/login")
+        return f(*args, **kwargs)
+
+    return decorated_func
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        if (username == app.config["USERNAME"]
+            ) and check_password_hash(app.config["PASSWORD_HASH"], password):
+
+            session['logged_in'] = True
+            return redirect("/index")
+        else:
+            flash('Credenziali errate', 'danger')
+
+    return render_template('login.html')
 
 
 def get_storage_size() -> Tuple[int, int]:
@@ -49,21 +92,19 @@ def get_storage_size() -> Tuple[int, int]:
     return max_size, size
 
 
-def check_valid_path(path: str) -> bool:
-    return os.path.commonprefix((os.path.realpath(path), app.config["COMPLETE_UPLOAD_FOLDER"])) != app.config["COMPLETE_UPLOAD_FOLDER"]
-
-
 @app.errorhandler(404)
 def page_not_found(e):
     return redirect("/index?notfound=true")
 
 
 @app.route("/")
+@login_required
 def index():
     return redirect("/index")
 
 
 @app.route("/index")
+@login_required
 def index_html():
     return render_template("index.html")
 
@@ -78,6 +119,7 @@ def list_dir(folder_path):
 
 
 @app.route("/list", methods=["GET"])
+@login_required
 def list_files_and_folders():
     folder = request.args.get("path", "")
     folder = folder.lstrip("/")
@@ -147,6 +189,7 @@ def list_files_and_folders():
 
 
 @app.route("/new/folder", methods=["POST"])
+@login_required
 def create_folder():
     path = request.args.get("path", "")
     folder_name = request.args.get("name", None)
@@ -172,6 +215,7 @@ def create_folder():
 
 
 @app.route("/upload/file", methods=["POST"])
+@login_required
 def upload_file():
     path = request.args.get("path", "")
 
@@ -212,6 +256,7 @@ def upload_file():
 
 
 @app.route("/upload/available-files", methods=['POST'])
+@login_required
 def available_files():
     try:
         data = request.get_json()
@@ -255,6 +300,7 @@ def available_files():
 
 
 @app.route("/reformat", methods=["GET"])
+@login_required
 def rename_or_move():
     old_path = request.args.get("old_path", None)
     new_path = request.args.get("new_path", None)
@@ -313,6 +359,7 @@ def generate_large_file(filepath):
 
 
 @app.route("/download", methods=["GET"])
+@login_required
 def download_file():
     filepath = request.args.get("filepath", None)
     pdf = request.args.get("pdf", False)
@@ -395,6 +442,7 @@ def download_file():
 
 
 @app.route("/delete", methods=["DELETE"])
+@login_required
 def delete_file_or_folder():
     target = request.args.get("target", None)
 
@@ -427,6 +475,7 @@ def delete_file_or_folder():
 
 
 @app.route("/storage", methods=["GET"])
+@login_required
 def get_storage():
     try:
         max_size, size = get_storage_size()
