@@ -24,13 +24,12 @@ app = Flask(__name__)
 sockets = Sockets(app)
 
 
-# Temporary parameters until docker compose is done
-UPLOAD_FOLDER = "./uploads"
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_STORAGE"] = 8000000000  # 8 Gb max - example
+app.config["UPLOAD_FOLDER"] = os.getenv("UPLOAD_FOLDER")
+app.config["COMPLETE_UPLOAD_FOLDER"] = os.getenv("COMPLETE_UPLOAD_FOLDER")
+app.config["MAX_STORAGE"] = int(os.getenv("MAX_STORAGE"))
 
 enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 
 def get_storage_size() -> Tuple[int, int]:
@@ -48,6 +47,10 @@ def get_storage_size() -> Tuple[int, int]:
     size = sum(f.stat().st_size for f in dir.glob("**/*") if f.is_file())
 
     return max_size, size
+
+
+def check_valid_path(path: str) -> bool:
+    return os.path.commonprefix((os.path.realpath(path), app.config["COMPLETE_UPLOAD_FOLDER"])) != app.config["COMPLETE_UPLOAD_FOLDER"]
 
 
 @app.errorhandler(404)
@@ -189,6 +192,9 @@ def upload_file():
         final_file_path = os.path.join(full_path, filename)
         final_file_path = enc.encode(final_file_path)
 
+        if check_valid_path(final_file_path):
+            return jsonify({"message": "Invalid path"}), 403
+
         sha256_hash = hashlib.sha256()
 
         os.makedirs(os.path.dirname(final_file_path), exist_ok=True)
@@ -272,6 +278,9 @@ def rename_or_move():
         old_path = enc.encode(old_path)
         new_path = enc.encode(new_path)
 
+        if check_valid_path(old_path) or check_valid_path(new_path):
+            return jsonify({"message": "Invalid path"}), 403
+
         if not os.path.exists(old_path):
             return jsonify({"error": "File not found", "type": 2}), 404
 
@@ -324,6 +333,9 @@ def download_file():
 
         full_file_path = os.path.join(full_dir_path, filename)
         full_file_path = enc.encode(full_file_path)
+
+        if check_valid_path(full_file_path):
+            return jsonify({"message": "Invalid path"}), 403
 
         if os.path.isdir(full_file_path):
 
@@ -394,6 +406,9 @@ def delete_file_or_folder():
 
         target_path = os.path.join(app.config["UPLOAD_FOLDER"], target)
         target_path = enc.encode(target_path)
+
+        if check_valid_path(target_path):
+            return jsonify({"message": "Invalid path"}), 403
 
         if not os.path.exists(target_path):
             return jsonify({"error": "File or folder not found"}), 404

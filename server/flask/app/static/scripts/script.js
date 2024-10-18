@@ -145,8 +145,12 @@ async function getAvailableFiles(query) {
 async function set_usage_bar() {
   const storage_json = await getStorage();
 
+  if (!storage_json) return;
+
   const used_bytes = storage_json["used_size"];
   const max_bytes = storage_json["max_size"];
+
+  if (!used_bytes || !max_bytes) return;
 
   let percent = (used_bytes / max_bytes) * 100;
   percent = percent.toFixed(1);
@@ -281,7 +285,9 @@ async function loadFolderStructure(parent, paths, index) {
   if (index >= paths.length) return;
 
   let fileListJson = await loadFileList(paths[index]);
-  fileListJson = fileListJson["files"];
+
+  if (!fileListJson) fileListJson = [];
+  else fileListJson = fileListJson["files"];
 
   for (const element of fileListJson) {
     if (!element["file"]) {
@@ -1204,6 +1210,8 @@ async function onFileSelect(filepath, event, files_) {
 
   const response = await getAvailableFiles({ data: queryData, size: size });
 
+  if (!response) return;
+
   try {
     if (response.ok) {
       const responseJSON = await response.json();
@@ -1526,6 +1534,8 @@ async function moveSelectedTo(newPath) {
   for (const [path, name] of selectedPaths) {
     const connectionResponse = await reformatRequest(path, newPath + name);
 
+    if (!connectionResponse) return;
+
     if (!connectionResponse.ok) {
       try {
         const responseJSON = await connectionResponse.json();
@@ -1613,9 +1623,15 @@ function readWebKitEntry(item, path = "") {
         const promises = entries.map((entry) =>
           readWebKitEntry(entry, path + item.name + "/")
         );
-        Promise.all(promises).then((results) => {
-          resolve(results.flat());
-        });
+        Promise.all(promises)
+          .then((results) => {
+            resolve(results.flat());
+          })
+          .catch((err) => {
+            alert("Errore durante la lettura del file.");
+            window.location.reload();
+            reject(err);
+          });
       });
     } else {
       resolve([]);

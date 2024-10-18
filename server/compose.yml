@@ -6,6 +6,8 @@ services:
     build: ./flask
     container_name: upload_server
     restart: always
+    env_file:
+      - .env
     volumes:
       - ./uploads:/app/uploads:rw
     expose:

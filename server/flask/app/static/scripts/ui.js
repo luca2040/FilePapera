@@ -381,19 +381,32 @@ function getFileViewElement(extension, lang, path, element) {
   const displayContent = (content, loaderContainer, markdown) => {
     loaderContainer.style.display = "none";
 
-    element.innerHTML = lang
-      ? marked.parse(`\`\`\`${lang}\n${content}\n\`\`\``)
-      : markdown
-      ? marked.parse(content)
-      : content.replace(/\n/g, "<br/>");
+    element.innerHTML = DOMPurify.sanitize(
+      lang
+        ? marked.parse(`\`\`\`${lang}\n${content}\n\`\`\``)
+        : markdown
+        ? marked.parse(content)
+        : content.replace(/\n/g, "<br/>")
+    );
 
     hljs.highlightAll();
   };
 
   const fetchAndDisplay = (completePath, loaderContainer, markdown) => {
-    fetchText(completePath).then((content) =>
-      displayContent(content, loaderContainer, markdown)
-    );
+    return new Promise((resolve, reject) => {
+      fetchText(completePath)
+        .then((content) => {
+          return displayContent(content, loaderContainer, markdown);
+        })
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          alert("Errore durante il caricamento del file.");
+          window.location.reload();
+          reject(err);
+        });
+    });
   };
 
   const loaderContainer = createLoader();
