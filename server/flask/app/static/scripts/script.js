@@ -150,8 +150,6 @@ async function set_usage_bar() {
   const used_bytes = storage_json["used_size"];
   const max_bytes = storage_json["max_size"];
 
-  if (!used_bytes || !max_bytes) return;
-
   let percent = (used_bytes / max_bytes) * 100;
   percent = percent.toFixed(1);
 
