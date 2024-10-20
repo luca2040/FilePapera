@@ -365,6 +365,12 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
 
 async function fetchText(path) {
   const response = await fetch(path);
+
+  if (response.status !== 200) {
+    alert("Errore durante la richiesta");
+    window.location.reload();
+  }
+
   return await response.text();
 }
 

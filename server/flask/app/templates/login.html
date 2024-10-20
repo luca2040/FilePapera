@@ -27,20 +27,34 @@
       </div>
       <div class="modal-background transparent">
         <div class="login-modal">
-          <div class="modal-title">Login</div>
+          <div class="modal-title" style="margin-bottom: 20px">Login</div>
           {% with messages = get_flashed_messages(with_categories=true) %} {% if
           messages %}
-          <ul>
+          <div
+            class="file-path-info no-text-select"
+            style="background-color: var(--bg-dark)"
+          >
             {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
+            <span class="path-separator {{ category }}">{{ message }}</span>
             {% endfor %}
-          </ul>
+          </div>
           {% endif %} {% endwith %}
           <form method="POST">
-            <label for="username">Username:</label>
-            <input type="text" name="username" required /><br /><br />
-            <label for="password">Password:</label>
-            <input type="password" name="password" required /><br /><br />
+            <label for="username" class="file-name">Utente:</label>
+            <input
+              type="text"
+              name="username"
+              class="rename-modal-input"
+              style="margin-bottom: 10px"
+              required=""
+            />
+            <label for="password" class="file-name">Password:</label>
+            <input
+              type="password"
+              name="password"
+              class="rename-modal-input"
+              required
+            />
             <input type="submit" value="Accedi" class="modal-save-button" />
           </form>
         </div>

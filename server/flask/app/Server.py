@@ -80,7 +80,7 @@ def login():
             session['logged_in'] = True
             return redirect("/index")
         else:
-            flash('Credenziali errate', 'danger')
+            flash('Credenziali errate', 'error')
 
     return render_template('login.html')
 
