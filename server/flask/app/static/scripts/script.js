@@ -981,6 +981,8 @@ let currentFileID = 1;
 
 let newFilesLoaded = false;
 
+let uploadingFiles = false;
+
 async function uploadFilesFromListRecursive() {
   while (true) {
     const elementToProcess = filesToProcessList.find(
@@ -992,6 +994,7 @@ async function uploadFilesFromListRecursive() {
     );
 
     if (!elementToProcess) {
+      uploadingFiles = false;
       if (!newFilesLoaded) {
         reloadFilesRequest();
         newFilesLoaded = true;
@@ -1001,11 +1004,22 @@ async function uploadFilesFromListRecursive() {
       continue;
     }
 
+    uploadingFiles = true;
     newFilesLoaded = false;
 
     await updateUploadElement(elementToProcess);
   }
 }
+
+window.addEventListener("beforeunload", function (e) {
+  var message = "Il caricamento in corso dei file verrà annullato, continuare?";
+
+  if (uploadingFiles) {
+    e.preventDefault();
+    e.returnValue = message;
+    return message;
+  } else return null;
+});
 
 function removeFilesElementById(id) {
   const index = filesToProcessList.findIndex((item) => item.id === id);
