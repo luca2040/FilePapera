@@ -8,7 +8,7 @@
 
 This is a file upload server where you can upload files.
 
-[Example](https://github.com/user-attachments/assets/0a14a04a-6a15-49cd-ac18-dd2e28d583c8)
+[Example](https://github.com/user-attachments/assets/032156b3-efc5-430f-9422-d975f5efb780)
 
 It also supports uploading multiple files at once, uploading folders and uploading files and folders by drag-and-drop.<br/>
 
