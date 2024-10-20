@@ -75,7 +75,7 @@ def login():
         password = request.form['password']
 
         if (username == app.config["USERNAME"]
-            ) and check_password_hash(app.config["PASSWORD_HASH"], password):
+                ) and check_password_hash(app.config["PASSWORD_HASH"], password):
 
             session['logged_in'] = True
             return redirect("/index")
@@ -83,6 +83,12 @@ def login():
             flash('Credenziali errate', 'error')
 
     return render_template('login.html')
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 
 def get_storage_size() -> Tuple[int, int]:
