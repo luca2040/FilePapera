@@ -1007,6 +1007,11 @@ async function uploadFilesFromListRecursive() {
     uploadingFiles = true;
     newFilesLoaded = false;
 
+    elementToProcess.container.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+
     await updateUploadElement(elementToProcess);
   }
 }
