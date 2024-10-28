@@ -7,7 +7,7 @@ services:
     container_name: upload_server
     restart: always
     env_file:
-      - .env
+      - ./config/.env
     volumes:
       - ./uploads:/app/uploads:rw
     expose:

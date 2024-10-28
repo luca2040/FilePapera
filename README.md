@@ -34,7 +34,7 @@ services:
     container_name: upload_server
     restart: always
     env_file:
-      - .env
+      - ./config/.env
     volumes:
       - ./uploads:/app/uploads:rw
     expose:
@@ -73,7 +73,7 @@ http{
 }
 ```
 
-`.env`:<br/>
+`config/.env`:<br/>
 
 ```sh
 # Upload folder in the container
