@@ -35,6 +35,8 @@ services:
     restart: always
     env_file:
       - ./config/.env
+    environment:
+      - FLASK_ENV=production
     volumes:
       - ./uploads:/app/uploads:rw
     expose:

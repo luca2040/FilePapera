@@ -8,6 +8,8 @@ services:
     restart: always
     env_file:
       - ./config/.env
+    environment:
+      - FLASK_ENV=development
     volumes:
       - ./uploads:/app/uploads:rw
     expose:

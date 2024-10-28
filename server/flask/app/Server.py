@@ -75,7 +75,7 @@ def login():
         password = request.form['password']
 
         if (username == app.config["USERNAME"]
-                ) and check_password_hash(app.config["PASSWORD_HASH"], password):
+            ) and check_password_hash(app.config["PASSWORD_HASH"], password):
 
             session['logged_in'] = True
             return redirect("/index")
