@@ -269,11 +269,11 @@ const MAX_PDF_FILE_SIZE = 500 * 1024 * 1024; // 0.5 GB
 
 function getLanguageByExtension(extension, filename) {
   for (const langElement of MD_LANGUAGES) {
-    if (langElement.ext?.includes(extension)) {
+    if (langElement.ext?.includes(extension.toLowerCase())) {
       return langElement.lang;
     }
 
-    if (langElement.name && langElement.name.includes(filename)) {
+    if (langElement.name && langElement.name.includes(filename.toLowerCase())) {
       return langElement.lang;
     }
   }
@@ -286,7 +286,7 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
   let codeBlockClass = false;
   let fileLang = null;
 
-  switch (extension) {
+  switch (extension.toLowerCase()) {
     case "md":
       if (size > MAX_TEXT_FILE_SIZE) return;
       addClasses = " y w";
@@ -426,7 +426,7 @@ function getFileViewElement(extension, lang, path, element) {
     return;
   }
 
-  switch (extension) {
+  switch (extension.toLowerCase()) {
     case "md":
       fetchAndDisplay(completePath, loaderContainer, true);
       return;
