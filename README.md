@@ -30,6 +30,7 @@ version: "3.7"
 services:
   upload_server:
     image: ghcr.io/luca2040/filepapera:latest
+    pull_policy: always
     container_name: upload_server
     restart: always
     env_file:
