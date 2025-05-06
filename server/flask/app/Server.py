@@ -53,24 +53,22 @@ def check_password_hash(hash: str, psw: str) -> bool:
     return hash2 == hash
 
 
-def login_required(f):
-    @wraps(f)
-    def decorated_func(*args, **kwargs):
-        if not session.get("logged_in"):
-            return redirect("/login")
-        return f(*args, **kwargs)
+def login_required(is_API: bool = False):
+    def decorator(f):
+        @wraps(f)
+        def decorated_func(*args, **kwargs):
 
-    return decorated_func
+            if not session.get("logged_in"):
+                if is_API:
+                    return jsonify({"error": "Unauthorized access."}), 401
+                else:
+                    return redirect("/login")
 
+            return f(*args, **kwargs)
 
-def login_required_API(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get("logged_in"):
-            return jsonify({"error": "Unauthorized access."}), 401
-        return f(*args, **kwargs)
+        return decorated_func
 
-    return decorated_function
+    return decorator
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -120,13 +118,13 @@ def page_not_found(e):
 
 
 @app.route("/")
-@login_required
+@login_required()
 def index():
     return redirect("/index")
 
 
 @app.route("/index")
-@login_required
+@login_required()
 def index_html():
     return render_template("index.html")
 
@@ -141,7 +139,7 @@ def list_dir(folder_path):
 
 
 @app.route("/list", methods=["GET"])
-@login_required_API
+@login_required(True)
 def list_files_and_folders():
     folder = request.args.get("path", "")
     folder = folder.lstrip("/")
@@ -215,7 +213,7 @@ def list_files_and_folders():
 
 
 @app.route("/new/folder", methods=["POST"])
-@login_required_API
+@login_required(True)
 def create_folder():
     path = request.args.get("path", "")
     folder_name = request.args.get("name", None)
@@ -240,7 +238,7 @@ def create_folder():
 
 
 @app.route("/upload/file", methods=["POST"])
-@login_required_API
+@login_required(True)
 def upload_file():
     path = request.args.get("path", "")
 
@@ -286,7 +284,7 @@ def upload_file():
 
 
 @app.route("/upload/available-files", methods=["POST"])
-@login_required_API
+@login_required(True)
 def available_files():
     try:
         data = request.get_json()
@@ -333,7 +331,7 @@ def available_files():
 
 
 @app.route("/reformat", methods=["GET"])
-@login_required_API
+@login_required(True)
 def rename_or_move():
     old_path = request.args.get("old_path", None)
     new_path = request.args.get("new_path", None)
@@ -390,7 +388,7 @@ def generate_large_file(filepath):
 
 
 @app.route("/download", methods=["GET"])
-@login_required_API
+@login_required(True)
 def download_file():
     filepath = request.args.get("filepath", None)
     pdf = request.args.get("pdf", False)
@@ -474,7 +472,7 @@ def download_file():
 
 
 @app.route("/delete", methods=["DELETE"])
-@login_required_API
+@login_required(True)
 def delete_file_or_folder():
     target = request.args.get("target", None)
 
@@ -507,7 +505,7 @@ def delete_file_or_folder():
 
 
 @app.route("/storage", methods=["GET"])
-@login_required_API
+@login_required(True)
 def get_storage():
     try:
         max_size, size = get_storage_size()
