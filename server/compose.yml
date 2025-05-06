@@ -9,17 +9,24 @@ services:
     env_file:
       - ./config/.env
     environment:
-      - FLASK_ENV=development
+      # can be development or production
+      - ENV=development
     volumes:
       - ./uploads:/app/uploads:rw
+      # For development:
+      - ./flask/app:/app/app:rw
     expose:
       - 8080
-
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    restart: always
+    # For development:
     ports:
-      - 80:80
-    volumes:
-      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - 5000:5000
+
+  # Dont need nginx for development
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: nginx
+  #   restart: always
+  #   ports:
+  #     - 80:80
+  #   volumes:
+  #     - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
