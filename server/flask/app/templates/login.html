@@ -7,7 +7,11 @@
     <link rel="icon" href="favicon.ico" />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='styles/style.min.css') }}"
+      href="{{ url_for('static', filename='styles/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles/external/font-awesome.all.min.css')}}"
     />
   </head>
   <body>
@@ -45,16 +49,41 @@
               required=""
             />
             <label for="password" class="file-name">Password:</label>
-            <input
-              type="password"
-              name="password"
-              class="rename-modal-input"
-              required
-            />
+            <div class="password-container">
+              <input
+                type="password"
+                name="password"
+                id="password"
+                class="rename-modal-input"
+                required
+              />
+              <button
+                type="button"
+                class="rename-modal-input password-button"
+                onclick="showPassword()"
+              >
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
             <input type="submit" value="Accedi" class="modal-save-button" />
           </form>
         </div>
       </div>
     </div>
+
+    <script>
+      function showPassword() {
+        const passwordInput = document.getElementById("password");
+        const passwordButtonIcon = document.querySelector(".password-button i");
+
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          passwordButtonIcon.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+          passwordInput.type = "password";
+          passwordButtonIcon.classList.replace("fa-eye-slash", "fa-eye");
+        }
+      }
+    </script>
   </body>
 </html>

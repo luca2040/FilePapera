@@ -904,6 +904,25 @@ div[selected] {
   color: var(--border-color);
 }
 
+.password-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.rename-modal-input.password-button {
+  width: 36px;
+  height: 36px;
+  color: var(--accent-green);
+  transition: all 0.3s ease;
+}
+
+.rename-modal-input.password-button:hover {
+  background-color: var(--accent-green-transparent);
+  cursor: pointer;
+}
+
 .delete-modal-name {
   width: 100%;
   padding: 10px;
