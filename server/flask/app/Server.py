@@ -13,7 +13,7 @@ from flask import (
     send_from_directory,
     redirect,
     session,
-    flash
+    flash,
 )
 from flask_sockets import Sockets
 from urllib.parse import unquote_plus
@@ -31,16 +31,21 @@ app.config["UPLOAD_FOLDER"] = os.getenv("UPLOAD_FOLDER")
 app.config["COMPLETE_UPLOAD_FOLDER"] = os.getenv("COMPLETE_UPLOAD_FOLDER")
 app.config["MAX_STORAGE"] = int(os.getenv("MAX_STORAGE"))
 
-app.secret_key = os.getenv('FLASK_SECRET_KEY')
-app.config["USERNAME"] = os.getenv('USERNAME')
-app.config["PASSWORD_HASH"] = os.getenv('PASSWORD_HASH')
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.config["USERNAME"] = os.getenv("USERNAME")
+app.config["PASSWORD_HASH"] = os.getenv("PASSWORD_HASH")
 
 enc = FilenameEncoder(app.config["UPLOAD_FOLDER"])
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 
 def check_valid_path(path: str) -> bool:
-    return os.path.commonprefix((os.path.realpath(path), app.config["COMPLETE_UPLOAD_FOLDER"])) != app.config["COMPLETE_UPLOAD_FOLDER"]
+    return (
+        os.path.commonprefix(
+            (os.path.realpath(path), app.config["COMPLETE_UPLOAD_FOLDER"])
+        )
+        != app.config["COMPLETE_UPLOAD_FOLDER"]
+    )
 
 
 def check_password_hash(hash: str, psw: str) -> bool:
@@ -51,7 +56,7 @@ def check_password_hash(hash: str, psw: str) -> bool:
 def login_required(f):
     @wraps(f)
     def decorated_func(*args, **kwargs):
-        if not session.get('logged_in'):
+        if not session.get("logged_in"):
             return redirect("/login")
         return f(*args, **kwargs)
 
@@ -61,28 +66,29 @@ def login_required(f):
 def login_required_API(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
+        if not session.get("logged_in"):
             return jsonify({"error": "Unauthorized access."}), 401
         return f(*args, **kwargs)
 
     return decorated_function
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
 
-        if (username == app.config["USERNAME"]
-            ) and check_password_hash(app.config["PASSWORD_HASH"], password):
+        if (username == app.config["USERNAME"]) and check_password_hash(
+            app.config["PASSWORD_HASH"], password
+        ):
 
-            session['logged_in'] = True
+            session["logged_in"] = True
             return redirect("/index")
         else:
-            flash('Credenziali errate', 'error')
+            flash("Credenziali errate", "error")
 
-    return render_template('login.html')
+    return render_template("login.html")
 
 
 @app.route("/logout")
@@ -174,7 +180,9 @@ def list_files_and_folders():
                             "file": False,
                             "creation_date": readable_creation_time,
                             "path": "/"
-                            + enc.decode(full_path).replace(app.config["UPLOAD_FOLDER"], "", 1).lstrip("/"),
+                            + enc.decode(full_path)
+                            .replace(app.config["UPLOAD_FOLDER"], "", 1)
+                            .lstrip("/"),
                         }
                     )
                 else:
@@ -190,7 +198,9 @@ def list_files_and_folders():
                             "file": True,
                             "creation_date": readable_creation_time,
                             "path": "/"
-                            + enc.decode(full_path).replace(app.config["UPLOAD_FOLDER"], "", 1).lstrip("/"),
+                            + enc.decode(full_path)
+                            .replace(app.config["UPLOAD_FOLDER"], "", 1)
+                            .lstrip("/"),
                         }
                     )
 
@@ -217,8 +227,7 @@ def create_folder():
         path = unquote_plus(path).lstrip("/")
         folder_name = unquote_plus(folder_name).lstrip("/")
 
-        full_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], path, folder_name)
+        full_path = os.path.join(app.config["UPLOAD_FOLDER"], path, folder_name)
         full_path = enc.encode(full_path)
 
         if os.path.exists(full_path) and os.path.isdir(full_path):
@@ -266,12 +275,17 @@ def upload_file():
 
         received_hash = sha256_hash.hexdigest()
 
-        return jsonify({"message": "File uploaded successfully.", "sha256": received_hash}), 200
+        return (
+            jsonify(
+                {"message": "File uploaded successfully.", "sha256": received_hash}
+            ),
+            200,
+        )
     except Exception as _:
         return jsonify({"error": "Exception uploading file"}), 500
 
 
-@app.route("/upload/available-files", methods=['POST'])
+@app.route("/upload/available-files", methods=["POST"])
 @login_required_API
 def available_files():
     try:
@@ -286,27 +300,30 @@ def available_files():
         max_size, used_size = get_storage_size()
         free_size = max_size - used_size
 
-        if (new_files_size >= free_size):
+        if new_files_size >= free_size:
             size_error = True
         else:
             for element in data["data"]:
                 remotePath = element["filepath"]
                 serverPath = os.path.join(
-                    app.config["UPLOAD_FOLDER"], remotePath.lstrip("/"))
+                    app.config["UPLOAD_FOLDER"], remotePath.lstrip("/")
+                )
                 serverPath = enc.encode(serverPath)
 
                 if os.path.exists(serverPath):
                     if os.path.isfile(serverPath):
                         responseList.append(
-                            {"id": element["id"], "isfolder": False, "isfile": True})
+                            {"id": element["id"], "isfolder": False, "isfile": True}
+                        )
                     else:
                         responseList.append(
-                            {"id": element["id"], "isfolder": True, "isfile": False})
+                            {"id": element["id"], "isfolder": True, "isfile": False}
+                        )
 
         response = {
-            'message': 'done',
-            'storageError': size_error,
-            'responseJSON': responseList
+            "message": "done",
+            "storageError": size_error,
+            "responseJSON": responseList,
         }
 
         return jsonify(response), 200
@@ -333,10 +350,8 @@ def rename_or_move():
     try:
         old_path = unquote_plus(old_path)
         new_path = unquote_plus(new_path)
-        old_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], old_path.lstrip("/"))
-        new_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], new_path.lstrip("/"))
+        old_path = os.path.join(app.config["UPLOAD_FOLDER"], old_path.lstrip("/"))
+        new_path = os.path.join(app.config["UPLOAD_FOLDER"], new_path.lstrip("/"))
         old_path = enc.encode(old_path)
         new_path = enc.encode(new_path)
 
@@ -404,7 +419,8 @@ def download_file():
 
             def generator():
                 z = zipstream.ZipFile(
-                    mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True)
+                    mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True
+                )
 
                 for root, dirs, files in os.walk(full_file_path):
                     for file in files:
