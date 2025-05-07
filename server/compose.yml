@@ -3,7 +3,7 @@ services:
   upload_server:
     build: ./flask
     container_name: upload_server
-    restart: no
+    restart: unless-stopped
     env_file:
       - ./config/.env
     environment:

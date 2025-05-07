@@ -1,0 +1,26 @@
+import os
+from flask import Flask
+from .utils.FilenameEncoder import FilenameEncoder
+
+
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object("config")
+
+    from .routes import routes
+    from .routes.auth import auth
+    from .routes.api import api
+
+    app.secret_key = app.config["FLASK_SECRET_KEY"]
+
+    app.config["FILENAME_ENCODER"] = FilenameEncoder(app.config["UPLOAD_FOLDER"])
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    # Sockets(app)
+
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(api.bp)
+
+    routes.register_routes(app)
+
+    return app
