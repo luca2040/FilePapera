@@ -12,7 +12,7 @@ def compile_assets(app):
     # Styles
     style_main_bundle = Bundle(
         "styles/style.css",
-        filters=None,
+        filters="rcssmin",
         output="gen/style.min.css",
     )
 
