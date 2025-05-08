@@ -1,3 +1,4 @@
+// Check the current path from url, add path to "/" if not present and update url, and then return the path
 function checkPath() {
   const urlParams = new URLSearchParams(window.location.search);
 
@@ -13,6 +14,7 @@ function checkPath() {
   return urlParams.get("path");
 }
 
+// Sets the page url to the given path
 function setPagePath(path) {
   const urlParams = new URLSearchParams(window.location.search);
   urlParams.set("path", path);
@@ -21,6 +23,7 @@ function setPagePath(path) {
   history.pushState(null, "", newUrl);
 }
 
+// Based on ShouldAdd, it removes or adds the given attribute to the url
 function toggleLinkAttribute(attrName, shouldAdd) {
   const urlParams = new URLSearchParams(window.location.search);
 
@@ -31,6 +34,12 @@ function toggleLinkAttribute(attrName, shouldAdd) {
   history.pushState(null, "", newUrl);
 }
 
+// Gets all the possible subpaths that take to the given filepath, returns as list
+// Example:
+// Input: "/folder/subfolder/file"
+// List element 1: "/folder"
+// List element 2: "/folder/subfolder"
+// List element 3: "/folder/subfolder/file"
 function getSubPaths(filepath) {
   if (!filepath.startsWith("/")) {
     filepath = "/" + filepath;
@@ -48,6 +57,9 @@ function getSubPaths(filepath) {
   return subPaths;
 }
 
+// Fetches the storage from server.
+// Relevant server logic:
+// return jsonify({"used_size": size, "max_size": max_size}), 200
 async function getStorage() {
   const url = "/storage";
 
@@ -69,6 +81,8 @@ async function getStorage() {
   return null;
 }
 
+// Requests the server to replace a path with another.
+// Both for renaming and moving files/folders
 async function reformatRequest(old_path, new_path) {
   const url = `/reformat?old_path=${encodeURIComponent(
     old_path
@@ -85,6 +99,7 @@ async function reformatRequest(old_path, new_path) {
   return null;
 }
 
+// Requests the server to delete a file or folder at the given path
 async function deleteElement(path) {
   const url = `/delete?target=${encodeURIComponent(path)}`;
 
@@ -106,6 +121,7 @@ async function deleteElement(path) {
   return null;
 }
 
+// Requests the server to create a new folder at the given path with the given name
 async function createFolder(basePath, name) {
   const url = `/new/folder?path=${encodeURIComponent(
     basePath
@@ -122,6 +138,15 @@ async function createFolder(basePath, name) {
   return null;
 }
 
+// Requests the server to check if the files given in the query are already there, and also if the size is not overflowing the limit when uploading
+// Query:
+// {data: [{id: int, filepath: str}, ...]}, size: int (Total bytes)}
+// Response:
+// response = {
+//   "message": "done",
+//   "storageError": size_error (boolean),
+//   "responseJSON": [{id: int, isfolder: boolean, isfile: boolean}],
+// }
 async function getAvailableFiles(query) {
   const url = "/upload/available-files";
 
@@ -142,6 +167,7 @@ async function getAvailableFiles(query) {
   return null;
 }
 
+// Updates the storage indicator bar with the current data, fetched from server
 async function set_usage_bar() {
   const storage_json = await getStorage();
 
@@ -174,6 +200,7 @@ async function set_usage_bar() {
   textElement.appendChild(storagePercent);
 }
 
+// Makes the browser download the given fileapath
 function downloadFile(filePath) {
   const url = new URL("/download", window.location.origin);
   url.searchParams.append("filepath", filePath);
@@ -189,6 +216,7 @@ function downloadFile(filePath) {
   document.body.removeChild(anchor);
 }
 
+// Requests the server to list all files and folders in the given path, then returns the JSON response
 async function loadFileList(filePath) {
   const url = `/list?path=${encodeURIComponent(filePath)}`;
 
@@ -210,6 +238,7 @@ async function loadFileList(filePath) {
   return null;
 }
 
+// Updates the drag logic in html to the given path
 function setMainDragDrop(path) {
   const filesMainDiv = document.getElementById("main-total-div");
   filesMainDiv.ondragover = function (event) {
@@ -243,6 +272,7 @@ function setMainDragDrop(path) {
   };
 }
 
+// Updates the node structure in the html fetching the server
 async function loadFolderStructure(parent, paths, index) {
   if (index === 0) {
     const rootNode = document.getElementById("root-node");
@@ -338,6 +368,7 @@ async function loadFolderStructure(parent, paths, index) {
   }
 }
 
+// Reloads the main ui, fetching from server
 async function reloadFilesRequest() {
   filepath = checkPath();
 
@@ -372,6 +403,7 @@ async function reloadFilesRequest() {
   tree_auto_scroll();
 }
 
+// Returns the html element for the file path bar
 function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   let folders = [];
 
@@ -527,6 +559,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   return containerDiv;
 }
 
+// Returns the bytes given in a readable string with size
 function formatFileSize(bytes) {
   const sizes = ["B", "KB", "MB", "GB"];
   if (bytes === 0) return `0 ${sizes[0]}`;
@@ -535,6 +568,7 @@ function formatFileSize(bytes) {
   return fileSize.toFixed(2) + " " + sizes[i];
 }
 
+// Returns a list of html elements, for each one of the file/folder elements in main ui, including their download/rename/delete buttons
 function generateFilesHTML(filesJson) {
   const filesList = filesJson["files"];
   let fileList = [];
@@ -948,6 +982,7 @@ function generateFilesHTML(filesJson) {
   return fileList;
 }
 
+// Updates the main ui getting the new elements for path bar and file/folder elements
 function reloadFiles(filesJson, filepath, folderNotFound) {
   main_files_div = document.getElementById("main-files-div");
 
@@ -976,6 +1011,8 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
   setMainDragDrop(filepath);
 }
 
+// Define some variables for the upload process
+
 let filesToProcessList = [];
 let currentFileID = 1;
 
@@ -983,6 +1020,7 @@ let newFilesLoaded = false;
 
 let uploadingFiles = false;
 
+// Constantly checks if there are any new files ready for upload, and uploads them
 async function uploadFilesFromListRecursive() {
   while (true) {
     const elementToProcess = filesToProcessList.find(
@@ -1016,6 +1054,7 @@ async function uploadFilesFromListRecursive() {
   }
 }
 
+// Sets before unload to warn user if still uploading files
 window.addEventListener("beforeunload", function (e) {
   var message = "Il caricamento in corso dei file verrà annullato, continuare?";
 
@@ -1026,6 +1065,7 @@ window.addEventListener("beforeunload", function (e) {
   } else return null;
 });
 
+// Remove a file from upload schedule list given its item.id
 function removeFilesElementById(id) {
   const index = filesToProcessList.findIndex((item) => item.id === id);
   if (index > -1) {
@@ -1033,17 +1073,19 @@ function removeFilesElementById(id) {
   }
 }
 
+// Remove all files that are already uploaded or have some errors from schedule
 function resetDoneFiles() {
   filesToProcessList = filesToProcessList.filter(
     (file) => !(file.alreadydone || file.replaceerror || file.storageerror)
   );
 }
 
+// Uploads the given file and registers its element for ui progress bar update
 async function updateUploadElement(elementToProcess) {
   const container = elementToProcess.container;
   const fileToSend = elementToProcess.file;
 
-  // Checking file hash would be too slow for large files, just upload it.
+  // Checking file hash would be too slow for large files, just upload it. [TODO: need to do something about this]
 
   const formData = new FormData();
   formData.append("file", fileToSend);
@@ -1089,6 +1131,7 @@ async function updateUploadElement(elementToProcess) {
   }
 }
 
+// Removes the replace or cancel button when uploading files (From elements in upload schedule)
 function removeButtonFromReplaceContainer(container) {
   const containerElements = container.children;
   for (let i = containerElements.length - 1; i >= 0; i--) {
@@ -1099,6 +1142,7 @@ function removeButtonFromReplaceContainer(container) {
   }
 }
 
+// Updates the ui list from upload schedule
 function documentDisplayFileList() {
   const filesDIVelement = document.getElementById("new-files-uploading-list");
   filesDIVelement.innerHTML = "";
@@ -1151,6 +1195,7 @@ function documentDisplayFileList() {
   }
 }
 
+// Updates the functions behind the replace all files button to auto click for every single file
 function checkTotalReplaceButton() {
   const index = filesToProcessList.findIndex(
     (item) => item.waitingfor === true
@@ -1176,6 +1221,7 @@ function checkTotalReplaceButton() {
   }
 }
 
+// Used when files are selected from user input
 async function onFileSelect(filepath, event, files_) {
   let files = [];
 
@@ -1296,6 +1342,7 @@ async function onFileSelect(filepath, event, files_) {
   checkTotalReplaceButton();
 }
 
+// Updates in the ui the two buttons for upload file and create folder
 function uploadButtons(filepath) {
   const buttonsContainer = document.getElementById("upload-buttons-container");
 
@@ -1476,8 +1523,10 @@ function uploadButtons(filepath) {
   buttonsContainer.appendChild(newFolderButton);
 }
 
+// Start the recursive uploading schedule
 uploadFilesFromListRecursive();
 
+// Get a list containing the paths of all the selected files
 function getSelectedElementsPaths() {
   return Array.from(
     document.querySelectorAll(".files .file-container[selected]"),
@@ -1485,6 +1534,7 @@ function getSelectedElementsPaths() {
   );
 }
 
+// What to do when pressing keys. Used for the delete key
 document.addEventListener("keydown", (event) => {
   if (event.key === "Delete") {
     const selectedPaths = getSelectedElementsPaths();
@@ -1539,6 +1589,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+// Move all the selected files to the given path
 async function moveSelectedTo(newPath) {
   if (!newPath.endsWith("/")) {
     newPath += "/";
@@ -1627,6 +1678,7 @@ async function moveSelectedTo(newPath) {
   }
 }
 
+// To parse user input
 function readWebKitEntry(item, path = "") {
   return new Promise((resolve, reject) => {
     if (item.isFile) {
@@ -1656,6 +1708,7 @@ function readWebKitEntry(item, path = "") {
   });
 }
 
+// When user drags files into the specified filepath, trigger the event and upload files. Function called externally by container
 async function uploadFilesFromDragEvent(event, filepath) {
   let files = [];
 
@@ -1677,7 +1730,7 @@ async function uploadFilesFromDragEvent(event, filepath) {
   await onFileSelect(filepath, null, files);
 }
 
-// window.onload = reloadFilesRequest;
+// Initial function for whole page
 window.onpopstate = () => {
   reloadFilesRequest();
 
