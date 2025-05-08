@@ -7,8 +7,7 @@
     <link rel="icon" href="favicon.ico" />
     {% assets "main_styles" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}" />
-    {% endassets %}
-    {% assets "external_styles" %}
+    {% endassets %} {% assets "external_styles" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}" />
     {% endassets %}
   </head>
@@ -69,19 +68,8 @@
       </div>
     </div>
 
-    <script>
-      function showPassword() {
-        const passwordInput = document.getElementById("password");
-        const passwordButtonIcon = document.querySelector(".password-button i");
-
-        if (passwordInput.type === "password") {
-          passwordInput.type = "text";
-          passwordButtonIcon.classList.replace("fa-eye", "fa-eye-slash");
-        } else {
-          passwordInput.type = "password";
-          passwordButtonIcon.classList.replace("fa-eye-slash", "fa-eye");
-        }
-      }
-    </script>
+    {% assets "login_scripts" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
   </body>
 </html>

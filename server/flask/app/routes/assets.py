@@ -26,7 +26,16 @@ def compile_assets(app):
 
     # Scripts
     js_main_bundle = Bundle(
-        "scripts/ui.js", "scripts/script.js", filters="jsmin", output="gen/main.min.js"
+        "scripts/index/ui.js",
+        "scripts/index/script.js",
+        filters="jsmin",
+        output="gen/main.min.js",
+    )
+
+    js_login_bundle = Bundle(
+        "scripts/login/script.js",
+        filters="jsmin",
+        output="gen/login.min.js",
     )
 
     # External Scripts
@@ -44,10 +53,12 @@ def compile_assets(app):
     assets.register("external_styles", style_external_bundle)
 
     assets.register("main_scripts", js_main_bundle)
+    assets.register("login_scripts", js_login_bundle)
     assets.register("external_scripts", js_external_bundle)
 
     style_main_bundle.build(force=True)
     style_external_bundle.build(force=True)
 
     js_main_bundle.build(force=True)
+    js_login_bundle.build(force=True)
     js_external_bundle.build(force=True)
