@@ -85,6 +85,7 @@ files.addEventListener(
   true
 );
 
+// Set background color on default on mouse leave
 files.addEventListener(
   "mouseleave",
   (event) => {
@@ -96,6 +97,7 @@ files.addEventListener(
   true
 );
 
+// Returns true if multiple files are selected
 function multipleSelected() {
   const selectedPaths = document.querySelectorAll(
     ".files .file-container[selected]"
@@ -103,6 +105,7 @@ function multipleSelected() {
   return selectedPaths.length >= 2;
 }
 
+// Function to handle file drag
 files.addEventListener("dragstart", (event) => {
   if (!event.target.classList.contains("file-container")) return;
 
@@ -123,6 +126,7 @@ files.addEventListener("dragstart", (event) => {
   }, 0);
 });
 
+// Create overlay for the dragged file, when multiple files are selected
 function createOverlay(target) {
   const overlay = target.cloneNode(true);
   const fileInfo = target.querySelector(".file-info").cloneNode(true);
@@ -131,6 +135,7 @@ function createOverlay(target) {
   return overlay;
 }
 
+// Create the overlay container
 function createOverlayContainer(overlay) {
   const container = document.createElement("div");
   container.style.position = "absolute";
@@ -140,6 +145,7 @@ function createOverlayContainer(overlay) {
   return container;
 }
 
+// Create a second overlay when multiple files are being dragged
 function createSecondOverlay(originalOverlay) {
   const secondOverlay = originalOverlay.cloneNode(true);
   const targetStyle = window.getComputedStyle(originalOverlay);
@@ -155,6 +161,7 @@ function createSecondOverlay(originalOverlay) {
   return secondOverlay;
 }
 
+// Toggles if the element is selected
 function toggleSelected(element, isSelected) {
   if (isSelected) {
     element.setAttribute("selected", "");
@@ -163,6 +170,7 @@ function toggleSelected(element, isSelected) {
   }
 }
 
+// Deselects all files selected
 function deselectAll() {
   const files = document.querySelectorAll(".file-container");
   files.forEach((file) => {
@@ -170,6 +178,7 @@ function deselectAll() {
   });
 }
 
+// If click on general container deselect all files
 document.body.addEventListener("click", function (event) {
   const fileContainer = event.target.closest(".file-container");
 
@@ -178,6 +187,7 @@ document.body.addEventListener("click", function (event) {
   }
 });
 
+// Check if this is touch so disable the multiple selected files
 function isTouchDevice() {
   return (
     "ontouchstart" in window ||
@@ -186,6 +196,7 @@ function isTouchDevice() {
   );
 }
 
+// List of file extensions for markdown. Written by AI.
 const MD_LANGUAGES = [
   { lang: "abap", ext: ["abap"] },
   { lang: "actionscript", ext: ["as"] },
@@ -278,10 +289,13 @@ const MD_LANGUAGES = [
   { lang: "yaml", ext: ["yml", "yaml"] },
 ];
 
+
+// Define limits for viewing files
 const MAX_TEXT_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 const MAX_IMAGE_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const MAX_PDF_FILE_SIZE = 500 * 1024 * 1024; // 0.5 GB
 
+// Get the language by the file's extension
 function getLanguageByExtension(extension, filename) {
   for (const langElement of MD_LANGUAGES) {
     if (langElement.ext?.includes(extension.toLowerCase())) {
@@ -296,6 +310,7 @@ function getLanguageByExtension(extension, filename) {
   return null;
 }
 
+// Handles the extension of the opened file
 function handleFileOpenExtension(element, extension, size, path, filename) {
   let addClasses = "";
   let codeBlockClass = false;
@@ -378,6 +393,7 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
   return clickFunc;
 }
 
+// Fetches text at the given path from server
 async function fetchText(path) {
   const response = await fetch(path);
 
@@ -389,6 +405,7 @@ async function fetchText(path) {
   return await response.text();
 }
 
+// Get the file element's container
 function getFileViewElement(extension, lang, path, element) {
   const createLoader = () => {
     const loaderContainer = document.createElement("div");
