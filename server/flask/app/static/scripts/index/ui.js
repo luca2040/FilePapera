@@ -1,13 +1,16 @@
+// Toggles sidebar active or not when called
 function toggleSidebar() {
   const sidebar = document.querySelector(".sidebar");
   sidebar.classList.toggle("active");
 }
 
+// Deactivates sidebar
 function closeSidebar() {
   const sidebar = document.querySelector(".sidebar");
   sidebar.classList.remove("active");
 }
 
+// Called with press event. if outside of sidebar, close it
 function handleClickOutside(event) {
   const sidebar = document.querySelector(".sidebar");
   const menuButton = document.querySelector(".menu-btn");
@@ -17,8 +20,10 @@ function handleClickOutside(event) {
   }
 }
 
+// Register previous function
 document.addEventListener("click", handleClickOutside);
 
+// Remove the activate class from sidebar if width is greater than threshold
 window.addEventListener("resize", function () {
   const sidebar = document.querySelector(".sidebar");
   if (window.innerWidth >= 768) {
@@ -26,24 +31,32 @@ window.addEventListener("resize", function () {
   }
 });
 
+// File structure diagram container
 const tree_container = document.querySelector(".tree");
 
+// Set auto scroll to ensure visibility of file diagram
 function tree_auto_scroll() {
   tree_container.scrollLeft = tree_container.scrollWidth;
 }
 
+// Call previous function on load
 tree_auto_scroll();
 
+// Prevent scrolling the tree diagram
 tree_container.addEventListener("scroll", function () {
   tree_auto_scroll();
 });
 
+// Sets the gradient background for the given container at the given percent.
+// Used to show upload file progress
 function setLoadingFilePercentage(container, perc) {
   container.style.background = `linear-gradient(to right, var(--accent-green-transparent) 100%, transparent 0%)`;
   container.style.backgroundSize = `${perc}% 100%`;
   container.style.backgroundPosition = "left";
 }
 
+// Sets the complete animation background for the given container.
+// Used when file upload is complete.
 function setLoadingFileComplete(container) {
   container.style.transition =
     "background-size 0.3s ease, background-position 0.3s ease";
@@ -57,8 +70,10 @@ function setLoadingFileComplete(container) {
   }, 300);
 }
 
+// The files container
 const files = document.querySelector(".files");
 
+// To set background colors on container
 files.addEventListener(
   "mouseenter",
   (event) => {
