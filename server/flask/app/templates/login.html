@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FilePapera Login</title>
     <link rel="icon" href="favicon.ico" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles/style.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles/external/font-awesome.all.min.css')}}"
-    />
+    {% assets "main_styles" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}" />
+    {% endassets %} {% assets "external_styles" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}" />
+    {% endassets %}
   </head>
   <body>
     <div class="main-inner">
@@ -71,19 +68,8 @@
       </div>
     </div>
 
-    <script>
-      function showPassword() {
-        const passwordInput = document.getElementById("password");
-        const passwordButtonIcon = document.querySelector(".password-button i");
-
-        if (passwordInput.type === "password") {
-          passwordInput.type = "text";
-          passwordButtonIcon.classList.replace("fa-eye", "fa-eye-slash");
-        } else {
-          passwordInput.type = "password";
-          passwordButtonIcon.classList.replace("fa-eye-slash", "fa-eye");
-        }
-      }
-    </script>
+    {% assets "login_scripts" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
   </body>
 </html>

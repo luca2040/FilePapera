@@ -164,4 +164,7 @@ cython_debug/
 uploads/
 test/
 
+.webassets-manifest
+server/flask/app/static/gen
+
 !server/config/.env
