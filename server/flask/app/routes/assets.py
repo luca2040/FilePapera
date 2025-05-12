@@ -18,31 +18,29 @@ def compile_assets(app):
 
     # External styles
     style_external_bundle = Bundle(
-        "styles/external/dracula.css",
-        "styles/external/font-awesome.all.min.css",
+        "styles/external/*.css",
         filters=None,
         output="gen/style_external.min.css",
     )
 
     # Scripts
     js_main_bundle = Bundle(
-        "scripts/index/ui.js",
-        "scripts/index/script.js",
+        "scripts/index/*.js",
+        "scripts/index/ui/*.js",
+        "scripts/index/utils/*.js",
         filters="jsmin",
         output="gen/main.min.js",
     )
 
     js_login_bundle = Bundle(
-        "scripts/login/script.js",
+        "scripts/login/*.js",
         filters="jsmin",
         output="gen/login.min.js",
     )
 
     # External Scripts
     js_external_bundle = Bundle(
-        "scripts/external/highlight.min.js",
-        "scripts/external/marked.min.js",
-        "scripts/external/purify.min.js",
+        "scripts/external/*.js",
         filters=None,
         output="gen/main_external.min.js",
     )
