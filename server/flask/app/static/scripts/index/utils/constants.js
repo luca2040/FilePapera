@@ -17,7 +17,7 @@ const MD_LANGUAGES = [
   { lang: "bnf", ext: ["bnf"] },
   { lang: "brainfuck", ext: ["b", "bf"] },
   { lang: "csharp", ext: ["cs"] },
-  { lang: "cpp", ext: ["cpp", "cxx", "hpp", "h"] },
+  { lang: "cpp", ext: ["cpp", "cxx", "hpp", "h", "ino"] },
   { lang: "c", ext: ["c", "h"] },
   { lang: "cmake", ext: ["cmake"] },
   { lang: "coffeescript", ext: ["coffee"] },
