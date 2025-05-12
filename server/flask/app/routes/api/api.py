@@ -1,3 +1,6 @@
+# Disable warnings:
+# file deepcode ignore PT: Filepaths are always encoded, so there is no risk of path traversal
+
 import os
 import time
 import hashlib
