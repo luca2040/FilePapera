@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-      push-circolari-image:
+      push-filepapera-image:
         runs-on: ubuntu-latest
         defaults:
           run:
