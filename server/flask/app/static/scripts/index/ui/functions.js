@@ -934,17 +934,7 @@ function uploadButtons(filepath) {
       modal.style.display = "none";
     };
 
-    newNameInput.addEventListener("input", () => {
-      newNameInput.value = newNameInput.value.replace(
-        /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
-        "_"
-      );
-      errorMessage.style.display = "none";
-    });
-
-    newNameInput.value = "";
-
-    saveButton.onclick = async () => {
+    const onSaveClicked = async () => {
       const response = await createFolder(filepath, newNameInput.value);
 
       if (response.ok) {
@@ -975,7 +965,29 @@ function uploadButtons(filepath) {
       }
     };
 
+    newNameInput.addEventListener("input", () => {
+      newNameInput.value = newNameInput.value.replace(
+        /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
+        "_"
+      );
+      errorMessage.style.display = "none";
+    });
+
+    newNameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        onSaveClicked();
+      }
+    });
+
+    newNameInput.value = "";
+
+    saveButton.onclick = () => {
+      onSaveClicked();
+    };
+
     modal.style.display = "flex";
+
+    newNameInput.focus();
   };
 
   const fileIconContainer = document.createElement("span");
