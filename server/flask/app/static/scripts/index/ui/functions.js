@@ -507,14 +507,6 @@ function generateFilesHTML(filesJson) {
       renameInput.placeholder = element["name"];
       renameInput.value = element["name"];
 
-      renameInput.addEventListener("input", () => {
-        renameInput.value = renameInput.value.replace(
-          /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
-          "_"
-        );
-        errorElement.style.display = "none";
-      });
-
       const onSaveClicked = async () => {
         const elementDividedPath = element["path"].split("/");
         elementDividedPath[elementDividedPath.length - 1] = renameInput.value
@@ -559,11 +551,19 @@ function generateFilesHTML(filesJson) {
         }
       };
 
-      renameInput.addEventListener('keydown', (event) => {
+      renameInput.oninput = () => {
+        renameInput.value = renameInput.value.replace(
+          /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
+          "_"
+        );
+        errorElement.style.display = "none";
+      };
+
+      renameInput.onkeydown = (event) => {
         if (event.key === 'Enter') {
           onSaveClicked();
         }
-      });
+      };
 
       errorElement.style.display = "none";
 
@@ -965,19 +965,19 @@ function uploadButtons(filepath) {
       }
     };
 
-    newNameInput.addEventListener("input", () => {
+    newNameInput.oninput = () => {
       newNameInput.value = newNameInput.value.replace(
         /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
         "_"
       );
       errorMessage.style.display = "none";
-    });
+    };
 
-    newNameInput.addEventListener('keydown', (event) => {
+    newNameInput.onkeydown = (event) => {
       if (event.key === 'Enter') {
         onSaveClicked();
       }
-    });
+    };
 
     newNameInput.value = "";
 
