@@ -515,23 +515,7 @@ function generateFilesHTML(filesJson) {
         errorElement.style.display = "none";
       });
 
-      errorElement.style.display = "none";
-
-      const closeModal = () => {
-        toggleLinkAttribute("modalOpen", false);
-        modal.style.display = "none";
-      };
-
-      modal.onclick = (event) => {
-        if (event.target === modal) {
-          closeModal();
-        }
-      };
-      closeButton.onclick = () => {
-        closeModal();
-      };
-
-      saveButton.onclick = async () => {
+      const onSaveClicked = async () => {
         const elementDividedPath = element["path"].split("/");
         elementDividedPath[elementDividedPath.length - 1] = renameInput.value
           ? renameInput.value
@@ -575,8 +559,36 @@ function generateFilesHTML(filesJson) {
         }
       };
 
+      renameInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          onSaveClicked();
+        }
+      });
+
+      errorElement.style.display = "none";
+
+      const closeModal = () => {
+        toggleLinkAttribute("modalOpen", false);
+        modal.style.display = "none";
+      };
+
+      modal.onclick = (event) => {
+        if (event.target === modal) {
+          closeModal();
+        }
+      };
+      closeButton.onclick = () => {
+        closeModal();
+      };
+
+      saveButton.onclick = () => {
+        onSaveClicked();
+      }
+
       toggleLinkAttribute("modalOpen", true);
       modal.style.display = "flex";
+
+      renameInput.focus();
     }
 
     renameButton.onclick = renameButtonClick;
