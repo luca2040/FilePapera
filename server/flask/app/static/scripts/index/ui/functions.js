@@ -507,31 +507,7 @@ function generateFilesHTML(filesJson) {
       renameInput.placeholder = element["name"];
       renameInput.value = element["name"];
 
-      renameInput.addEventListener("input", () => {
-        renameInput.value = renameInput.value.replace(
-          /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
-          "_"
-        );
-        errorElement.style.display = "none";
-      });
-
-      errorElement.style.display = "none";
-
-      const closeModal = () => {
-        toggleLinkAttribute("modalOpen", false);
-        modal.style.display = "none";
-      };
-
-      modal.onclick = (event) => {
-        if (event.target === modal) {
-          closeModal();
-        }
-      };
-      closeButton.onclick = () => {
-        closeModal();
-      };
-
-      saveButton.onclick = async () => {
+      const onSaveClicked = async () => {
         const elementDividedPath = element["path"].split("/");
         elementDividedPath[elementDividedPath.length - 1] = renameInput.value
           ? renameInput.value
@@ -575,8 +551,44 @@ function generateFilesHTML(filesJson) {
         }
       };
 
+      renameInput.oninput = () => {
+        renameInput.value = renameInput.value.replace(
+          /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
+          "_"
+        );
+        errorElement.style.display = "none";
+      };
+
+      renameInput.onkeydown = (event) => {
+        if (event.key === 'Enter') {
+          onSaveClicked();
+        }
+      };
+
+      errorElement.style.display = "none";
+
+      const closeModal = () => {
+        toggleLinkAttribute("modalOpen", false);
+        modal.style.display = "none";
+      };
+
+      modal.onclick = (event) => {
+        if (event.target === modal) {
+          closeModal();
+        }
+      };
+      closeButton.onclick = () => {
+        closeModal();
+      };
+
+      saveButton.onclick = () => {
+        onSaveClicked();
+      }
+
       toggleLinkAttribute("modalOpen", true);
       modal.style.display = "flex";
+
+      renameInput.focus();
     }
 
     renameButton.onclick = renameButtonClick;
@@ -922,17 +934,7 @@ function uploadButtons(filepath) {
       modal.style.display = "none";
     };
 
-    newNameInput.addEventListener("input", () => {
-      newNameInput.value = newNameInput.value.replace(
-        /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
-        "_"
-      );
-      errorMessage.style.display = "none";
-    });
-
-    newNameInput.value = "";
-
-    saveButton.onclick = async () => {
+    const onSaveClicked = async () => {
       const response = await createFolder(filepath, newNameInput.value);
 
       if (response.ok) {
@@ -963,7 +965,29 @@ function uploadButtons(filepath) {
       }
     };
 
+    newNameInput.oninput = () => {
+      newNameInput.value = newNameInput.value.replace(
+        /[^a-zA-Z0-9àèìòùÀÈÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜ._\-+@& ]/g,
+        "_"
+      );
+      errorMessage.style.display = "none";
+    };
+
+    newNameInput.onkeydown = (event) => {
+      if (event.key === 'Enter') {
+        onSaveClicked();
+      }
+    };
+
+    newNameInput.value = "";
+
+    saveButton.onclick = () => {
+      onSaveClicked();
+    };
+
     modal.style.display = "flex";
+
+    newNameInput.focus();
   };
 
   const fileIconContainer = document.createElement("span");
