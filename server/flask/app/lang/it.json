@@ -34,5 +34,6 @@
   "cancel_label": "Annulla",
   "overwrite_label": "Sovrascrivi",
   "unvalid_folder_name": "Nome cartella non valido",
-  "folder_already_exists": "Cartella già esistente"
+  "folder_already_exists": "Cartella già esistente",
+  "files_already_there": "File già presenti"
 }
