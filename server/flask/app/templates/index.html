@@ -12,6 +12,9 @@
     {% endassets %} {% assets "external_scripts" %}
     <script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
+    <script>
+      const TRANSLATIONS = {{ translations | tojson | safe }};
+    </script>
   </head>
   <body>
     <div class="container">
