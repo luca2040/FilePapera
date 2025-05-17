@@ -32,7 +32,13 @@
           >
             {% for category, message in messages %}
             <span class="path-separator {{ category }}">{{ message }}</span>
-            {% endfor %}
+            {% if category == "error" %}
+            <span class="path-separator {{ category }}">
+              {{ translations["wrong_credentials_html"] }}
+            </span>
+            {% else %}
+            <span class="path-separator {{ category }}"> {{ message }} </span>
+            {% endif %} {% endfor %}
           </div>
           {% endif %} {% endwith %}
           <form method="POST">

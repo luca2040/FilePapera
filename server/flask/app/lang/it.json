@@ -6,6 +6,7 @@
   "username_input_html": "Utente:",
   "password_input_html": "Password:",
   "login_confirm_button_html": "Accedi",
+  "wrong_credentials_html": "Credenziali errate",
   "menu_button_html": "☰ Menu",
   "ok_button_html": "OK",
   "cancel_button_html": "Annulla",

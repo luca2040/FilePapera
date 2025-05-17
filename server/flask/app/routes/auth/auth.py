@@ -26,7 +26,7 @@ def login():
             session["logged_in"] = True
             return redirect("/index")
         else:
-            flash("Credenziali errate", "error")
+            flash("Wrong credentials", "error")
 
     return render_template("login.html")
 
