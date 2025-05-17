@@ -21,7 +21,7 @@ class Translations:
 
     def available_langs(self):
         """Returns a list of available langs"""
-        return self.translations.keys()
+        return list(self.translations.keys())
 
     def get(self, lang: str):
         """Returns the specified lang dict"""
