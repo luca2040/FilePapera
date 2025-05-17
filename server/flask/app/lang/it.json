@@ -1,6 +1,11 @@
 {
   "title_html": "FilePapera",
+  "title_html_login": "FilePapera Login",
   "logout_html": "Logout",
+  "login_html": "Login",
+  "username_input_html": "Utente:",
+  "password_input_html": "Password:",
+  "login_confirm_button_html": "Accedi",
   "menu_button_html": "☰ Menu",
   "ok_button_html": "OK",
   "cancel_button_html": "Annulla",
