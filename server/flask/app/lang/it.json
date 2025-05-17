@@ -1,0 +1,11 @@
+{
+  "title_html": "FilePapera",
+  "logout_html": "Logout",
+  "menu_button_html": "☰ Menu",
+  "ok_button_html": "OK",
+  "cancel_button_html": "Annulla",
+  "close_button_html": "Chiudi",
+  "upload_file_html": "Carica file",
+  "upload_folder_html": "Carica cartella",
+  "create_folder_html": "Crea cartella"
+}
