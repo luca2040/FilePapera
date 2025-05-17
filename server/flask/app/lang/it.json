@@ -29,6 +29,7 @@
   "element_already_named": "Elemento con stesso nome già presente",
   "server_error": "Errore del server",
   "problem_occurred": "Si è verificato un problema:",
+  "error": "Errore:",
   "menu_label": "Menu",
   "cancel_label": "Annulla",
   "overwrite_label": "Sovrascrivi",

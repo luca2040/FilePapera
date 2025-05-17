@@ -7,7 +7,7 @@ async function getStorage() {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      const errorText = `Errore: ${response.status} - ${response.statusText}`;
+      const errorText = `${TRANSLATIONS.error} ${response.status} - ${response.statusText}`;
       alert(errorText);
       window.location.reload();
       return;
@@ -15,7 +15,7 @@ async function getStorage() {
     const data = await response.json();
     return data;
   } catch (error) {
-    alert(`Si è verificato un problema: ${error.message}`);
+    alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
     window.location.reload();
   }
 
@@ -33,7 +33,7 @@ async function reformatRequest(old_path, new_path) {
     const response = await fetch(url);
     return response;
   } catch (error) {
-    alert(`Si è verificato un problema: ${error.message}`);
+    alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
     window.location.reload();
   }
 
@@ -47,7 +47,7 @@ async function deleteElement(path) {
   try {
     const response = await fetch(url, { method: "DELETE" });
     if (!response.ok) {
-      const errorText = `Errore: ${response.status} - ${response.statusText}`;
+      const errorText = `${TRANSLATIONS.error} ${response.status} - ${response.statusText}`;
       alert(errorText);
       window.location.reload();
       return;
@@ -55,7 +55,7 @@ async function deleteElement(path) {
     const data = await response.json();
     return data;
   } catch (error) {
-    alert(`Si è verificato un problema: ${error.message}`);
+    alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
     window.location.reload();
   }
 
@@ -72,7 +72,7 @@ async function createFolder(basePath, name) {
     const response = await fetch(url, { method: "POST" });
     return response;
   } catch (error) {
-    alert(`Si è verificato un problema: ${error.message}`);
+    alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
     window.location.reload();
   }
 
@@ -101,7 +101,7 @@ async function getAvailableFiles(query) {
     });
     return response;
   } catch (error) {
-    alert(`Si è verificato un problema: ${error.message}`);
+    alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
     window.location.reload();
   }
 
@@ -123,7 +123,7 @@ async function loadFileList(filePath) {
     const data = await response.json();
     return data;
   } catch (error) {
-    alert(`Si è verificato un problema: ${error.message}`);
+    alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
     window.location.reload();
   }
 
@@ -135,7 +135,7 @@ async function fetchText(path) {
   const response = await fetch(path);
 
   if (response.status !== 200) {
-    alert("Errore durante la richiesta");
+    alert(TRANSLATIONS.error_during_request);
     window.location.reload();
   }
 
