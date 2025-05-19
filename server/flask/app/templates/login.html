@@ -34,7 +34,6 @@
             style="background-color: var(--bg-dark)"
           >
             {% for category, message in messages %}
-            <span class="path-separator {{ category }}">{{ message }}</span>
             {% if category == "error" %}
             <span class="path-separator {{ category }}">
               {{ translations["wrong_credentials_html"] }}
