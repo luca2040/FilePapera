@@ -88,12 +88,12 @@ async function updateUploadElement(elementToProcess) {
 
         resolve(result);
       } else {
-        reject(new Error(`Upload failed: ${xhr.statusText}`));
+        reject(new Error(`${TRANSLATIONS.upload_failed} ${xhr.statusText}`));
       }
     };
 
     xhr.onerror = () => {
-      reject(new Error("Network error"));
+      reject(new Error(TRANSLATIONS.network_error));
     };
 
     xhr.send(formData);
@@ -102,7 +102,7 @@ async function updateUploadElement(elementToProcess) {
   try {
     await uploadPromise;
   } catch (error) {
-    alert("Error uploading file");
+    alert(TRANSLATIONS.error_uploading_file);
     window.location.reload();
   }
 }
@@ -173,7 +173,7 @@ async function onFileSelect(filepath, event, files_) {
         const fileTitleDiv = document.createElement("div");
         fileTitleDiv.className =
           "file-name no-text-select storageerror add-error-icon no-margin";
-        fileTitleDiv.innerHTML = "Memoria esaurita";
+        fileTitleDiv.innerHTML = TRANSLATIONS.no_storage_left;
 
         storageErrorDiv.appendChild(fileTitleDiv);
 
@@ -212,12 +212,12 @@ async function onFileSelect(filepath, event, files_) {
         }
       }
     } else {
-      alert("Errore durante la preparazione al caricamento dei file");
+      alert(TRANSLATIONS.error_preparing_file_upload);
       window.location.reload();
     }
   } catch (error) {
     alert(
-      "Errore durante la preparazione al caricamento dei file: " + error.message
+      `${TRANSLATIONS.error_preparing_file_upload}: ${error.message}`
     );
     window.location.reload();
   }
@@ -247,7 +247,7 @@ function readWebKitEntry(item, path = "") {
             resolve(results.flat());
           })
           .catch((err) => {
-            alert("Errore durante la lettura del file.");
+            alert(TRANSLATIONS.error_reading_file);
             window.location.reload();
             reject(err);
           });
@@ -282,7 +282,7 @@ async function uploadFilesFromDragEvent(event, filepath) {
 
 // Sets before unload to warn user if still uploading files
 window.addEventListener("beforeunload", function (e) {
-  var message = "Il caricamento in corso dei file verrà annullato, continuare?";
+  var message = TRANSLATIONS.page_reload_confirm;
 
   if (uploadingFiles) {
     e.preventDefault();

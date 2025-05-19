@@ -35,5 +35,15 @@
   "overwrite_label": "Sovrascrivi",
   "unvalid_folder_name": "Nome cartella non valido",
   "folder_already_exists": "Cartella già esistente",
-  "files_already_there": "File già presenti"
+  "files_already_there": "File già presenti",
+  "error_loading_file": "Errore durante il caricamento del file.",
+  "error_loading_image": "Errore nel caricamento dell'immagine.",
+  "error_loading_pdf": "Errore durante il caricamento del file PDF.",
+  "upload_failed": "Caricamento fallito:",
+  "error_uploading_file": "Errore durante il caricamento del file",
+  "network_error": "Errore di rete",
+  "no_storage_left": "Spazio di archiviazione esaurito",
+  "error_preparing_file_upload": "Errore durante la preparazione al caricamento dei file",
+  "error_reading_file": "Errore durante la lettura del file.",
+  "page_reload_confirm": "Il caricamento in corso dei file verrà annullato, continuare?"
 }
