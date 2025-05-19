@@ -342,6 +342,7 @@ body {
   background-color: var(--error-not-found);
   border: 2px solid var(--error-not-found);
 }
+
 /* SCROLLBARS */
 
 .scrollable::-webkit-scrollbar {
@@ -356,6 +357,11 @@ body {
 .scrollable::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
   border-radius: var(--scrollbars-height);
+}
+
+.scrollable {
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+  scrollbar-width: thin;
 }
 
 /* STORAGE BAR */
@@ -888,6 +894,7 @@ div[selected] {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
