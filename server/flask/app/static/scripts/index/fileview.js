@@ -107,6 +107,15 @@ function getFileViewElement(extension, lang, path, element) {
     return loaderContainer;
   };
 
+  const escapeHtml = (text) =>
+    text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+
   const displayContent = (content, loaderContainer, markdown) => {
     loaderContainer.style.display = "none";
 
@@ -115,7 +124,7 @@ function getFileViewElement(extension, lang, path, element) {
         ? marked.parse(`\`\`\`${lang}\n${content}\n\`\`\``)
         : markdown
           ? marked.parse(content)
-          : content.replace(/\n/g, "<br/>")
+          : escapeHtml(content).replace(/\n/g, "<br/>")
     );
 
     hljs.highlightAll();
