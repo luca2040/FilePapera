@@ -50,7 +50,7 @@ document.addEventListener("keydown", (event) => {
     const cancelButton = document.getElementById("delete-file-cancel");
     const deleteName = document.getElementById("delete-file-name");
 
-    modalTitle.innerHTML = "Elimina";
+    modalTitle.innerHTML = TRANSLATIONS.delete_label;
     deleteName.innerHTML = "";
 
     cancelButton.style.display = "inline-block";

@@ -24,11 +24,20 @@ def login():
         ):
 
             session["logged_in"] = True
+
+            # [TODO] Need to change only this for multi user, it defaults to this if lang is not in url parameters
+            session["lang"] = current_app.config["DEFAULT_LANG"]
+
             return redirect("/index")
         else:
-            flash("Credenziali errate", "error")
+            flash("Wrong credentials", "error")
 
-    return render_template("login.html")
+    translations_obj = current_app.config["TRANSLATIONS_OBJ"]
+    lang = request.args.get(
+        "lang",
+        session["lang"] if session.get("lang") else current_app.config["DEFAULT_LANG"],
+    )
+    return render_template("login.html", translations=translations_obj.get(lang))
 
 
 @bp.route("/logout")

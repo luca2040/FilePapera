@@ -131,7 +131,7 @@ function getFileViewElement(extension, lang, path, element) {
           resolve();
         })
         .catch((err) => {
-          alert("Errore durante il caricamento del file.");
+          alert(TRANSLATIONS.error_loading_file);
           window.location.reload();
           reject(err);
         });
@@ -174,7 +174,7 @@ function getFileViewElement(extension, lang, path, element) {
 
       imageElement.onerror = () => {
         loaderContainer.style.display = "none";
-        element.innerText = "Errore nel caricamento dell'immagine.";
+        element.innerText = TRANSLATIONS.error_loading_image;
       };
 
       element.appendChild(imageElement);
@@ -193,7 +193,7 @@ function getFileViewElement(extension, lang, path, element) {
 
       pdfElement.onerror = () => {
         loaderContainer.style.display = "none";
-        element.innerText = "Errore durante il caricamento del file PDF.";
+        element.innerText = TRANSLATIONS.error_loading_pdf;
       };
 
       element.appendChild(pdfElement);

@@ -1,4 +1,11 @@
-from flask import render_template, redirect, send_from_directory
+from flask import (
+    render_template,
+    redirect,
+    send_from_directory,
+    current_app,
+    request,
+    session,
+)
 
 from .auth.auth_utils import login_required
 
@@ -17,7 +24,16 @@ def register_routes(app):
     @app.route("/index")
     @login_required()
     def index_html():
-        return render_template("index.html")
+        translations_obj = current_app.config["TRANSLATIONS_OBJ"]
+        lang = request.args.get(
+            "lang",
+            (
+                session["lang"]
+                if session.get("lang")
+                else current_app.config["DEFAULT_LANG"]
+            ),
+        )
+        return render_template("index.html", translations=translations_obj.get(lang))
 
     @app.route("/favicon.ico")
     def favicon():

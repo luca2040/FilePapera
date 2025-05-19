@@ -3,28 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FilePapera Login</title>
+    <title>{{ translations["title_html_login"] }}</title>
     <link rel="icon" href="favicon.ico" />
     {% assets "main_styles" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}" />
     {% endassets %} {% assets "external_styles" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}" />
     {% endassets %}
+    <script>
+      const TRANSLATIONS = {{ translations | tojson | safe }};
+    </script>
   </head>
   <body>
     <div class="main-inner">
       <div class="titlebar">
         <div class="title-container">
-          <img
-            src="{{ url_for('static', filename='icons/name_icon.png') }}"
-            alt="FilePapera"
-            class="title-icon"
-          />
+          <img src="{{ url_for('static', filename='icons/name_icon.png') }}"
+          alt="{{ translations["title_html"] }}" class="title-icon" />
         </div>
       </div>
       <div class="modal-background transparent">
         <div class="login-modal">
-          <div class="modal-title" style="margin-bottom: 20px">Login</div>
+          <div class="modal-title" style="margin-bottom: 20px">
+            {{ translations["login_html"] }}
+          </div>
           {% with messages = get_flashed_messages(with_categories=true) %} {% if
           messages %}
           <div
@@ -32,12 +34,19 @@
             style="background-color: var(--bg-dark)"
           >
             {% for category, message in messages %}
-            <span class="path-separator {{ category }}">{{ message }}</span>
-            {% endfor %}
+            {% if category == "error" %}
+            <span class="path-separator {{ category }}">
+              {{ translations["wrong_credentials_html"] }}
+            </span>
+            {% else %}
+            <span class="path-separator {{ category }}"> {{ message }} </span>
+            {% endif %} {% endfor %}
           </div>
           {% endif %} {% endwith %}
           <form method="POST">
-            <label for="username" class="file-name">Utente:</label>
+            <label for="username" class="file-name"
+              >{{ translations["username_input_html"] }}</label
+            >
             <input
               type="text"
               name="username"
@@ -45,7 +54,9 @@
               style="margin-bottom: 10px"
               required=""
             />
-            <label for="password" class="file-name">Password:</label>
+            <label for="password" class="file-name"
+              >{{ translations["password_input_html"] }}</label
+            >
             <div class="password-container">
               <input
                 type="password"
@@ -62,7 +73,9 @@
                 <i class="fa-solid fa-eye"></i>
               </button>
             </div>
-            <input type="submit" value="Accedi" class="modal-save-button" />
+            <input type="submit" value="{{
+            translations["login_confirm_button_html"] }}"
+            class="modal-save-button" />
           </form>
         </div>
       </div>

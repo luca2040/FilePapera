@@ -1,6 +1,7 @@
 import os
 from flask import Flask
 from .utils.FilenameEncoder import FilenameEncoder
+from .utils.Translations import Translations
 
 
 def create_app():
@@ -17,7 +18,10 @@ def create_app():
     app.config["FILENAME_ENCODER"] = FilenameEncoder(app.config["UPLOAD_FOLDER"])
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-    # Sockets(app)
+    translations_obj = Translations("./app/lang", app.config["DEFAULT_LANG"])
+    translations_obj.load()
+
+    app.config["TRANSLATIONS_OBJ"] = translations_obj
 
     compile_assets(app)
 

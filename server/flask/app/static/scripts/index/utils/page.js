@@ -163,7 +163,7 @@ async function moveSelectedTo(newPath) {
 
         errors.push({ name: name, path: path, type: responseType });
       } catch (error) {
-        alert(`Si è verificato un problema: ${error.message}`);
+        alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
         window.location.reload();
       }
     }
@@ -180,13 +180,13 @@ async function moveSelectedTo(newPath) {
         break;
       // Other errors should not happen, so it is useless to make a UI for them.
       case 1:
-        console.log("Request error", elementError.name);
+        console.log(TRANSLATIONS.error_during_request, elementError.name);
         break;
       case 2:
-        console.log("File not found", elementError.name);
+        console.log(TRANSLATIONS.file_not_found, elementError.name);
         break;
       default:
-        console.log("Server error", elementError.name);
+        console.log(TRANSLATIONS.server_error, elementError.name);
         break;
     }
   }
@@ -199,7 +199,7 @@ async function moveSelectedTo(newPath) {
     const cancelButton = document.getElementById("delete-file-cancel");
     const deleteName = document.getElementById("delete-file-name");
 
-    modalTitle.innerHTML = "File già presenti";
+    modalTitle.innerHTML = TRANSLATIONS.files_already_there;
     deleteName.innerHTML = "";
 
     cancelButton.style.display = "none";

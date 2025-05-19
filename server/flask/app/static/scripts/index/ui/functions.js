@@ -208,7 +208,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   if (pathNotFound) {
     const rootSeparatorSpan = document.createElement("span");
     rootSeparatorSpan.className = "path-separator error";
-    rootSeparatorSpan.textContent = "Percorso non trovato";
+    rootSeparatorSpan.textContent = TRANSLATIONS.path_not_found;
     pathInfoDiv.appendChild(rootSeparatorSpan);
   } else {
     const rootSpan = document.createElement("span");
@@ -471,7 +471,7 @@ function generateFilesHTML(filesJson) {
 
     const downloadButton = document.createElement("button");
     downloadButton.className = "file-action-button";
-    downloadButton.ariaLabel = "Download";
+    downloadButton.ariaLabel = TRANSLATIONS.download_label;
 
     downloadButton.onclick = () => {
       downloadFile(element["path"]);
@@ -491,7 +491,7 @@ function generateFilesHTML(filesJson) {
 
     const renameButton = document.createElement("button");
     renameButton.className = "file-action-button";
-    renameButton.ariaLabel = "Rinomina";
+    renameButton.ariaLabel = TRANSLATIONS.rename_label;
 
     function renameButtonClick() {
       const modal = document.getElementById("file-rename-modal");
@@ -502,8 +502,8 @@ function generateFilesHTML(filesJson) {
       const errorElement = document.getElementById("file-rename-error");
 
       modalTitle.innerHTML = element["file"]
-        ? "Rinomina file"
-        : "Rinomina cartella";
+        ? TRANSLATIONS.rename_file
+        : TRANSLATIONS.rename_folder;
       renameInput.placeholder = element["name"];
       renameInput.value = element["name"];
 
@@ -529,23 +529,22 @@ function generateFilesHTML(filesJson) {
 
             switch (responseType) {
               case 1:
-                errorElement.innerHTML = "Errore durante la richiesta";
+                errorElement.innerHTML = TRANSLATIONS.error_during_request;
                 break;
               case 2:
-                errorElement.innerHTML = "File non trovato";
+                errorElement.innerHTML = TRANSLATIONS.file_not_found;
                 break;
               case 3:
-                errorElement.innerHTML =
-                  "Elemento con stesso nome già presente";
+                errorElement.innerHTML = TRANSLATIONS.element_already_named;
                 break;
               default:
-                errorElement.innerHTML = "Errore del server";
+                errorElement.innerHTML = TRANSLATIONS.server_error;
                 break;
             }
 
             errorElement.style.display = "block";
           } catch (error) {
-            alert(`Si è verificato un problema: ${error.message}`);
+            alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
             window.location.reload();
           }
         }
@@ -605,7 +604,7 @@ function generateFilesHTML(filesJson) {
 
     const deleteButton = document.createElement("button");
     deleteButton.className = "file-action-button";
-    deleteButton.ariaLabel = "Elimina";
+    deleteButton.ariaLabel = TRANSLATIONS.delete_label;
 
     function deleteButtonClick() {
       const modal = document.getElementById("delete-file-modal");
@@ -616,8 +615,8 @@ function generateFilesHTML(filesJson) {
       const deleteName = document.getElementById("delete-file-name");
 
       modalTitle.innerHTML = element["file"]
-        ? "Elimina file"
-        : "Elimina cartella";
+        ? TRANSLATIONS.delete_file
+        : TRANSLATIONS.delete_folder;
 
       const nameTag = document.createElement("div");
       nameTag.className = "file-container modal-upload";
@@ -668,7 +667,7 @@ function generateFilesHTML(filesJson) {
 
     const openDropdown = document.createElement("button");
     openDropdown.className = "file-action-button";
-    openDropdown.ariaLabel = "Menu";
+    openDropdown.ariaLabel = TRANSLATIONS.menu_label;
 
     const openDropdownIcon = document.createElement("i");
     openDropdownIcon.className = "fa fa-bars";
@@ -782,7 +781,7 @@ function documentDisplayFileList() {
       const cancelButton = document.createElement("button");
       cancelButton.className = "file-action-button cancel-files-colored";
       cancelButton.id = "cancel-file-button";
-      cancelButton.ariaLabel = "Annulla";
+      cancelButton.ariaLabel = TRANSLATIONS.cancel_label;
 
       cancelButton.onclick = () => {
         removeFilesElementById(file.id);
@@ -800,7 +799,7 @@ function documentDisplayFileList() {
       const reloadButton = document.createElement("button");
       reloadButton.className = "file-action-button replace-files-colored";
       reloadButton.id = "replace-file-button";
-      reloadButton.ariaLabel = "Sovrascrivi";
+      reloadButton.ariaLabel = TRANSLATIONS.overwrite_label;
 
       reloadButton.onclick = () => {
         const index = filesToProcessList.findIndex(
@@ -947,19 +946,19 @@ function uploadButtons(filepath) {
 
           switch (responseType) {
             case 1:
-              errorMessage.innerHTML = "Nome cartella non valido";
+              errorMessage.innerHTML = TRANSLATIONS.unvalid_folder_name;
               break;
             case 2:
-              errorMessage.innerHTML = "Cartella già esistente";
+              errorMessage.innerHTML = TRANSLATIONS.folder_already_exists;
               break;
             default:
-              errorMessage.innerHTML = "Errore del server";
+              errorMessage.innerHTML = TRANSLATIONS.server_error;
               break;
           }
 
           errorMessage.style.display = "block";
         } catch (error) {
-          alert(`Si è verificato un problema: ${error.message}`);
+          alert(`${TRANSLATIONS.problem_occurred} ${error.message}`);
           window.location.reload();
         }
       }
@@ -1003,8 +1002,8 @@ function uploadButtons(filepath) {
 
   const newFileNameSpan = document.createElement("span");
   const newFolderNameSpan = document.createElement("span");
-  newFileNameSpan.innerHTML = "Carica file";
-  newFolderNameSpan.innerHTML = "Crea cartella";
+  newFileNameSpan.innerHTML = TRANSLATIONS.upload_file;
+  newFolderNameSpan.innerHTML = TRANSLATIONS.create_folder;
 
   uploadFileButton.appendChild(fileIconContainer);
   newFolderButton.appendChild(folderIconContainer);

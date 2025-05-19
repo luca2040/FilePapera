@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FilePapera</title>
+    <title>{{ translations["title_html"] }}</title>
     <link rel="icon" href="favicon.ico" />
     {% assets "main_styles" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}" />
@@ -12,22 +12,26 @@
     {% endassets %} {% assets "external_scripts" %}
     <script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
+    <script>
+      const TRANSLATIONS = {{ translations | tojson | safe }};
+    </script>
   </head>
   <body>
     <div class="container">
       <div class="titlebar">
-        <button class="menu-btn" onclick="toggleSidebar()">☰ Menu</button>
+        <button class="menu-btn" onclick="toggleSidebar()">
+          {{ translations["menu_button_html"] }}
+        </button>
         <div class="title-container">
-          <img
-            src="{{ url_for('static', filename='icons/name_icon.png') }}"
-            alt="FilePapera"
-            class="title-icon"
-          />
+          <img src="{{ url_for('static', filename='icons/name_icon.png') }}"
+          alt="{{ translations["title_html"] }}" class="title-icon" />
         </div>
       </div>
 
       <div class="sidebar">
-        <a href="/logout" style="color: var(--light-text)">Logout</a>
+        <a href="/logout" style="color: var(--light-text)"
+          >{{ translations["logout_html"] }}</a
+        >
 
         <div class="separator"></div>
 
@@ -80,7 +84,9 @@
           id="file-rename-error"
         ></div>
         <input class="rename-modal-input" id="file-rename-input" />
-        <button class="modal-save-button" id="file-rename-save">Ok</button>
+        <button class="modal-save-button" id="file-rename-save">
+          {{ translations["ok_button_html"] }}
+        </button>
       </div>
     </div>
 
@@ -96,10 +102,10 @@
         <div class="files modal-upload scrollable" id="delete-file-name"></div>
         <div style="align-items: left">
           <button class="modal-save-button delete-ok" id="delete-file-save">
-            Ok
+            {{ translations["ok_button_html"] }}
           </button>
           <button class="modal-save-button" id="delete-file-cancel">
-            Annulla
+            {{ translations["cancel_button_html"] }}
           </button>
         </div>
       </div>
@@ -108,7 +114,7 @@
     <div class="modal-background" id="upload-file-modal">
       <div class="upload-modal scrollable">
         <div class="modal-header">
-          <div class="modal-title">Carica file</div>
+          <div class="modal-title">{{ translations["upload_file_html"] }}</div>
           <button
             class="file-action-button modal-close-button"
             id="upload-file-close"
@@ -121,7 +127,7 @@
             class="upload-file file-input"
             id="file-selection-input-button"
           >
-            Carica file
+            {{ translations["upload_file_html"] }}
           </button>
           <input
             type="file"
@@ -134,7 +140,7 @@
             class="upload-folder file-input"
             id="folder-selection-input-button"
           >
-            Carica cartella
+            {{ translations["upload_folder_html"] }}
           </button>
           <input
             type="file"
@@ -156,7 +162,7 @@
 
         <div style="align-items: left">
           <button class="modal-save-button" id="upload-file-cancel">
-            Chiudi
+            {{ translations["close_button_html"] }}
           </button>
         </div>
       </div>
@@ -165,7 +171,9 @@
     <div class="modal-background" id="folder-create-modal">
       <div class="rename-modal">
         <div class="modal-header">
-          <div class="modal-title">Crea cartella</div>
+          <div class="modal-title">
+            {{ translations["create_folder_html"] }}
+          </div>
           <button
             class="file-action-button modal-close-button"
             id="folder-create-close"
@@ -177,7 +185,9 @@
           id="folder-create-error"
         ></div>
         <input class="rename-modal-input" id="folder-create-input" />
-        <button class="modal-save-button" id="folder-create-save">Ok</button>
+        <button class="modal-save-button" id="folder-create-save">
+          {{ translations["ok_button_html"] }}
+        </button>
       </div>
     </div>
 
