@@ -831,6 +831,11 @@ div[selected] {
   overflow-y: auto !important;
 }
 
+.y-image {
+  height: 100vh;
+  overflow-y: auto !important;
+}
+
 .nx {
   overflow: hidden !important;
   width: 100vh;

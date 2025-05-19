@@ -40,7 +40,7 @@ function handleFileOpenExtension(element, extension, size, path, filename) {
     case "webp":
     case "ico":
       if (size > MAX_IMAGE_FILE_SIZE) return;
-      addClasses = " y";
+      addClasses = " y-image";
       break;
 
     case "pdf":
@@ -114,7 +114,6 @@ function getFileViewElement(extension, lang, path, element) {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
-
 
   const displayContent = (content, loaderContainer, markdown) => {
     loaderContainer.style.display = "none";
