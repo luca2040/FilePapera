@@ -4,7 +4,7 @@ function formatFileSize(bytes) {
   if (bytes === 0) return `0 ${sizes[0]}`;
   let i = Math.min(3, Math.floor(Math.log(bytes) / Math.log(1024)));
   let fileSize = bytes / Math.pow(1024, i);
-  return fileSize.toFixed(2) + " " + sizes[i];
+  return fileSize.toFixed(2) + "&nbsp;" + sizes[i];
 }
 
 // Updates the storage indicator bar with the current data, fetched from server
@@ -305,6 +305,24 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   return containerDiv;
 }
 
+// Animates the change in the sort text
+function changeSortText(newText) {
+  const span = document.getElementById("sort-value-text");
+
+  span.classList.add("animate-out");
+
+  setTimeout(() => {
+    span.textContent = newText;
+
+    span.classList.remove("animate-out");
+    span.classList.add("animate-in");
+
+    setTimeout(() => {
+      span.classList.remove("animate-in");
+    }, 150); // Same time as css
+  }, 150); // Same time as css
+}
+
 // Returns the html element for the sort button after the path bar
 function generateSortButtonHTML() {
   const containerDiv = document.createElement("div");
@@ -317,9 +335,34 @@ function generateSortButtonHTML() {
   sortTag.className = "sort-span";
   sortTag.innerText = "Sort by:";
 
+  const fileviewOrder = getFileViewOrder();
+  const actualSort = fileviewOrder.sort;
+  const actualOrder = fileviewOrder.order;
+
+  // Possible options:
+  const sortPossibilities = [
+    "name", // 0: sort by name
+    "date", // 1: sort by date
+    "size" // 2: sort by size
+  ];
+
   const sortValue = document.createElement("span");
   sortValue.className = "sort-span value";
-  sortValue.innerText = "name";
+  sortValue.id = "sort-value-text";
+  sortValue.innerText = sortPossibilities[actualSort];
+
+  sortButton.onclick = () => {
+    const fileOrderResult = getFileViewOrder();
+    var sortBy_local = fileOrderResult.sort;
+    var viewOrder_local = fileOrderResult.order;
+
+    sortBy_local++;
+    if (sortBy_local >= sortPossibilities.length) sortBy_local = 0;
+
+    changeSortText(sortPossibilities[sortBy_local]);
+
+    setFileViewOrder(sortBy_local, viewOrder_local);
+  };
 
   sortButton.appendChild(sortTag);
   sortButton.appendChild(sortValue);
@@ -330,7 +373,7 @@ function generateSortButtonHTML() {
   const orderIcon = document.createElement("i");
   orderIcon.className = "fa-solid fa-arrow-up transition-transform";
 
-  orderButton.style.transform = getFileViewOrder().order ? "" : "rotate(180deg)";
+  orderButton.style.transform = actualOrder ? "" : "rotate(180deg)";
 
   orderButton.onclick = () => {
     const fileOrderResult = getFileViewOrder();
@@ -801,9 +844,17 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
   main_files_div.innerHTML = "";
   main_files_div.appendChild(titlePath);
   main_files_div.appendChild(sortButtonElement);
+
+  const completeFileListContainer = document.createElement("div");
+  completeFileListContainer.className = "all-files-container";
+  completeFileListContainer.id = "all-files-container";
+
   filesList.forEach((element, index) => {
-    main_files_div.appendChild(element);
+    completeFileListContainer.appendChild(element);
+    // main_files_div.appendChild(element);
   });
+
+  main_files_div.appendChild(completeFileListContainer);
 
   // Set drag and drop files
 

@@ -420,6 +420,7 @@ body {
 
 /* FILES */
 
+.all-files-container,
 .files {
   display: flex;
   flex-direction: column;
@@ -681,6 +682,21 @@ span.sort-span.value {
   text-overflow: ellipsis;
   word-break: break-word;
   white-space: normal;
+}
+
+#sort-value-text {
+  display: inline-block;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+#sort-value-text.animate-out {
+  transform: translateY(-100%) scaleY(0.8);
+  opacity: 0;
+}
+
+#sort-value-text.animate-in {
+  transform: translateY(0%) scaleY(1);
+  opacity: 1;
 }
 
 .sort-button-container {
