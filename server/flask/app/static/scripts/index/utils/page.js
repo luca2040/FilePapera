@@ -23,6 +23,49 @@ function setPagePath(path) {
   history.pushState(null, "", newUrl);
 }
 
+// Gets the file view order in the url, if not present creates it
+function getFileViewOrder() {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  // Possible options:
+  // 0: sort by name
+  // 1: sort by date
+  // 2: sort by size
+  const defaultSort = 0;
+
+  // Possible options:
+  // false: normal
+  // true: reversed
+  const defaultOrder = false;
+
+  if (!urlParams.has("sortBy")) urlParams.set("sortBy", defaultSort);
+  if (!urlParams.has("viewOrder")) urlParams.set("viewOrder", defaultOrder);
+
+  var sortBy = parseInt(urlParams.get("sortBy"), 10);
+  var viewOrder = urlParams.get("viewOrder") === "true";
+
+  if (sortBy < 0 || sortBy > 2 || isNaN(sortBy)) {
+    urlParams.set("sortBy", defaultSort);
+    sortBy = defaultSort;
+  }
+
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
+
+  return { sort: sortBy, order: viewOrder };
+}
+
+// Sets the file view order to change it
+function setFileViewOrder(sortBy, viewOrder) {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  urlParams.set("sortBy", sortBy);
+  urlParams.set("viewOrder", viewOrder ? "true" : "false");
+
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
+}
+
 // Based on shouldAdd, it removes or adds the given attribute to the url
 function toggleLinkAttribute(attrName, shouldAdd) {
   const urlParams = new URLSearchParams(window.location.search);

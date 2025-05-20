@@ -164,7 +164,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
 
   if (pathNotFound) {
     const returnButton = document.createElement("button");
-    returnButton.className = "upload-file file-path-return";
+    returnButton.className = "upload-file file-path-return no-margin-bottom";
     returnButton.style = "margin-right:10px;";
 
     const returnIcon = document.createElement("i");
@@ -180,7 +180,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
     returnDiv.appendChild(returnButton);
   } else if (filepath != "/" && filepath != "") {
     const returnButton = document.createElement("button");
-    returnButton.className = "upload-file file-path-return";
+    returnButton.className = "upload-file file-path-return no-margin-bottom";
     returnButton.style = "margin-right:10px;";
 
     const dividedFilepath = ["/"].concat(getSubPaths(filepath));
@@ -204,6 +204,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   pathInfoDiv.className = "file-path-info no-text-select";
 
   if (!completeMode) pathInfoDiv.classList.add("dark");
+  else pathInfoDiv.classList.add("no-margin-bottom");
 
   if (pathNotFound) {
     const rootSeparatorSpan = document.createElement("span");
@@ -300,6 +301,52 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   if ((filepath != "/" && filepath != "") || pathNotFound)
     containerDiv.appendChild(returnDiv);
   containerDiv.appendChild(pathInfoDiv);
+
+  return containerDiv;
+}
+
+// Returns the html element for the sort button after the path bar
+function generateSortButtonHTML() {
+  const containerDiv = document.createElement("div");
+  containerDiv.className = "sort-button-container";
+
+  const sortButton = document.createElement("button");
+  sortButton.className = "upload-file sort-button margined-right";
+
+  const sortTag = document.createElement("span");
+  sortTag.className = "sort-span";
+  sortTag.innerText = "Sort by:";
+
+  const sortValue = document.createElement("span");
+  sortValue.className = "sort-span value";
+  sortValue.innerText = "name";
+
+  sortButton.appendChild(sortTag);
+  sortButton.appendChild(sortValue);
+
+  const orderButton = document.createElement("button");
+  orderButton.className = "upload-file sort-button";
+
+  const orderIcon = document.createElement("i");
+  orderIcon.className = "fa-solid fa-arrow-up transition-transform";
+
+  orderButton.style.transform = getFileViewOrder().order ? "" : "rotate(180deg)";
+
+  orderButton.onclick = () => {
+    const fileOrderResult = getFileViewOrder();
+    var sortBy_local = fileOrderResult.sort;
+    var viewOrder_local = fileOrderResult.order;
+
+    viewOrder_local = !viewOrder_local;
+    orderButton.style.transform = viewOrder_local ? "" : "rotate(180deg)";
+
+    setFileViewOrder(sortBy_local, viewOrder_local);
+  };
+
+  orderButton.appendChild(orderIcon);
+
+  containerDiv.appendChild(sortButton);
+  containerDiv.appendChild(orderButton);
 
   return containerDiv;
 }
@@ -743,12 +790,17 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
     return;
   }
 
+  // Add sort button
+
+  const sortButtonElement = generateSortButtonHTML();
+
   // Add file list
 
   const filesList = generateFilesHTML(filesJson);
 
   main_files_div.innerHTML = "";
   main_files_div.appendChild(titlePath);
+  main_files_div.appendChild(sortButtonElement);
   filesList.forEach((element, index) => {
     main_files_div.appendChild(element);
   });

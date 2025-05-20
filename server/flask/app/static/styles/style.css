@@ -648,6 +648,10 @@ div[selected] {
   overflow: hidden;
 }
 
+.no-margin-bottom {
+  margin-bottom: 0px !important;
+}
+
 .file-path-info.dark {
   background-color: var(--bg-dark);
 }
@@ -663,6 +667,36 @@ div[selected] {
 .file-path-container {
   display: flex;
   align-items: stretch;
+}
+
+span.sort-span {
+  margin-left: 0px;
+}
+
+span.sort-span.value {
+  color: var(--accent-green);
+  font-weight: bold;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.sort-button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.sort-button {
+  border: none;
+  padding: 10px;
+  background-color: var(--bg-light);
+}
+
+.sort-button.margined-right {
+  margin-right: 10px;
 }
 
 .return-span {
