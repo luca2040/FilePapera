@@ -57,6 +57,7 @@ def list_files_and_folders():
                             "size": None,
                             "file": False,
                             "creation_date": readable_creation_time,
+                            "sort_date": int(creation_time),
                             "path": "/"
                             + enc.decode(full_path)
                             .replace(current_app.config["UPLOAD_FOLDER"], "", 1)
@@ -75,6 +76,7 @@ def list_files_and_folders():
                             "size": file_size,
                             "file": True,
                             "creation_date": readable_creation_time,
+                            "sort_date": int(creation_time),
                             "path": "/"
                             + enc.decode(full_path)
                             .replace(current_app.config["UPLOAD_FOLDER"], "", 1)

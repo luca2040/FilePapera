@@ -394,6 +394,32 @@ function generateSortButtonHTML() {
   return containerDiv;
 }
 
+// Sort the file list given by the current files sort parameters
+function sortFilesListBySetSort(filesList) {
+  // Get current sort parameters
+  const fileviewOrder = getFileViewOrder();
+  const actualSort = fileviewOrder.sort;
+  const actualOrder = fileviewOrder.order;
+
+  // actualSort options:
+  // 0: sort by name
+  // 1: sort by date
+  // 2: sort by size
+
+  // actualOrder options:
+  // false: normal
+  // true: reversed
+
+  const files = [];
+  const folders = [];
+
+  filesList.forEach((element, index) => {
+    ((element.getAttribute("isfile") === "true") ? files : folders).push(element);
+  });
+
+  return filesList;
+}
+
 // Returns a list of html elements, for each one of the file/folder elements in main ui, including their download/rename/delete buttons
 function generateFilesHTML(filesJson) {
   const filesList = filesJson["files"];
@@ -404,8 +430,11 @@ function generateFilesHTML(filesJson) {
     fileContainer.className = "file-container nopadding";
 
     fileContainer.setAttribute("index", index);
-    fileContainer.setAttribute("filePath", element["path"]);
-    fileContainer.setAttribute("fileName", element["name"]);
+    fileContainer.setAttribute("filepath", element["path"]);
+    fileContainer.setAttribute("filename", element["name"]);
+    fileContainer.setAttribute("filedate", element["sort_date"]);
+    fileContainer.setAttribute("filesize", element["size"]);
+    fileContainer.setAttribute("isfile", element["file"]);
 
     fileContainer.draggable = true;
 
@@ -840,21 +869,22 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
   // Add file list
 
   const filesList = generateFilesHTML(filesJson);
+  const sortedFilesList = sortFilesListBySetSort(filesList);
 
   main_files_div.innerHTML = "";
   main_files_div.appendChild(titlePath);
   main_files_div.appendChild(sortButtonElement);
 
-  const completeFileListContainer = document.createElement("div");
-  completeFileListContainer.className = "all-files-container";
-  completeFileListContainer.id = "all-files-container";
+  const filesListContainer = document.createElement("div");
+  filesListContainer.className = "all-files-container";
+  filesListContainer.id = "all-files-container";
 
-  filesList.forEach((element, index) => {
-    completeFileListContainer.appendChild(element);
+  sortedFilesList.forEach((element, index) => {
+    filesListContainer.appendChild(element);
     // main_files_div.appendChild(element);
   });
 
-  main_files_div.appendChild(completeFileListContainer);
+  main_files_div.appendChild(filesListContainer);
 
   // Set drag and drop files
 
