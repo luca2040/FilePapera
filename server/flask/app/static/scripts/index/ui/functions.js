@@ -362,6 +362,7 @@ function generateSortButtonHTML() {
     changeSortText(sortPossibilities[sortBy_local]);
 
     setFileViewOrder(sortBy_local, viewOrder_local);
+    reloadFilesViewedOrder();
   };
 
   sortButton.appendChild(sortTag);
@@ -384,6 +385,7 @@ function generateSortButtonHTML() {
     orderButton.style.transform = viewOrder_local ? "" : "rotate(180deg)";
 
     setFileViewOrder(sortBy_local, viewOrder_local);
+    reloadFilesViewedOrder();
   };
 
   orderButton.appendChild(orderIcon);
@@ -392,6 +394,21 @@ function generateSortButtonHTML() {
   containerDiv.appendChild(orderButton);
 
   return containerDiv;
+}
+
+// Reload the files viewed sorting them
+function reloadFilesViewedOrder() {
+  const htmlFilesContainer = document.getElementById("all-files-container");
+  const filesList = Array.from(htmlFilesContainer.children);
+  const sortedFilesList = sortFilesListBySetSort(filesList);
+
+  while (htmlFilesContainer.firstChild) {
+    htmlFilesContainer.removeChild(htmlFilesContainer.firstChild);
+  }
+
+  sortedFilesList.forEach((element, index) => {
+    htmlFilesContainer.appendChild(element);
+  });
 }
 
 // Sort the file list given by the current files sort parameters
@@ -410,14 +427,70 @@ function sortFilesListBySetSort(filesList) {
   // false: normal
   // true: reversed
 
-  const files = [];
-  const folders = [];
+  let files = [];
+  let folders = [];
 
   filesList.forEach((element, index) => {
     ((element.getAttribute("isfile") === "true") ? files : folders).push(element);
   });
 
-  return filesList;
+  switch (actualSort) {
+    case 0:
+      files = sortElementsList(files, 0, actualOrder);
+      folders = sortElementsList(folders, 0, actualOrder);
+      break;
+    case 1:
+      files = sortElementsList(files, 1, actualOrder);
+      folders = sortElementsList(folders, 1, actualOrder);
+      break;
+    case 2:
+      files = sortElementsList(files, 2, actualOrder);
+      folders = sortElementsList(folders, 0, false); // folders by name because they dont have size
+      break;
+  }
+
+  // If sorting from size show files before for the same reason as before
+  return (actualSort == 2) ? files.concat(folders) : folders.concat(files);
+}
+
+// Sort elements:
+// 0: by name
+// 1: by date
+// 2: by size
+function sortElementsList(elements, type, reversed) {
+  return elements.sort((a, b) => {
+    let valueA, valueB;
+
+    switch (type) {
+      case 0:
+        valueA = a.getAttribute("filename")?.toLowerCase() || "";
+        valueB = b.getAttribute("filename")?.toLowerCase() || "";
+        break;
+      case 1:
+        valueA = parseInt(a.getAttribute("filedate"), 10) || 0;
+        valueB = parseInt(b.getAttribute("filedate"), 10) || 0;
+        break;
+      case 2:
+        valueA = parseInt(a.getAttribute("filesize"), 10) || 0;
+        valueB = parseInt(b.getAttribute("filesize"), 10) || 0;
+        break;
+      default:
+        return 0;
+    }
+
+    if (valueA < valueB) return reversed ? 1 : -1;
+    if (valueA > valueB) return reversed ? -1 : 1;
+    if (type == 0) return 0;
+
+    // If not sortable like that because they are the same then default to name order, always not reversed
+
+    valueA = a.getAttribute("filename")?.toLowerCase() || "";
+    valueB = b.getAttribute("filename")?.toLowerCase() || "";
+
+    if (valueA < valueB) return -1;
+    if (valueA > valueB) return 1;
+    return 0;
+  });
 }
 
 // Returns a list of html elements, for each one of the file/folder elements in main ui, including their download/rename/delete buttons
