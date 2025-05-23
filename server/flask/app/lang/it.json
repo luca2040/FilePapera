@@ -45,5 +45,9 @@
   "no_storage_left": "Spazio di archiviazione esaurito",
   "error_preparing_file_upload": "Errore durante la preparazione al caricamento dei file",
   "error_reading_file": "Errore durante la lettura del file.",
-  "page_reload_confirm": "Il caricamento in corso dei file verrà annullato, continuare?"
+  "page_reload_confirm": "Il caricamento in corso dei file verrà annullato, continuare?",
+  "sort_by": "Ordina per:",
+  "sort_name": "nome",
+  "sort_date": "data di creazione",
+  "sort_size": "dimensione"
 }

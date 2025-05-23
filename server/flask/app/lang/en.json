@@ -45,5 +45,9 @@
   "no_storage_left": "Storage full",
   "error_preparing_file_upload": "Error preparing file upload",
   "error_reading_file": "Error reading the file.",
-  "page_reload_confirm": "The upload in progress will be canceled. Continue?"
+  "page_reload_confirm": "The upload in progress will be canceled. Continue?",
+  "sort_by": "Sort by:",
+  "sort_name": "name",
+  "sort_date": "creation date",
+  "sort_size": "size"
 }

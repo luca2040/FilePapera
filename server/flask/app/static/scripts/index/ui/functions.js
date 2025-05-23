@@ -333,7 +333,7 @@ function generateSortButtonHTML() {
 
   const sortTag = document.createElement("span");
   sortTag.className = "sort-span";
-  sortTag.innerText = "Sort by:";
+  sortTag.innerText = TRANSLATIONS.sort_by;
 
   const fileviewOrder = getFileViewOrder();
   const actualSort = fileviewOrder.sort;
@@ -341,9 +341,9 @@ function generateSortButtonHTML() {
 
   // Possible options:
   const sortPossibilities = [
-    "name", // 0: sort by name
-    "date", // 1: sort by date
-    "size" // 2: sort by size
+    TRANSLATIONS.sort_name, // 0: sort by name
+    TRANSLATIONS.sort_date, // 1: sort by date
+    TRANSLATIONS.sort_size // 2: sort by size
   ];
 
   const sortValue = document.createElement("span");
