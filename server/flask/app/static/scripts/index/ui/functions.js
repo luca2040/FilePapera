@@ -4,7 +4,7 @@ function formatFileSize(bytes) {
   if (bytes === 0) return `0 ${sizes[0]}`;
   let i = Math.min(3, Math.floor(Math.log(bytes) / Math.log(1024)));
   let fileSize = bytes / Math.pow(1024, i);
-  return fileSize.toFixed(2) + " " + sizes[i];
+  return fileSize.toFixed(2) + "&nbsp;" + sizes[i];
 }
 
 // Updates the storage indicator bar with the current data, fetched from server
@@ -164,7 +164,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
 
   if (pathNotFound) {
     const returnButton = document.createElement("button");
-    returnButton.className = "upload-file file-path-return";
+    returnButton.className = "upload-file file-path-return no-margin-bottom";
     returnButton.style = "margin-right:10px;";
 
     const returnIcon = document.createElement("i");
@@ -180,7 +180,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
     returnDiv.appendChild(returnButton);
   } else if (filepath != "/" && filepath != "") {
     const returnButton = document.createElement("button");
-    returnButton.className = "upload-file file-path-return";
+    returnButton.className = "upload-file file-path-return no-margin-bottom";
     returnButton.style = "margin-right:10px;";
 
     const dividedFilepath = ["/"].concat(getSubPaths(filepath));
@@ -204,6 +204,7 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   pathInfoDiv.className = "file-path-info no-text-select";
 
   if (!completeMode) pathInfoDiv.classList.add("dark");
+  else pathInfoDiv.classList.add("no-margin-bottom");
 
   if (pathNotFound) {
     const rootSeparatorSpan = document.createElement("span");
@@ -304,6 +305,194 @@ function generateFilePathHTML(filepath, pathNotFound, completeMode) {
   return containerDiv;
 }
 
+// Animates the change in the sort text
+function changeSortText(newText) {
+  const span = document.getElementById("sort-value-text");
+
+  span.classList.add("animate-out");
+
+  setTimeout(() => {
+    span.textContent = newText;
+
+    span.classList.remove("animate-out");
+    span.classList.add("animate-in");
+
+    setTimeout(() => {
+      span.classList.remove("animate-in");
+    }, 150); // Same time as css
+  }, 150); // Same time as css
+}
+
+// Returns the html element for the sort button after the path bar
+function generateSortButtonHTML() {
+  const containerDiv = document.createElement("div");
+  containerDiv.className = "sort-button-container";
+
+  const sortButton = document.createElement("button");
+  sortButton.className = "upload-file sort-button margined-right";
+
+  const sortTag = document.createElement("span");
+  sortTag.className = "sort-span";
+  sortTag.innerText = "Sort by:";
+
+  const fileviewOrder = getFileViewOrder();
+  const actualSort = fileviewOrder.sort;
+  const actualOrder = fileviewOrder.order;
+
+  // Possible options:
+  const sortPossibilities = [
+    "name", // 0: sort by name
+    "date", // 1: sort by date
+    "size" // 2: sort by size
+  ];
+
+  const sortValue = document.createElement("span");
+  sortValue.className = "sort-span value";
+  sortValue.id = "sort-value-text";
+  sortValue.innerText = sortPossibilities[actualSort];
+
+  sortButton.onclick = () => {
+    const fileOrderResult = getFileViewOrder();
+    var sortBy_local = fileOrderResult.sort;
+    var viewOrder_local = fileOrderResult.order;
+
+    sortBy_local++;
+    if (sortBy_local >= sortPossibilities.length) sortBy_local = 0;
+
+    changeSortText(sortPossibilities[sortBy_local]);
+
+    setFileViewOrder(sortBy_local, viewOrder_local);
+    reloadFilesViewedOrder();
+  };
+
+  sortButton.appendChild(sortTag);
+  sortButton.appendChild(sortValue);
+
+  const orderButton = document.createElement("button");
+  orderButton.className = "upload-file sort-button";
+
+  const orderIcon = document.createElement("i");
+  orderIcon.className = "fa-solid fa-arrow-up transition-transform";
+
+  orderButton.style.transform = actualOrder ? "" : "rotate(180deg)";
+
+  orderButton.onclick = () => {
+    const fileOrderResult = getFileViewOrder();
+    var sortBy_local = fileOrderResult.sort;
+    var viewOrder_local = fileOrderResult.order;
+
+    viewOrder_local = !viewOrder_local;
+    orderButton.style.transform = viewOrder_local ? "" : "rotate(180deg)";
+
+    setFileViewOrder(sortBy_local, viewOrder_local);
+    reloadFilesViewedOrder();
+  };
+
+  orderButton.appendChild(orderIcon);
+
+  containerDiv.appendChild(sortButton);
+  containerDiv.appendChild(orderButton);
+
+  return containerDiv;
+}
+
+// Reload the files viewed sorting them
+function reloadFilesViewedOrder() {
+  const htmlFilesContainer = document.getElementById("all-files-container");
+  const filesList = Array.from(htmlFilesContainer.children);
+  const sortedFilesList = sortFilesListBySetSort(filesList);
+
+  while (htmlFilesContainer.firstChild) {
+    htmlFilesContainer.removeChild(htmlFilesContainer.firstChild);
+  }
+
+  sortedFilesList.forEach((element, index) => {
+    htmlFilesContainer.appendChild(element);
+  });
+}
+
+// Sort the file list given by the current files sort parameters
+function sortFilesListBySetSort(filesList) {
+  // Get current sort parameters
+  const fileviewOrder = getFileViewOrder();
+  const actualSort = fileviewOrder.sort;
+  const actualOrder = fileviewOrder.order;
+
+  // actualSort options:
+  // 0: sort by name
+  // 1: sort by date
+  // 2: sort by size
+
+  // actualOrder options:
+  // false: normal
+  // true: reversed
+
+  let files = [];
+  let folders = [];
+
+  filesList.forEach((element, index) => {
+    ((element.getAttribute("isfile") === "true") ? files : folders).push(element);
+  });
+
+  switch (actualSort) {
+    case 0:
+      files = sortElementsList(files, 0, actualOrder);
+      folders = sortElementsList(folders, 0, actualOrder);
+      break;
+    case 1:
+      files = sortElementsList(files, 1, actualOrder);
+      folders = sortElementsList(folders, 1, actualOrder);
+      break;
+    case 2:
+      files = sortElementsList(files, 2, actualOrder);
+      folders = sortElementsList(folders, 0, false); // folders by name because they dont have size
+      break;
+  }
+
+  // If sorting from size show files before for the same reason as before
+  return (actualSort == 2) ? files.concat(folders) : folders.concat(files);
+}
+
+// Sort elements:
+// 0: by name
+// 1: by date
+// 2: by size
+function sortElementsList(elements, type, reversed) {
+  return elements.sort((a, b) => {
+    let valueA, valueB;
+
+    switch (type) {
+      case 0:
+        valueA = a.getAttribute("filename")?.toLowerCase() || "";
+        valueB = b.getAttribute("filename")?.toLowerCase() || "";
+        break;
+      case 1:
+        valueA = parseInt(a.getAttribute("filedate"), 10) || 0;
+        valueB = parseInt(b.getAttribute("filedate"), 10) || 0;
+        break;
+      case 2:
+        valueA = parseInt(a.getAttribute("filesize"), 10) || 0;
+        valueB = parseInt(b.getAttribute("filesize"), 10) || 0;
+        break;
+      default:
+        return 0;
+    }
+
+    if (valueA < valueB) return reversed ? 1 : -1;
+    if (valueA > valueB) return reversed ? -1 : 1;
+    if (type == 0) return 0;
+
+    // If not sortable like that because they are the same then default to name order, always not reversed
+
+    valueA = a.getAttribute("filename")?.toLowerCase() || "";
+    valueB = b.getAttribute("filename")?.toLowerCase() || "";
+
+    if (valueA < valueB) return -1;
+    if (valueA > valueB) return 1;
+    return 0;
+  });
+}
+
 // Returns a list of html elements, for each one of the file/folder elements in main ui, including their download/rename/delete buttons
 function generateFilesHTML(filesJson) {
   const filesList = filesJson["files"];
@@ -314,8 +503,11 @@ function generateFilesHTML(filesJson) {
     fileContainer.className = "file-container nopadding";
 
     fileContainer.setAttribute("index", index);
-    fileContainer.setAttribute("filePath", element["path"]);
-    fileContainer.setAttribute("fileName", element["name"]);
+    fileContainer.setAttribute("filepath", element["path"]);
+    fileContainer.setAttribute("filename", element["name"]);
+    fileContainer.setAttribute("filedate", element["sort_date"]);
+    fileContainer.setAttribute("filesize", element["size"]);
+    fileContainer.setAttribute("isfile", element["file"]);
 
     fileContainer.draggable = true;
 
@@ -743,15 +935,29 @@ function reloadFiles(filesJson, filepath, folderNotFound) {
     return;
   }
 
+  // Add sort button
+
+  const sortButtonElement = generateSortButtonHTML();
+
   // Add file list
 
   const filesList = generateFilesHTML(filesJson);
+  const sortedFilesList = sortFilesListBySetSort(filesList);
 
   main_files_div.innerHTML = "";
   main_files_div.appendChild(titlePath);
-  filesList.forEach((element, index) => {
-    main_files_div.appendChild(element);
+  main_files_div.appendChild(sortButtonElement);
+
+  const filesListContainer = document.createElement("div");
+  filesListContainer.className = "all-files-container";
+  filesListContainer.id = "all-files-container";
+
+  sortedFilesList.forEach((element, index) => {
+    filesListContainer.appendChild(element);
+    // main_files_div.appendChild(element);
   });
+
+  main_files_div.appendChild(filesListContainer);
 
   // Set drag and drop files
 
