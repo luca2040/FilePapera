@@ -450,7 +450,13 @@ function sortFilesListBySetSort(filesList) {
   }
 
   // If sorting from size show files before for the same reason as before
-  return (actualSort == 2) ? files.concat(folders) : folders.concat(files);
+  let finalList = (actualSort == 2) ? files.concat(folders) : folders.concat(files);
+
+  finalList.forEach((element, index) => {
+    element.setAttribute("index", index);
+  });
+
+  return finalList;
 }
 
 // Sort elements:
@@ -516,12 +522,14 @@ function generateFilesHTML(filesJson) {
 
     const noTouchOnclick = (event) => {
       if (event.ctrlKey) {
+
         if (fileContainer.hasAttribute("selected"))
           toggleSelected(fileContainer, false);
         else toggleSelected(fileContainer, true);
+
       } else if (event.shiftKey) {
         let filesElements = document
-          .getElementById("main-files-div")
+          .getElementById("all-files-container")
           .querySelectorAll(".file-container");
 
         let lastElementIndex = -1;
@@ -537,20 +545,22 @@ function generateFilesHTML(filesJson) {
           }
         });
 
+        const index_dynamic = parseInt(fileContainer.getAttribute("index"), 10);;
+
         if (
           lastElementIndex !== -1 &&
-          lastElementIndex !== index &&
-          firstElementIndex !== index
+          lastElementIndex !== index_dynamic &&
+          firstElementIndex !== index_dynamic
         ) {
           filesElements.forEach((element) => {
             let elementIndex = parseInt(element.getAttribute("index"), 10);
 
-            if (index > lastElementIndex) {
-              if (elementIndex >= lastElementIndex && elementIndex <= index) {
+            if (index_dynamic > lastElementIndex) {
+              if (elementIndex >= lastElementIndex && elementIndex <= index_dynamic) {
                 element.setAttribute("selected", "");
               }
             } else {
-              if (elementIndex <= firstElementIndex && elementIndex >= index) {
+              if (elementIndex <= firstElementIndex && elementIndex >= index_dynamic) {
                 element.setAttribute("selected", "");
               }
             }
@@ -622,7 +632,7 @@ function generateFilesHTML(filesJson) {
       fileInfo.appendChild(nameSpan);
       fileInfo.appendChild(dateSpan);
 
-      // Add ondrop
+      // Add ondrop [TODO] here need to prevent drag on itself (issue #47)
 
       fileInfo.ondragover = function (event) {
         if (!fileContainer.hasAttribute("selected")) {
