@@ -632,8 +632,6 @@ function generateFilesHTML(filesJson) {
       fileInfo.appendChild(nameSpan);
       fileInfo.appendChild(dateSpan);
 
-      // Add ondrop [TODO] here need to prevent drag on itself (issue #47)
-
       fileInfo.ondragover = function (event) {
         if (!fileContainer.hasAttribute("selected")) {
           event.preventDefault();
@@ -658,7 +656,10 @@ function generateFilesHTML(filesJson) {
         );
 
         if (isFile) await uploadFilesFromDragEvent(event, element["path"]);
-        else await moveSelectedTo(element["path"]);
+        else {
+          const selectedElements = getCurrentlySelectedElements(true);
+          if (!selectedElements.includes(fileContainer)) await moveSelectedTo(element["path"]);
+        }
       };
     }
 
