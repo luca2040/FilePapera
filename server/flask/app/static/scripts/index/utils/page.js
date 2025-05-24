@@ -176,10 +176,16 @@ function checkTotalReplaceButton() {
   }
 }
 
+// Get the elements that are currently selected
+function getCurrentlySelectedElements(as_array = false) {
+  const elements = document.querySelectorAll(".files .file-container[selected]");
+  return as_array ? Array.from(elements) : elements;
+}
+
 // Get a list containing the paths of all the selected files
 function getSelectedElementsPaths() {
   return Array.from(
-    document.querySelectorAll(".files .file-container[selected]"),
+    getCurrentlySelectedElements(),
     (file) => [file.getAttribute("filePath"), file.getAttribute("fileName")]
   );
 }
