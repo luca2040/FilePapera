@@ -33,9 +33,9 @@ async function reloadFilesRequest() {
   tree_auto_scroll();
 }
 
-// Start the recursive uploading schedule
+// Initial load of the file list
 document.addEventListener("DOMContentLoaded", function () {
-  uploadFilesFromListRecursive();
+  reloadFilesRequest();
 });
 
 // What to do when pressing keys. Used for the delete key

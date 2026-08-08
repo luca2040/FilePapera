@@ -170,6 +170,8 @@ function checkTotalReplaceButton() {
       }
 
       checkTotalReplaceButton();
+
+      processUploadQueue();
     };
   } else {
     replaceButton.style.display = "none";

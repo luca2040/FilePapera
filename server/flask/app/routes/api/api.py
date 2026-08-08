@@ -224,14 +224,14 @@ def rename_or_move():
     old_path = request.args.get("old_path", None)
     new_path = request.args.get("new_path", None)
 
-    if new_path == old_path:
-        return jsonify({"message": "Same path"}), 200
-
     if not old_path or not new_path:
         return (
             jsonify({"error": "'old_path' and/or 'new_path' missing", "type": 1}),
             400,
         )
+
+    if new_path == old_path:
+        return jsonify({"message": "Same path"}), 200
 
     try:
         enc = current_app.config["FILENAME_ENCODER"]

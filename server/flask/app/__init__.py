@@ -18,11 +18,16 @@ def create_app():
     app.config["FILENAME_ENCODER"] = FilenameEncoder(app.config["UPLOAD_FOLDER"])
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-    translations_obj = Translations("./app/lang", app.config["DEFAULT_LANG"])
+    translations_obj = Translations(
+        os.path.join(os.path.dirname(__file__), "lang"),
+        app.config["DEFAULT_LANG"],
+    )
     translations_obj.load()
 
     app.config["TRANSLATIONS_OBJ"] = translations_obj
 
+    # Registers the bundles and the Jinja "assets" tag (the initial build is
+    # skipped while running the test suite).
     compile_assets(app)
 
     app.register_blueprint(auth.bp)

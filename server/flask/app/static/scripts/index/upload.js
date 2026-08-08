@@ -3,41 +3,61 @@
 let filesToProcessList = [];
 let currentFileID = 1;
 
-let newFilesLoaded = false;
-
 let uploadingFiles = false;
 
-// Constantly checks if there are any new files ready for upload, and uploads them
-async function uploadFilesFromListRecursive() {
-  while (true) {
-    const elementToProcess = filesToProcessList.find(
-      (item) =>
-        !item.waitingfor &&
-        !item.alreadydone &&
-        !item.replaceerror &&
-        !item.storageerror
-    );
+// True while the upload queue is being drained, to avoid concurrent runs
+let isProcessing = false;
 
-    if (!elementToProcess) {
-      uploadingFiles = false;
-      if (!newFilesLoaded) {
-        reloadFilesRequest();
-        newFilesLoaded = true;
-      }
+// True if at least one file was uploaded during the current drain
+let uploadedAny = false;
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      continue;
+// Returns the next file in the list that is ready to be uploaded
+function getNextReadyFile() {
+  return filesToProcessList.find(
+    (item) =>
+      !item.waitingfor &&
+      !item.alreadydone &&
+      !item.replaceerror &&
+      !item.storageerror
+  );
+}
+
+// Uploads all the files that are ready, one at a time, then stops.
+// It gets restarted every time a new file becomes ready for upload.
+async function processUploadQueue() {
+  if (isProcessing) return;
+
+  isProcessing = true;
+
+  try {
+    while (true) {
+      const elementToProcess = getNextReadyFile();
+
+      if (!elementToProcess) break;
+
+      uploadingFiles = true;
+
+      elementToProcess.container.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      await updateUploadElement(elementToProcess);
+
+      uploadedAny = true;
     }
 
-    uploadingFiles = true;
-    newFilesLoaded = false;
+    uploadingFiles = false;
 
-    elementToProcess.container.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
+    if (uploadedAny) {
+      uploadedAny = false;
+      await reloadFilesRequest();
+    }
+  } finally {
+    isProcessing = false;
 
-    await updateUploadElement(elementToProcess);
+    // New files may have been added while uploading, so restart if there is more work
+    if (getNextReadyFile()) processUploadQueue();
   }
 }
 
@@ -226,6 +246,8 @@ async function onFileSelect(filepath, event, files_) {
 
   documentDisplayFileList();
   checkTotalReplaceButton();
+
+  processUploadQueue();
 }
 
 // To parse user input
