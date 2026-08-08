@@ -157,9 +157,21 @@ async function uploadChunked(file, path, container, fileElement) {
   // Compute hash before upload - show progress in purple
   setLoadingFilePercentage(container, 0, "var(--accent-purple-transparent)");
 
+  // Only show cancel button for large files (>50MB) where streaming hash can be cancelled
+  const canCancelHash = totalSize > HASH_CHUNKED_THRESHOLD;
+
   // AbortController for hash computation cancellation
   const hashAbortController = new AbortController();
   fileElement.hashAbortController = hashAbortController;
+
+  // Show cancel button for hashing phase (only for cancellable hashes)
+  const cancelBtn = container.querySelector(".cancel-upload-btn");
+  if (cancelBtn && canCancelHash) {
+    cancelBtn.onclick = () => {
+      hashAbortController.abort();
+    };
+    cancelBtn.classList.add("visible");
+  }
 
   let expectedHash;
   try {
@@ -167,6 +179,15 @@ async function uploadChunked(file, path, container, fileElement) {
       setLoadingFilePercentage(container, progress, "var(--accent-purple-transparent)");
     }, hashAbortController.signal);
   } catch (error) {
+    // Check if it's a cancellation
+    if (error.message === "Hash computation cancelled" || hashAbortController.signal.aborted) {
+      setLoadingFilePercentage(container, 0);
+      container.classList.add("red-transparent-bg");
+      if (cancelBtn) cancelBtn.classList.remove("visible");
+      fileElement.alreadydone = true;
+      fileElement.cancelled = true;
+      return;
+    }
     throw new Error(`Hash computation failed: ${error.message}`);
   }
 
@@ -195,10 +216,9 @@ async function uploadChunked(file, path, container, fileElement) {
   fileElement.upload_id = upload_id;
   activeChunkedUploads.set(fileElement.id, upload_id);
 
-  const cancelBtn = container.querySelector(".cancel-upload-btn");
+  // Update cancel button handler for upload phase
   if (cancelBtn) {
     cancelBtn.onclick = () => cancelChunkedUpload(upload_id, fileElement);
-    cancelBtn.classList.add("visible");
   }
 
   const uploadedChunks = new Set();
