@@ -133,12 +133,8 @@ async function computeFileHashAuto(file, onProgress, abortSignal) {
 async function uploadChunked(file, path, container, fileElement) {
   const totalSize = file.size;
 
-  // Compute hash before upload
-  setLoadingFilePercentage(container, 0);
-  const statusDiv = container.querySelector(".file-name");
-  if (statusDiv) {
-    statusDiv.textContent = `${file.name} (computing hash...)`;
-  }
+  // Compute hash before upload - show progress in purple
+  setLoadingFilePercentage(container, 0, "var(--accent-purple-transparent)");
 
   // AbortController for hash computation cancellation
   const hashAbortController = new AbortController();
@@ -147,11 +143,14 @@ async function uploadChunked(file, path, container, fileElement) {
   let expectedHash;
   try {
     expectedHash = await computeFileHashAuto(file, (progress) => {
-      setLoadingFilePercentage(container, progress * 0.1); // 10% for hashing
+      setLoadingFilePercentage(container, progress, "var(--accent-purple-transparent)");
     }, hashAbortController.signal);
   } catch (error) {
     throw new Error(`Hash computation failed: ${error.message}`);
   }
+
+  // Hash done, switch to green for upload
+  setLoadingFilePercentage(container, 0);
 
   const initiateResponse = await fetch("/upload/initiate", {
     method: "POST",
@@ -351,12 +350,8 @@ async function updateUploadElement(elementToProcess) {
   }
 
   // Small file: use original single-request upload
-  // Compute hash first
-  setLoadingFilePercentage(container, 0);
-  const statusDiv = container.querySelector(".file-name");
-  if (statusDiv) {
-    statusDiv.textContent = `${fileToSend.name} (computing hash...)`;
-  }
+  // Compute hash first - show progress in purple
+  setLoadingFilePercentage(container, 0, "var(--accent-purple-transparent)");
 
   const hashAbortController = new AbortController();
   elementToProcess.hashAbortController = hashAbortController;
@@ -375,7 +370,7 @@ async function updateUploadElement(elementToProcess) {
   let xhr = null;
   try {
     expectedHash = await computeFileHashAuto(fileToSend, (progress) => {
-      setLoadingFilePercentage(container, progress * 0.1); // 10% for hashing
+      setLoadingFilePercentage(container, progress, "var(--accent-purple-transparent)");
     }, hashAbortController.signal);
   } catch (error) {
     elementToProcess.alreadydone = true;
@@ -388,6 +383,9 @@ async function updateUploadElement(elementToProcess) {
     container.appendChild(errorDiv);
     return;
   }
+
+  // Hash done, switch to green for upload
+  setLoadingFilePercentage(container, 0);
 
   const formData = new FormData();
   formData.append("file", fileToSend);

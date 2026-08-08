@@ -1245,12 +1245,14 @@ function handleClickOutside(event) {
 }
 
 // Sets the gradient background for the given container at the given percent.
-// Used to show upload file progress
-function setLoadingFilePercentage(container, perc) {
-  container.style.background = `linear-gradient(to right, var(--accent-green-transparent) 100%, transparent 0%)`;
-  container.style.backgroundSize = `${perc}% 100%`;
-  container.style.backgroundPosition = "left";
-}
+  // Used to show upload file progress
+  // color: optional CSS variable name for the progress color (default: --accent-green-transparent)
+  function setLoadingFilePercentage(container, perc, color) {
+    const progressColor = color || "var(--accent-green-transparent)";
+    container.style.background = `linear-gradient(to right, ${progressColor} ${perc}%, transparent ${perc}%)`;
+    container.style.backgroundSize = `${perc}% 100%`;
+    container.style.backgroundPosition = "left";
+  }
 
 // Sets the complete animation background for the given container.
 // Used when file upload is complete.
