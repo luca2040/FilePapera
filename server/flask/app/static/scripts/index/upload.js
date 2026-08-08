@@ -80,13 +80,12 @@ function resetDoneFiles() {
 }
 
 // Configuration for chunked uploads
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB (default, server response takes precedence)
 const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB - files larger use chunked upload
 const MAX_PARALLEL_CHUNKS = 3;
 
 async function uploadChunked(file, path, container, fileElement) {
   const totalSize = file.size;
-  const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
 
   const initiateResponse = await fetch("/upload/initiate", {
     method: "POST",
@@ -97,7 +96,7 @@ async function uploadChunked(file, path, container, fileElement) {
       total_size: totalSize,
       target_path: path,
       expected_hash: null,
-      chunk_size: CHUNK_SIZE,
+      chunk_size: 5 * 1024 * 1024, // 5 MB
     }),
   });
 
@@ -113,25 +112,34 @@ async function uploadChunked(file, path, container, fileElement) {
   const cancelBtn = container.querySelector(".cancel-upload-btn");
   if (cancelBtn) {
     cancelBtn.onclick = () => cancelChunkedUpload(upload_id, fileElement);
-    cancelBtn.style.display = "inline-block";
+    cancelBtn.classList.add("visible");
   }
 
   const uploadedChunks = new Set();
   let completedChunks = 0;
-  let aborted = false;
+  // Use fileElement to share abort state with cancel function
+  fileElement.aborted = false;
+  // AbortController for true fetch cancellation
+  const abortController = new AbortController();
+  fileElement.abortController = abortController;
+
+  // Semaphore-based concurrency control
+  let runningCount = 0;
+  const queue = Array.from({ length: total_chunks }, (_, i) => i);
 
   async function uploadSingleChunk(chunkIndex) {
-    if (aborted) throw new Error("Upload cancelled");
+    if (fileElement.aborted || abortController.signal.aborted) throw new Error("Upload cancelled");
+
     const start = chunkIndex * chunk_size;
     const end = Math.min(start + chunk_size, totalSize);
     const chunkBlob = file.slice(start, end);
-    const chunkData = await chunkBlob.arrayBuffer();
 
     const response = await fetch(`/upload/chunk?upload_id=${upload_id}&chunk_index=${chunkIndex}`, {
       method: "POST",
       headers: { "Content-Type": "application/octet-stream" },
       credentials: "include",
-      body: chunkData,
+      body: chunkBlob,
+      signal: abortController.signal,
     });
 
     if (!response.ok) {
@@ -141,36 +149,31 @@ async function uploadChunked(file, path, container, fileElement) {
 
     uploadedChunks.add(chunkIndex);
     completedChunks++;
-    const progress = (completedChunks / totalChunks) * 100;
+    const progress = (completedChunks / total_chunks) * 100;
     setLoadingFilePercentage(container, progress);
   }
 
-  const queue = Array.from({ length: totalChunks }, (_, i) => i);
-  const running = new Set();
-
-  async function processQueue() {
-    while (queue.length > 0 && running.size < MAX_PARALLEL_CHUNKS && !aborted) {
+  function startNext() {
+    while (queue.length > 0 && runningCount < MAX_PARALLEL_CHUNKS && !fileElement.aborted && !abortController.signal.aborted) {
       const chunkIndex = queue.shift();
       if (uploadedChunks.has(chunkIndex)) continue;
 
-      const promise = uploadSingleChunk(chunkIndex).finally(() => {
-        running.delete(chunkIndex);
-        processQueue();
-      });
-      running.add(chunkIndex);
-      promise.catch((e) => {
-        running.delete(chunkIndex);
-        throw e;
+      runningCount++;
+      const promise = uploadSingleChunk(chunkIndex);
+      promise.finally(() => {
+        runningCount--;
+        startNext();
       });
     }
   }
 
   try {
-    await processQueue();
-    while (running.size > 0 && !aborted) {
-      await Promise.race(Array.from(running.values()));
+    startNext();
+    while (runningCount > 0 && !fileElement.aborted && !abortController.signal.aborted) {
+      // Wait for at least one chunk to complete
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
-    if (aborted) throw new Error("Upload cancelled");
+    if (fileElement.aborted || abortController.signal.aborted) throw new Error("Upload cancelled");
 
     const completeResponse = await fetch("/upload/complete", {
       method: "POST",
@@ -187,12 +190,17 @@ async function uploadChunked(file, path, container, fileElement) {
     return await completeResponse.json();
   } finally {
     activeChunkedUploads.delete(fileElement.id);
-    if (cancelBtn) cancelBtn.style.display = "none";
+    if (cancelBtn) cancelBtn.classList.remove("visible");
   }
 }
 
 async function cancelChunkedUpload(uploadId, fileElement) {
   if (!uploadId) return;
+  // Signal the upload loop to abort gracefully
+  fileElement.aborted = true;
+  if (fileElement.abortController) {
+    fileElement.abortController.abort();
+  }
   try {
     await fetch("/upload/cancel", {
       method: "POST",
@@ -205,9 +213,17 @@ async function cancelChunkedUpload(uploadId, fileElement) {
     fileElement.upload_id = null;
     fileElement.alreadydone = true;
     fileElement.cancelled = true;
+    // Update UI immediately
     const container = fileElement.container;
-    if (container && container.parentNode) {
-      container.remove();
+    if (container) {
+      const cancelBtn = container.querySelector(".cancel-upload-btn");
+      if (cancelBtn) cancelBtn.classList.remove("visible");
+      // Show cancelled state
+      container.classList.add("red-transparent-bg");
+      const statusDiv = container.querySelector(".file-name") || container.firstElementChild;
+      if (statusDiv) {
+        statusDiv.textContent = `${statusDiv.textContent} (cancelled)`;
+      }
     }
   }
 }
@@ -246,8 +262,21 @@ async function updateUploadElement(elementToProcess) {
       setLoadingFileComplete(container);
       return;
     } catch (error) {
-      alert(`${TRANSLATIONS.error_uploading_file}: ${error.message}`);
-      window.location.reload();
+      // Cancelled - don't show error, just mark as done and continue queue
+      if (error.message === "Upload cancelled" || elementToProcess.cancelled) {
+        elementToProcess.alreadydone = true;
+        return;
+      }
+      // Other error - show in UI, mark as done, continue queue
+      elementToProcess.alreadydone = true;
+      elementToProcess.storageerror = true;
+      container.classList.add("red-transparent-bg");
+      const errorDiv = document.createElement("div");
+      errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+      errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
+      container.innerHTML = "";
+      container.appendChild(errorDiv);
+      return;
     }
   }
 
@@ -290,8 +319,15 @@ async function updateUploadElement(elementToProcess) {
   try {
     await uploadPromise;
   } catch (error) {
-    alert(`${TRANSLATIONS.error_uploading_file}: ${error.message}`);
-    window.location.reload();
+    // Don't reload - mark as done and continue queue
+    elementToProcess.alreadydone = true;
+    elementToProcess.storageerror = true;
+    container.classList.add("red-transparent-bg");
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+    errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
+    container.innerHTML = "";
+    container.appendChild(errorDiv);
   }
 }
 
@@ -307,57 +343,71 @@ async function onFileSelect(filepath, event, files_) {
 
   let size = 0;
 
-  for (const singleFile of files) {
-    const fileContainerDiv = document.createElement("div");
-    fileContainerDiv.className = "file-container modal-upload";
+  const fileArray = Array.from(files);
+  const BATCH_SIZE = 50;
+  const fileContainer = document.getElementById("file-list-modal") || document.body;
 
-    const fileTitleDiv = document.createElement("div");
-    fileTitleDiv.className = "file-name no-text-select add-file-icon no-margin";
-    fileTitleDiv.innerHTML = singleFile.name;
+  // Show preparing indicator
+  const preparingDiv = document.createElement("div");
+  preparingDiv.className = "file-container modal-upload";
+  preparingDiv.innerHTML = '<div class="file-name no-text-select">Preparing files...</div>';
+  fileContainer.appendChild(preparingDiv);
 
-    fileContainerDiv.appendChild(fileTitleDiv);
+  // Process files in batches to avoid blocking the main thread
+  for (let batchStart = 0; batchStart < fileArray.length; batchStart += BATCH_SIZE) {
+    const batch = fileArray.slice(batchStart, batchStart + BATCH_SIZE);
 
-    const cancelBtn = document.createElement("button");
-    cancelBtn.className = "cancel-upload-btn";
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.style.display = "none";
-    cancelBtn.style.marginLeft = "8px";
-    cancelBtn.style.padding = "2px 8px";
-    cancelBtn.style.fontSize = "0.8em";
-    cancelBtn.style.background = "#dc3545";
-    cancelBtn.style.color = "white";
-    cancelBtn.style.border = "none";
-    cancelBtn.style.borderRadius = "3px";
-    cancelBtn.style.cursor = "pointer";
-    fileContainerDiv.appendChild(cancelBtn);
+    for (const singleFile of batch) {
+      const fileContainerDiv = document.createElement("div");
+      fileContainerDiv.className = "file-container modal-upload";
 
-    const newFileElement = {
-      id: currentFileID++,
-      path: filepath,
-      file: singleFile,
-      waitingfor: false,
-      wasreplaced: false,
-      replaceerror: false,
-      alreadydone: false,
-      storageerror: false,
-      container: fileContainerDiv,
-    };
+      const fileTitleDiv = document.createElement("div");
+      fileTitleDiv.className = "file-name no-text-select add-file-icon no-margin";
+      fileTitleDiv.innerHTML = singleFile.name;
 
-    let completePath;
+      fileContainerDiv.appendChild(fileTitleDiv);
 
-    if (singleFile.webkitRelativePath && singleFile.webkitRelativePath !== "")
-      completePath =
-        filepath.replace(/^\/+/, "") + "/" + singleFile.webkitRelativePath;
-    else completePath = filepath.replace(/^\/+/, "") + "/" + singleFile.name;
+      const cancelBtn = document.createElement("button");
+      cancelBtn.className = "cancel-upload-btn";
+      cancelBtn.textContent = "Cancel";
+      fileContainerDiv.appendChild(cancelBtn);
 
-    queryData.push({
-      id: newFileElement.id,
-      filepath: completePath,
-    });
-    size += singleFile.size;
+      const newFileElement = {
+        id: currentFileID++,
+        path: filepath,
+        file: singleFile,
+        waitingfor: false,
+        wasreplaced: false,
+        replaceerror: false,
+        alreadydone: false,
+        storageerror: false,
+        container: fileContainerDiv,
+      };
 
-    tempFilesToProcessList.push(newFileElement);
+      let completePath;
+
+      if (singleFile.webkitRelativePath && singleFile.webkitRelativePath !== "")
+        completePath =
+          filepath.replace(/^\/+/, "") + "/" + singleFile.webkitRelativePath;
+      else completePath = filepath.replace(/^\/+/, "") + "/" + singleFile.name;
+
+      queryData.push({
+        id: newFileElement.id,
+        filepath: completePath,
+      });
+      size += singleFile.size;
+
+      tempFilesToProcessList.push(newFileElement);
+    }
+
+    // Yield to the event loop between batches
+    if (batchStart + BATCH_SIZE < fileArray.length) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
   }
+
+  // Remove preparing indicator
+  preparingDiv.remove();
 
   const response = await getAvailableFiles({ data: queryData, size: size });
 

@@ -9,6 +9,7 @@ services:
     environment:
       # can be development or production
       - ENV=development
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./uploads:/app/uploads:rw
       # For development: mount the whole app so every source file is hot-reloadable

@@ -501,6 +501,32 @@ div[selected] {
   border-bottom: none;
 }
 
+.cancel-upload-btn {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 0.8em;
+  background: var(--red-color-transparent);
+  color: var(--text-light);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: none;
+}
+
+.cancel-upload-btn.visible {
+  display: inline-block;
+}
+
+.cancel-upload-btn:hover {
+  background: var(--error-not-found);
+}
+
+.cancel-upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .folder-clickable {
   cursor: pointer;
   transition: all 0.2s ease;

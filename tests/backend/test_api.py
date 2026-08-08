@@ -454,3 +454,45 @@ def test_chunked_upload_storage_limit(auth_client):
     )
     assert response.status_code == 507
     assert response.get_json()["storageError"] is True
+
+
+def test_chunked_upload_large_file_default_chunks(auth_client):
+    """Test multi-chunk upload with default 5MB chunk size (e.g., 8MB file = 2 chunks)"""
+    total_size = 8 * 1024 * 1024  # 8MB - fits in 10MB storage
+    chunk_size = 5 * 1024 * 1024  # 5MB default
+    total_chunks = 2  # ceil(8/5) = 2
+
+    response = auth_client.post(
+        "/upload/initiate",
+        json={"filename": "large.bin", "total_size": total_size, "target_path": ""},
+    )
+    assert response.status_code == 200
+    initiate = response.get_json()
+    upload_id = initiate["upload_id"]
+    assert initiate["total_chunks"] == total_chunks
+    assert initiate["chunk_size"] == chunk_size
+
+    # Upload all chunks
+    content = os.urandom(total_size)
+    expected_hash = hashlib.sha256(content).hexdigest()
+
+    for i in range(total_chunks):
+        start = i * chunk_size
+        end = min(start + chunk_size, total_size)
+        chunk_data = content[start:end]
+        response = auth_client.post(
+            f"/upload/chunk?upload_id={upload_id}&chunk_index={i}",
+            data=chunk_data,
+            content_type="application/octet-stream",
+        )
+        assert response.status_code == 200
+        assert response.get_json()["status"] == "uploaded"
+
+    # Complete and verify
+    response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
+    assert response.status_code == 200
+    assert response.get_json()["sha256"] == expected_hash
+
+    # Verify file exists and has correct content
+    listing = auth_client.get("/list?path=/").get_json()
+    assert any(f["name"] == "large.bin" and f["size"] == total_size for f in listing["files"])
