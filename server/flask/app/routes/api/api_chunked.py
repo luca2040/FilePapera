@@ -4,15 +4,21 @@ import hashlib
 import uuid
 import time
 import shutil
+import threading
 from pathlib import Path
 from typing import Optional
 from flask import current_app
+from urllib.parse import unquote_plus
 
 from .api_utils import check_valid_path
 
 PARTIAL_DIR_NAME = ".partial"
 CHUNK_SIZE_DEFAULT = 5 * 1024 * 1024
 PARTIAL_TTL_SECONDS = 24 * 60 * 60
+
+# Per-upload locks for concurrent access to metadata/chunks
+_upload_locks: dict[str, threading.Lock] = {}
+_locks_lock = threading.Lock()
 
 
 def _partial_root() -> Path:
@@ -49,6 +55,14 @@ def _save_metadata(upload_id: str, meta: dict, sync: bool = False) -> None:
             os.fsync(f.fileno())
 
 
+def _get_lock(upload_id: str) -> threading.Lock:
+    """Get or create a lock for the given upload ID."""
+    with _locks_lock:
+        if upload_id not in _upload_locks:
+            _upload_locks[upload_id] = threading.Lock()
+        return _upload_locks[upload_id]
+
+
 def initiate_upload(
     filename: str,
     total_size: int,
@@ -72,7 +86,11 @@ def initiate_upload(
         "created_at": time.time(),
         "updated_at": time.time(),
     }
-    _save_metadata(upload_id, meta)
+
+    lock = _get_lock(upload_id)
+    with lock:
+        _save_metadata(upload_id, meta)
+
     return {
         "upload_id": upload_id,
         "chunk_size": chunk_size,
@@ -81,7 +99,10 @@ def initiate_upload(
 
 
 def upload_chunk(upload_id: str, chunk_index: int, data: bytes) -> dict:
-    meta = _load_metadata(upload_id)
+    lock = _get_lock(upload_id)
+    with lock:
+        meta = _load_metadata(upload_id)
+
     if not meta:
         return {"error": "Upload not found"}, 404
     if meta["status"] != "in_progress":
@@ -103,16 +124,21 @@ def upload_chunk(upload_id: str, chunk_index: int, data: bytes) -> dict:
     with open(_chunk_path(upload_id, chunk_index), "wb") as f:
         f.write(data)
 
-    meta["uploaded_chunks"].append(chunk_index)
-    meta["uploaded_chunks"].sort()
-    meta["updated_at"] = time.time()
-    _save_metadata(upload_id, meta)
+    with lock:
+        meta = _load_metadata(upload_id)
+        meta["uploaded_chunks"].append(chunk_index)
+        meta["uploaded_chunks"].sort()
+        meta["updated_at"] = time.time()
+        _save_metadata(upload_id, meta)
 
     return {"chunk_index": chunk_index, "status": "uploaded"}, 200
 
 
 def get_upload_status(upload_id: str) -> dict:
-    meta = _load_metadata(upload_id)
+    lock = _get_lock(upload_id)
+    with lock:
+        meta = _load_metadata(upload_id)
+
     if not meta:
         return {"error": "Upload not found"}, 404
     return {
@@ -130,7 +156,9 @@ def get_upload_status(upload_id: str) -> dict:
 
 
 def complete_upload(upload_id: str) -> dict:
-    meta = _load_metadata(upload_id)
+    lock = _get_lock(upload_id)
+    with lock:
+        meta = _load_metadata(upload_id)
     if not meta:
         return {"error": "Upload not found"}, 404
     if meta["status"] != "in_progress":
@@ -142,7 +170,7 @@ def complete_upload(upload_id: str) -> dict:
         return {"error": "Missing chunks", "missing_chunks": missing}, 400
 
     enc = current_app.config["FILENAME_ENCODER"]
-    target_path = meta["target_path"]
+    target_path = unquote_plus(meta["target_path"]).lstrip("/")
     full_target = os.path.join(
         current_app.config["UPLOAD_FOLDER"], target_path, meta["filename"]
     )
@@ -173,10 +201,12 @@ def complete_upload(upload_id: str) -> dict:
             "got": received_hash,
         }, 400
 
-    meta["status"] = "completed"
-    meta["final_hash"] = received_hash
-    meta["updated_at"] = time.time()
-    _save_metadata(upload_id, meta, sync=True)
+    with lock:
+        meta = _load_metadata(upload_id)
+        meta["status"] = "completed"
+        meta["final_hash"] = received_hash
+        meta["updated_at"] = time.time()
+        _save_metadata(upload_id, meta, sync=True)
 
     _cleanup_upload(upload_id)
 
@@ -195,6 +225,9 @@ def _cleanup_upload(upload_id: str) -> None:
     upload_dir = _upload_dir(upload_id)
     if upload_dir.exists():
         shutil.rmtree(upload_dir, ignore_errors=True)
+    # Clean up the lock
+    with _locks_lock:
+        _upload_locks.pop(upload_id, None)
 
 
 def cleanup_expired_uploads() -> int:
