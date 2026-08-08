@@ -86,13 +86,34 @@ const MAX_PARALLEL_CHUNKS = 3;
 const HASH_CHUNK_SIZE = 1024 * 1024; // 1 MB for hash calculation
 const HASH_CHUNKED_THRESHOLD = 50 * 1024 * 1024; // 50 MB threshold for streaming hash
 
-// Computes SHA-256 hash for small files using Web Crypto (fast, single allocation)
+// Computes SHA-256 hash for small files using Web Crypto (fast) with js-sha256 fallback
 async function computeFileHashSmall(file, onProgress) {
   const buffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  
+  // Try Web Crypto API first (requires secure context)
+  if (typeof crypto !== "undefined" && crypto.subtle) {
+    try {
+      const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      if (onProgress) onProgress(100);
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    } catch (e) {
+      // Only fall back for unsupported/insecure context errors
+      if (e.name !== "NotSupportedError" && e.name !== "SecurityError") {
+        throw e;
+      }
+      // Fall through to js-sha256
+    }
+  }
+  
+  // Fallback: js-sha256 (works everywhere)
+  if (typeof sha256 === "undefined") {
+    throw new Error("Hash library not loaded");
+  }
+  const hasher = sha256.create();
+  hasher.update(new Uint8Array(buffer));
   if (onProgress) onProgress(100);
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  return hasher.hex();
 }
 
 // Computes SHA-256 hash using streaming (constant memory) via js-sha256 (loaded globally)
