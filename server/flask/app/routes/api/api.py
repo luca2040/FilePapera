@@ -139,14 +139,14 @@ def create_folder():
 @login_required(is_API=True)
 def upload_file():
     path = request.args.get("path", "")
+    expected_hash = request.args.get("expected_hash")
+    final_file_path = None
 
     try:
         enc = current_app.config["FILENAME_ENCODER"]
 
         path = unquote_plus(path).lstrip("/")
         full_path = os.path.join(current_app.config["UPLOAD_FOLDER"], path)
-
-        os.makedirs(enc.encode(full_path), exist_ok=True)
 
         if "file" not in request.files:
             return jsonify({"error": "No file part"}), 400
@@ -162,6 +162,11 @@ def upload_file():
         if check_valid_path(final_file_path):
             return jsonify({"message": "Invalid path"}), 403
 
+        os.makedirs(enc.encode(full_path), exist_ok=True)
+
+        if expected_hash and len(expected_hash) != 64:
+            return jsonify({"error": "Invalid hash format"}), 400
+
         sha256_hash = hashlib.sha256()
 
         os.makedirs(os.path.dirname(final_file_path), exist_ok=True)
@@ -173,6 +178,14 @@ def upload_file():
 
         received_hash = sha256_hash.hexdigest()
 
+        if expected_hash and expected_hash != received_hash:
+            os.remove(final_file_path)
+            return jsonify({
+                "error": "Hash mismatch",
+                "expected": expected_hash,
+                "got": received_hash,
+            }), 400
+
         return (
             jsonify(
                 {"message": "File uploaded successfully.", "sha256": received_hash}
@@ -180,6 +193,8 @@ def upload_file():
             200,
         )
     except Exception as _:
+        if final_file_path and os.path.exists(final_file_path):
+            os.remove(final_file_path)
         return jsonify({"error": "Exception uploading file"}), 500
 
 
