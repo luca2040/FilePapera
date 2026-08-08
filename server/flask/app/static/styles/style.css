@@ -478,6 +478,7 @@ div[selected] {
 
 .file-container.modal-upload {
   min-height: 27px;
+  flex-shrink: 0;
   padding: 10px 20px;
   border-radius: 2px;
   border-bottom: 1px solid var(--border-color);
@@ -543,14 +544,15 @@ div[selected] {
   display: flex;
   flex: 1;
   gap: 10px;
+  min-width: 0;
 }
 
 .file-name {
   font-weight: bold;
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /*overflow: hidden;*/
+  /*text-overflow: ellipsis;*/
   word-break: break-word;
   white-space: normal;
 }
