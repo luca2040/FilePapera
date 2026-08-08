@@ -306,14 +306,11 @@ async function cancelChunkedUpload(uploadId, fileElement) {
     // Update UI immediately
     const container = fileElement.container;
     if (container) {
+      setLoadingFilePercentage(container, 0);
       const cancelBtn = container.querySelector(".cancel-upload-btn");
       if (cancelBtn) cancelBtn.classList.remove("visible");
       // Show cancelled state
       container.classList.add("red-transparent-bg");
-      const statusDiv = container.querySelector(".file-name") || container.firstElementChild;
-      if (statusDiv) {
-        statusDiv.textContent = `${statusDiv.textContent} (cancelled)`;
-      }
     }
   }
 }
@@ -360,6 +357,7 @@ async function updateUploadElement(elementToProcess) {
       // Other error - show in UI, mark as done, continue queue
       elementToProcess.alreadydone = true;
       elementToProcess.storageerror = true;
+      setLoadingFilePercentage(container, 0);
       container.classList.add("red-transparent-bg");
       const errorDiv = document.createElement("div");
       errorDiv.className = "file-name no-text-select add-error-icon no-margin";
@@ -396,6 +394,7 @@ async function updateUploadElement(elementToProcess) {
   } catch (error) {
     elementToProcess.alreadydone = true;
     elementToProcess.storageerror = true;
+    setLoadingFilePercentage(container, 0);
     container.classList.add("red-transparent-bg");
     const errorDiv = document.createElement("div");
     errorDiv.className = "file-name no-text-select add-error-icon no-margin";
@@ -449,6 +448,7 @@ async function updateUploadElement(elementToProcess) {
     // Don't reload - mark as done and continue queue
     elementToProcess.alreadydone = true;
     elementToProcess.storageerror = true;
+    setLoadingFilePercentage(container, 0);
     container.classList.add("red-transparent-bg");
     const errorDiv = document.createElement("div");
     errorDiv.className = "file-name no-text-select add-error-icon no-margin";
