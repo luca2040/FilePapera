@@ -1,7 +1,22 @@
 import os
+import threading
+import time
 from flask import Flask
 from .utils.FilenameEncoder import FilenameEncoder
 from .utils.Translations import Translations
+
+
+def _periodic_cleanup(app, interval=3600):
+    with app.app_context():
+        from .routes.api.api_chunked import cleanup_expired_uploads
+        while True:
+            time.sleep(interval)
+            try:
+                cleaned = cleanup_expired_uploads()
+                if cleaned:
+                    app.logger.info(f"Cleaned up {cleaned} expired partial uploads")
+            except Exception as e:
+                app.logger.error(f"Partial upload cleanup failed: {e}")
 
 
 def create_app():
@@ -34,5 +49,9 @@ def create_app():
     app.register_blueprint(api.bp)
 
     routes.register_routes(app)
+
+    if os.environ.get("TESTING") != "1":
+        cleanup_thread = threading.Thread(target=_periodic_cleanup, args=(app,), daemon=True)
+        cleanup_thread.start()
 
     return app
