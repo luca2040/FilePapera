@@ -168,3 +168,6 @@ test/
 server/flask/app/static/gen
 
 !server/config/.env
+
+# issues files
+CURRENT_ISSUE.md

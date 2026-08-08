@@ -1026,6 +1026,8 @@ function documentDisplayFileList() {
         removeButtonFromReplaceContainer(filesToProcessList[index].container);
 
         checkTotalReplaceButton();
+
+        processUploadQueue();
       };
 
       const reloadIcon = document.createElement("i");
