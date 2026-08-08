@@ -83,9 +83,75 @@ function resetDoneFiles() {
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB (default, server response takes precedence)
 const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB - files larger use chunked upload
 const MAX_PARALLEL_CHUNKS = 3;
+const HASH_CHUNK_SIZE = 1024 * 1024; // 1 MB for hash calculation
+const HASH_CHUNKED_THRESHOLD = 50 * 1024 * 1024; // 50 MB threshold for streaming hash
+
+// Computes SHA-256 hash for small files using Web Crypto (fast, single allocation)
+async function computeFileHashSmall(file, onProgress) {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  if (onProgress) onProgress(100);
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Computes SHA-256 hash using streaming (constant memory) via js-sha256 (loaded globally)
+async function computeFileHashStreaming(file, onProgress, abortSignal) {
+  const totalSize = file.size;
+  let processed = 0;
+  const hasher = sha256.create();
+
+  for (let offset = 0; offset < totalSize; offset += HASH_CHUNK_SIZE) {
+    if (abortSignal?.aborted) {
+      throw new Error("Hash computation cancelled");
+    }
+
+    const chunk = file.slice(offset, offset + HASH_CHUNK_SIZE);
+    const buffer = await chunk.arrayBuffer();
+    hasher.update(new Uint8Array(buffer));
+    processed += chunk.size;
+
+    if (onProgress) {
+      onProgress((processed / totalSize) * 100);
+    }
+
+    // Yield to event loop to keep UI responsive
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  return hasher.hex();
+}
+
+// Unified hash computation - uses streaming for large files
+async function computeFileHashAuto(file, onProgress, abortSignal) {
+  if (file.size > HASH_CHUNKED_THRESHOLD) {
+    return computeFileHashStreaming(file, onProgress, abortSignal);
+  }
+  return computeFileHashSmall(file, onProgress);
+}
 
 async function uploadChunked(file, path, container, fileElement) {
   const totalSize = file.size;
+
+  // Compute hash before upload
+  setLoadingFilePercentage(container, 0);
+  const statusDiv = container.querySelector(".file-name");
+  if (statusDiv) {
+    statusDiv.textContent = `${file.name} (computing hash...)`;
+  }
+
+  // AbortController for hash computation cancellation
+  const hashAbortController = new AbortController();
+  fileElement.hashAbortController = hashAbortController;
+
+  let expectedHash;
+  try {
+    expectedHash = await computeFileHashAuto(file, (progress) => {
+      setLoadingFilePercentage(container, progress * 0.1); // 10% for hashing
+    }, hashAbortController.signal);
+  } catch (error) {
+    throw new Error(`Hash computation failed: ${error.message}`);
+  }
 
   const initiateResponse = await fetch("/upload/initiate", {
     method: "POST",
@@ -95,7 +161,7 @@ async function uploadChunked(file, path, container, fileElement) {
       filename: file.name,
       total_size: totalSize,
       target_path: path,
-      expected_hash: null,
+      expected_hash: expectedHash,
       chunk_size: 5 * 1024 * 1024, // 5 MB
     }),
   });
@@ -201,6 +267,10 @@ async function cancelChunkedUpload(uploadId, fileElement) {
   if (fileElement.abortController) {
     fileElement.abortController.abort();
   }
+  // Also abort hash computation if in progress
+  if (fileElement.hashAbortController) {
+    fileElement.hashAbortController.abort();
+  }
   try {
     await fetch("/upload/cancel", {
       method: "POST",
@@ -281,13 +351,51 @@ async function updateUploadElement(elementToProcess) {
   }
 
   // Small file: use original single-request upload
+  // Compute hash first
+  setLoadingFilePercentage(container, 0);
+  const statusDiv = container.querySelector(".file-name");
+  if (statusDiv) {
+    statusDiv.textContent = `${fileToSend.name} (computing hash...)`;
+  }
+
+  const hashAbortController = new AbortController();
+  elementToProcess.hashAbortController = hashAbortController;
+
+  // Wire up cancel button for small files
+  const cancelBtn = container.querySelector(".cancel-upload-btn");
+  if (cancelBtn) {
+    cancelBtn.onclick = () => {
+      hashAbortController.abort();
+      if (xhr) xhr.abort();
+    };
+    cancelBtn.classList.add("visible");
+  }
+
+  let expectedHash;
+  let xhr = null;
+  try {
+    expectedHash = await computeFileHashAuto(fileToSend, (progress) => {
+      setLoadingFilePercentage(container, progress * 0.1); // 10% for hashing
+    }, hashAbortController.signal);
+  } catch (error) {
+    elementToProcess.alreadydone = true;
+    elementToProcess.storageerror = true;
+    container.classList.add("red-transparent-bg");
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+    errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: Hash computation failed: ${error.message}`;
+    container.innerHTML = "";
+    container.appendChild(errorDiv);
+    return;
+  }
+
   const formData = new FormData();
   formData.append("file", fileToSend);
 
   const uploadPromise = new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+    xhr = new XMLHttpRequest();
 
-    xhr.open("POST", `/upload/file?path=${encodeURIComponent(path)}`, true);
+    xhr.open("POST", `/upload/file?path=${encodeURIComponent(path)}&expected_hash=${expectedHash}`, true);
 
     xhr.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) {
@@ -328,6 +436,10 @@ async function updateUploadElement(elementToProcess) {
     errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
     container.innerHTML = "";
     container.appendChild(errorDiv);
+  } finally {
+    // Hide cancel button
+    const cancelBtn = container.querySelector(".cancel-upload-btn");
+    if (cancelBtn) cancelBtn.classList.remove("visible");
   }
 }
 

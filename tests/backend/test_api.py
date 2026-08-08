@@ -111,6 +111,60 @@ def test_upload_file_unicode_name(auth_client):
     assert listing["files"][0]["name"] == "café-ñ 1.txt"
 
 
+def test_upload_file_hash_verification_correct(auth_client):
+    content = b"data to hash"
+    expected = hashlib.sha256(content).hexdigest()
+
+    response = auth_client.post(
+        f"/upload/file?path=/&expected_hash={expected}",
+        data={"file": (io.BytesIO(content), "hash.txt")},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 200
+    assert response.get_json()["sha256"] == expected
+
+    # File should exist
+    listing = auth_client.get("/list?path=/").get_json()
+    assert any(f["name"] == "hash.txt" and f["size"] == len(content) for f in listing["files"])
+
+
+def test_upload_file_hash_verification_wrong(auth_client):
+    content = b"data to hash"
+    wrong_hash = "0" * 64
+
+    response = auth_client.post(
+        f"/upload/file?path=/&expected_hash={wrong_hash}",
+        data={"file": (io.BytesIO(content), "hash2.txt")},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Hash mismatch"
+    assert data["expected"] == wrong_hash
+    assert data["got"] == hashlib.sha256(content).hexdigest()
+
+    # File should NOT exist (cleaned up on mismatch)
+    listing = auth_client.get("/list?path=/").get_json()
+    assert not any(f["name"] == "hash2.txt" for f in listing["files"])
+
+
+def test_upload_file_hash_verification_invalid_format(auth_client):
+    content = b"data"
+    invalid_hash = "not-a-valid-hash"
+
+    response = auth_client.post(
+        f"/upload/file?path=/&expected_hash={invalid_hash}",
+        data={"file": (io.BytesIO(content), "hash3.txt")},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Invalid hash format"
+
+    # File should NOT exist
+    listing = auth_client.get("/list?path=/").get_json()
+    assert not any(f["name"] == "hash3.txt" for f in listing["files"])
+
+
 # ---------------------------------------------------------------------------
 # /upload/available-files
 # ---------------------------------------------------------------------------
@@ -429,6 +483,18 @@ def test_chunked_upload_hash_verification(auth_client):
     response = auth_client.post("/upload/complete", json={"upload_id": upload_id2})
     assert response.status_code == 400
     assert "Hash mismatch" in response.get_json()["error"]
+
+
+def test_chunked_upload_hash_verification_invalid_format(auth_client):
+    content = b"data"
+    invalid_hash = "not-a-valid-hash"
+
+    response = auth_client.post(
+        "/upload/initiate",
+        json={"filename": "hash3.txt", "total_size": len(content), "expected_hash": invalid_hash},
+    )
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Invalid hash format"
 
 
 def test_chunked_upload_missing_chunks_fails(auth_client):

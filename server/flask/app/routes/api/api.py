@@ -261,6 +261,9 @@ def upload_initiate():
         if not filename or total_size is None:
             return jsonify({"error": "filename and total_size required"}), 400
 
+        if expected_hash and len(expected_hash) != 64:
+            return jsonify({"error": "Invalid hash format"}), 400
+
         max_size, used_size = get_storage_size()
         free_size = max_size - used_size
         if total_size > free_size:
