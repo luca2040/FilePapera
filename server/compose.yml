@@ -11,13 +11,29 @@ services:
       - ENV=development
     volumes:
       - ./uploads:/app/uploads:rw
-      # For development:
-      - ./flask/app:/app/app:rw
+      # For development: mount the whole app so every source file is hot-reloadable
+      - ./flask:/app:rw
     expose:
       - 8080
     # For development:
     ports:
       - 5000:5000
+
+  # Runs the automated backend tests inside the same image as the server.
+  # Usage: docker compose run --rm test
+  test:
+    build: ./flask
+    environment:
+      - ENV=test
+      - APP_DIR=/app
+    volumes:
+      # Write access so Flask-Assets can build/cache the gen bundles when a
+      # template is rendered during the tests.
+      - ./flask:/app:rw
+      - ../tests:/app/tests:ro
+    working_dir: /app
+    command: >
+      sh -c "pip install -q -r requirements-dev.txt && pytest tests/backend -q"
 
   # Dont need nginx for development
   # nginx:

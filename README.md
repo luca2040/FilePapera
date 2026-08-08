@@ -93,3 +93,42 @@ USERNAME=user
 PASSWORD_HASH=3bb12eda3c298db5de25597f54d924f2e17e78a26ad8953ed8218ee682f0bbbe9021e2f3009d152c911bf1f25ec683a902714166767afbd8e5bd0fb0124ecb8a
 
 ```
+
+The template above lives in `server/config/.env.example`. Copy it to `server/config/.env` before running:
+
+```sh
+cp server/config/.env.example server/config/.env
+```
+
+---
+
+## Development
+
+### Running with hot reload
+
+From `server/`, the whole `flask` folder is mounted into the container, so any edit to Python, JS, CSS or templates is picked up without rebuilding:
+
+```sh
+docker compose up --build
+```
+
+The server is exposed on `localhost:5000`. Python files trigger a Flask reload, while JS/CSS bundles are rebuilt automatically by Flask-Assets (with hash-versioned URLs, so no browser cache busting is needed).
+
+### Tests
+
+Backend (pytest, runs inside the same Docker image as the server):
+
+```sh
+# from server/
+docker compose run --rm test
+```
+
+Frontend (vitest + jsdom):
+
+```sh
+# from the repository root
+npm install
+npm test
+```
+
+For a watch loop while editing: `npm run test:watch`.

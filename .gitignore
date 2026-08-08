@@ -167,7 +167,8 @@ test/
 .webassets-manifest
 server/flask/app/static/gen
 
-!server/config/.env
-
 # issues files
 CURRENT_ISSUE.md
+
+# Node
+node_modules/
