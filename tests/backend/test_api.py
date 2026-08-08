@@ -1,5 +1,6 @@
 import hashlib
 import io
+import os
 import zipfile
 
 
@@ -296,3 +297,160 @@ def test_download_path_traversal_never_escapes(auth_client):
         response = auth_client.get(f"/download?filepath={payload}")
         assert response.status_code != 200
         assert b"root:" not in response.data
+
+
+# ---------------------------------------------------------------------------
+# Chunked upload
+# ---------------------------------------------------------------------------
+
+
+def _initiate(auth_client, filename="test.bin", total_size=100, target_path="", expected_hash=None):
+    payload = {"filename": filename, "total_size": total_size, "target_path": target_path}
+    if expected_hash is not None:
+        payload["expected_hash"] = expected_hash
+    response = auth_client.post("/upload/initiate", json=payload)
+    assert response.status_code == 200
+    return response.get_json()
+
+
+def test_chunked_upload_initiate(auth_client):
+    data = _initiate(auth_client, "test.txt", 100)
+    assert "upload_id" in data
+    assert data["total_chunks"] == 1
+    assert data["chunk_size"] == 5 * 1024 * 1024
+
+
+def test_chunked_upload_single_chunk(auth_client):
+    initiate = _initiate(auth_client, "small.txt", 11)
+    upload_id = initiate["upload_id"]
+
+    response = auth_client.post(
+        f"/upload/chunk?upload_id={upload_id}&chunk_index=0",
+        data=b"hello world",
+        content_type="application/octet-stream",
+    )
+    assert response.status_code == 200
+    assert response.get_json()["status"] == "uploaded"
+
+    response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
+    assert response.status_code == 200
+    assert response.get_json()["sha256"] == "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+
+
+def test_chunked_upload_multiple_chunks(auth_client):
+    # Use 1 MB chunks to fit within 10 MB max storage
+    response = auth_client.post(
+        "/upload/initiate",
+        json={"filename": "big.bin", "total_size": 3 * 1024 * 1024, "target_path": "", "chunk_size": 1024 * 1024},
+    )
+    assert response.status_code == 200
+    initiate = response.get_json()
+    upload_id = initiate["upload_id"]
+    assert initiate["total_chunks"] == 3
+
+    chunk_size = initiate["chunk_size"]
+    for i in range(3):
+        start = i * chunk_size
+        end = min(start + chunk_size, 3 * 1024 * 1024)
+        chunk_data = os.urandom(end - start)
+        response = auth_client.post(
+            f"/upload/chunk?upload_id={upload_id}&chunk_index={i}",
+            data=chunk_data,
+            content_type="application/octet-stream",
+        )
+        assert response.status_code == 200
+
+    response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
+    assert response.status_code == 200
+
+
+def test_chunked_upload_status(auth_client):
+    # Use a custom chunk size to force multiple chunks for a small file
+    response = auth_client.post(
+        "/upload/initiate",
+        json={"filename": "status.txt", "total_size": 20, "target_path": "", "chunk_size": 10},
+    )
+    assert response.status_code == 200
+    upload_id = response.get_json()["upload_id"]
+
+    response = auth_client.get(f"/upload/status?upload_id={upload_id}")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] == "in_progress"
+    assert data["progress"] == 0.0
+
+    auth_client.post(
+        f"/upload/chunk?upload_id={upload_id}&chunk_index=0",
+        data=b"x" * 10,
+        content_type="application/octet-stream",
+    )
+
+    response = auth_client.get(f"/upload/status?upload_id={upload_id}")
+    data = response.get_json()
+    assert data["progress"] == 50.0
+
+
+def test_chunked_upload_cancel(auth_client):
+    initiate = _initiate(auth_client, "cancel.txt", 100)
+    upload_id = initiate["upload_id"]
+
+    response = auth_client.post("/upload/cancel", json={"upload_id": upload_id})
+    assert response.status_code == 200
+
+    response = auth_client.get(f"/upload/status?upload_id={upload_id}")
+    assert response.status_code == 404
+
+
+def test_chunked_upload_hash_verification(auth_client):
+    content = b"data to hash"
+    expected = hashlib.sha256(content).hexdigest()
+    initiate = _initiate(auth_client, "hash.txt", len(content), expected_hash=expected)
+    upload_id = initiate["upload_id"]
+
+    auth_client.post(
+        f"/upload/chunk?upload_id={upload_id}&chunk_index=0",
+        data=content,
+        content_type="application/octet-stream",
+    )
+
+    response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
+    assert response.status_code == 200
+    assert response.get_json()["sha256"] == expected
+
+    # Wrong hash should fail
+    wrong_hash = "0" * 64
+    initiate2 = _initiate(auth_client, "hash2.txt", len(content), expected_hash=wrong_hash)
+    upload_id2 = initiate2["upload_id"]
+    auth_client.post(
+        f"/upload/chunk?upload_id={upload_id2}&chunk_index=0",
+        data=content,
+        content_type="application/octet-stream",
+    )
+    response = auth_client.post("/upload/complete", json={"upload_id": upload_id2})
+    assert response.status_code == 400
+    assert "Hash mismatch" in response.get_json()["error"]
+
+
+def test_chunked_upload_missing_chunks_fails(auth_client):
+    initiate = _initiate(auth_client, "missing.txt", 30)
+    upload_id = initiate["upload_id"]
+
+    auth_client.post(
+        f"/upload/chunk?upload_id={upload_id}&chunk_index=0",
+        data=b"x" * 10,
+        content_type="application/octet-stream",
+    )
+    # Skip chunk 1
+
+    response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
+    assert response.status_code == 400
+    assert "Missing chunks" in response.get_json()["error"]
+
+
+def test_chunked_upload_storage_limit(auth_client):
+    response = auth_client.post(
+        "/upload/initiate",
+        json={"filename": "huge.bin", "total_size": 10 * 1024 * 1024 + 1, "target_path": ""},
+    )
+    assert response.status_code == 507
+    assert response.get_json()["storageError"] is True
