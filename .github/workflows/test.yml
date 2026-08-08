@@ -1,0 +1,41 @@
+name: test suite
+
+on:
+  push:
+    branches: [main, 'github-tests']
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: backend tests (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build test image
+        run: docker compose build test
+
+      - name: run backend tests
+        run: docker compose run --rm test
+
+  frontend:
+    name: frontend tests (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: install deps
+        run: npm ci
+
+      - name: run frontend tests
+        run: npm test

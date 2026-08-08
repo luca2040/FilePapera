@@ -10,28 +10,28 @@ on:
   workflow_dispatch:
 
 jobs:
-      push-filepapera-image:
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: './server/flask'
-        steps:
-          - id: string
-            uses: ASzc/change-string-case-action@v2
-            with:
-              string: Luca2040
-        
-          - name: 'github actions'
-            uses: actions/checkout@main
+  push-filepapera-image:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './server/flask'
+    steps:
+      - id: string
+        uses: ASzc/change-string-case-action@v2
+        with:
+          string: Luca2040
 
-          - name: 'login ghcr'
-            uses: docker/login-action@v1
-            with:
-              registry: ghcr.io
-              username: ${{github.actor}}
-              password: ${{secrets.GITHUB_TOKEN}}
+      - name: 'github actions'
+        uses: actions/checkout@main
 
-          - name: 'build image'
-            run: |
-              docker build . --file Dockerfile --tag ghcr.io/${{ steps.string.outputs.lowercase }}/filepapera:latest
-              docker push ghcr.io/${{ steps.string.outputs.lowercase }}/filepapera:latest
+      - name: 'login ghcr'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: 'build image'
+        run: |
+          docker build . --file Dockerfile --tag ghcr.io/${{ steps.string.outputs.lowercase }}/filepapera:latest
+          docker push ghcr.io/${{ steps.string.outputs.lowercase }}/filepapera:latest
