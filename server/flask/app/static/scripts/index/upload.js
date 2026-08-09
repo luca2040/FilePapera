@@ -11,6 +11,9 @@ let isProcessing = false;
 // True if at least one file was uploaded during the current drain
 let uploadedAny = false;
 
+// Track active chunked uploads for cleanup on unload
+const activeChunkedUploads = new Map(); // fileElementId -> upload_id
+
 // Returns the next file in the list that is ready to be uploaded
 function getNextReadyFile() {
   return filesToProcessList.find(
@@ -76,21 +79,361 @@ function resetDoneFiles() {
   );
 }
 
+// Configuration for chunked uploads
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB (default, server response takes precedence)
+const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB - files larger use chunked upload
+const MAX_PARALLEL_CHUNKS = 3;
+const HASH_CHUNK_SIZE = 1024 * 1024; // 1 MB for hash calculation
+const HASH_CHUNKED_THRESHOLD = 50 * 1024 * 1024; // 50 MB threshold for streaming hash
+
+// Computes SHA-256 hash for small files using Web Crypto (fast) with js-sha256 fallback
+async function computeFileHashSmall(file, onProgress) {
+  const buffer = await file.arrayBuffer();
+  
+  // Try Web Crypto API first (requires secure context)
+  if (typeof crypto !== "undefined" && crypto.subtle) {
+    try {
+      const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      if (onProgress) onProgress(100);
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    } catch (e) {
+      // Only fall back for unsupported/insecure context errors
+      if (e.name !== "NotSupportedError" && e.name !== "SecurityError") {
+        throw e;
+      }
+      // Fall through to js-sha256
+    }
+  }
+  
+  // Fallback: js-sha256 (works everywhere)
+  if (typeof sha256 === "undefined") {
+    throw new Error("Hash library not loaded");
+  }
+  const hasher = sha256.create();
+  hasher.update(new Uint8Array(buffer));
+  if (onProgress) onProgress(100);
+  return hasher.hex();
+}
+
+// Computes SHA-256 hash using streaming (constant memory) via js-sha256 (loaded globally)
+async function computeFileHashStreaming(file, onProgress, abortSignal) {
+  const totalSize = file.size;
+  let processed = 0;
+  const hasher = sha256.create();
+
+  for (let offset = 0; offset < totalSize; offset += HASH_CHUNK_SIZE) {
+    if (abortSignal?.aborted) {
+      throw new Error("Hash computation cancelled");
+    }
+
+    const chunk = file.slice(offset, offset + HASH_CHUNK_SIZE);
+    const buffer = await chunk.arrayBuffer();
+    hasher.update(new Uint8Array(buffer));
+    processed += chunk.size;
+
+    if (onProgress) {
+      onProgress((processed / totalSize) * 100);
+    }
+
+    // Yield to event loop to keep UI responsive
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  return hasher.hex();
+}
+
+// Unified hash computation - uses streaming for large files
+async function computeFileHashAuto(file, onProgress, abortSignal) {
+  if (file.size > HASH_CHUNKED_THRESHOLD) {
+    return computeFileHashStreaming(file, onProgress, abortSignal);
+  }
+  return computeFileHashSmall(file, onProgress);
+}
+
+async function uploadChunked(file, path, container, fileElement) {
+  const totalSize = file.size;
+
+  // Compute hash before upload - show progress in purple
+  setLoadingFilePercentage(container, 0, "var(--accent-purple-transparent)");
+
+  // Only show cancel button for large files (>50MB) where streaming hash can be cancelled
+  const canCancelHash = totalSize > HASH_CHUNKED_THRESHOLD;
+
+  // AbortController for hash computation cancellation
+  const hashAbortController = new AbortController();
+  fileElement.hashAbortController = hashAbortController;
+
+  // Show cancel button for hashing phase (only for cancellable hashes)
+  const cancelBtn = container.querySelector(".cancel-upload-btn");
+  if (cancelBtn && canCancelHash) {
+    cancelBtn.onclick = () => {
+      hashAbortController.abort();
+    };
+    cancelBtn.classList.add("visible");
+  }
+
+  let expectedHash;
+  try {
+    expectedHash = await computeFileHashAuto(file, (progress) => {
+      setLoadingFilePercentage(container, progress, "var(--accent-purple-transparent)");
+    }, hashAbortController.signal);
+  } catch (error) {
+    // Check if it's a cancellation
+    if (error.message === "Hash computation cancelled" || hashAbortController.signal.aborted) {
+      setLoadingFilePercentage(container, 0);
+      container.classList.add("red-transparent-bg");
+      if (cancelBtn) cancelBtn.classList.remove("visible");
+      fileElement.alreadydone = true;
+      fileElement.cancelled = true;
+      return;
+    }
+    throw new Error(`Hash computation failed: ${error.message}`);
+  }
+
+  // Hash done, switch to green for upload
+  setLoadingFilePercentage(container, 0);
+
+  const initiateResponse = await fetch("/upload/initiate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      filename: file.name,
+      total_size: totalSize,
+      target_path: path,
+      expected_hash: expectedHash,
+      chunk_size: 5 * 1024 * 1024, // 5 MB
+    }),
+  });
+
+  if (!initiateResponse.ok) {
+    const err = await initiateResponse.json();
+    throw new Error(err.error || "Failed to initiate upload");
+  }
+
+  const { upload_id, chunk_size, total_chunks } = await initiateResponse.json();
+  fileElement.upload_id = upload_id;
+  activeChunkedUploads.set(fileElement.id, upload_id);
+
+  // Update cancel button handler for upload phase
+  if (cancelBtn) {
+    cancelBtn.onclick = () => cancelChunkedUpload(upload_id, fileElement);
+  }
+
+  const uploadedChunks = new Set();
+  let completedChunks = 0;
+  // Use fileElement to share abort state with cancel function
+  fileElement.aborted = false;
+  // AbortController for true fetch cancellation
+  const abortController = new AbortController();
+  fileElement.abortController = abortController;
+
+  // Semaphore-based concurrency control
+  let runningCount = 0;
+  const queue = Array.from({ length: total_chunks }, (_, i) => i);
+
+  async function uploadSingleChunk(chunkIndex) {
+    if (fileElement.aborted || abortController.signal.aborted) throw new Error("Upload cancelled");
+
+    const start = chunkIndex * chunk_size;
+    const end = Math.min(start + chunk_size, totalSize);
+    const chunkBlob = file.slice(start, end);
+
+    const response = await fetch(`/upload/chunk?upload_id=${upload_id}&chunk_index=${chunkIndex}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      credentials: "include",
+      body: chunkBlob,
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(`Chunk ${chunkIndex}: ${err.error || "Upload failed"}`);
+    }
+
+    uploadedChunks.add(chunkIndex);
+    completedChunks++;
+    const progress = (completedChunks / total_chunks) * 100;
+    setLoadingFilePercentage(container, progress);
+  }
+
+  function startNext() {
+    while (queue.length > 0 && runningCount < MAX_PARALLEL_CHUNKS && !fileElement.aborted && !abortController.signal.aborted) {
+      const chunkIndex = queue.shift();
+      if (uploadedChunks.has(chunkIndex)) continue;
+
+      runningCount++;
+      const promise = uploadSingleChunk(chunkIndex);
+      promise.finally(() => {
+        runningCount--;
+        startNext();
+      });
+    }
+  }
+
+  try {
+    startNext();
+    while (runningCount > 0 && !fileElement.aborted && !abortController.signal.aborted) {
+      // Wait for at least one chunk to complete
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    if (fileElement.aborted || abortController.signal.aborted) throw new Error("Upload cancelled");
+
+    const completeResponse = await fetch("/upload/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ upload_id }),
+    });
+
+    if (!completeResponse.ok) {
+      const err = await completeResponse.json();
+      throw new Error(err.error || "Failed to complete upload");
+    }
+
+    return await completeResponse.json();
+  } finally {
+    activeChunkedUploads.delete(fileElement.id);
+    if (cancelBtn) cancelBtn.classList.remove("visible");
+  }
+}
+
+async function cancelChunkedUpload(uploadId, fileElement) {
+  if (!uploadId) return;
+  // Signal the upload loop to abort gracefully
+  fileElement.aborted = true;
+  if (fileElement.abortController) {
+    fileElement.abortController.abort();
+  }
+  // Also abort hash computation if in progress
+  if (fileElement.hashAbortController) {
+    fileElement.hashAbortController.abort();
+  }
+  try {
+    await fetch("/upload/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ upload_id: uploadId }),
+    });
+  } finally {
+    activeChunkedUploads.delete(fileElement.id);
+    fileElement.upload_id = null;
+    fileElement.alreadydone = true;
+    fileElement.cancelled = true;
+    // Update UI immediately
+    const container = fileElement.container;
+    if (container) {
+      setLoadingFilePercentage(container, 0);
+      const cancelBtn = container.querySelector(".cancel-upload-btn");
+      if (cancelBtn) cancelBtn.classList.remove("visible");
+      // Show cancelled state
+      container.classList.add("red-transparent-bg");
+    }
+  }
+}
+
+// Cleanup on page unload
+window.addEventListener("beforeunload", async () => {
+  for (const [fileId, uploadId] of activeChunkedUploads) {
+    try {
+      await fetch("/upload/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ upload_id: uploadId }),
+        keepalive: true,
+      });
+    } catch (_) { }
+  }
+});
+
 // Uploads the given file and registers its element for ui progress bar update
 async function updateUploadElement(elementToProcess) {
   const container = elementToProcess.container;
   const fileToSend = elementToProcess.file;
 
-  // Checking file hash would be too slow for large files, just upload it. [TODO: need to do something about this]
+  if (!fileToSend) {
+    elementToProcess.alreadydone = true;
+    return;
+  }
+
+  const path = elementToProcess.path;
+
+  if (fileToSend.size > CHUNKED_THRESHOLD) {
+    try {
+      await uploadChunked(fileToSend, path, container, elementToProcess);
+      elementToProcess.alreadydone = true;
+      setLoadingFileComplete(container);
+      return;
+    } catch (error) {
+      // Cancelled - don't show error, just mark as done and continue queue
+      if (error.message === "Upload cancelled" || elementToProcess.cancelled) {
+        elementToProcess.alreadydone = true;
+        return;
+      }
+      // Other error - show in UI, mark as done, continue queue
+      elementToProcess.alreadydone = true;
+      elementToProcess.storageerror = true;
+      setLoadingFilePercentage(container, 0);
+      container.classList.add("red-transparent-bg");
+      const errorDiv = document.createElement("div");
+      errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+      errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
+      container.innerHTML = "";
+      container.appendChild(errorDiv);
+      return;
+    }
+  }
+
+  // Small file: use original single-request upload
+  // Compute hash first - show progress in purple
+  setLoadingFilePercentage(container, 0, "var(--accent-purple-transparent)");
+
+  const hashAbortController = new AbortController();
+  elementToProcess.hashAbortController = hashAbortController;
+
+  // avoid making the cancel button visible for small files, its not needed
+  // const cancelBtn = container.querySelector(".cancel-upload-btn");
+  // if (cancelBtn) {
+  //   cancelBtn.onclick = () => {
+  //     hashAbortController.abort();
+  //     if (xhr) xhr.abort();
+  //   };
+  //   cancelBtn.classList.add("visible");
+  // }
+
+  let expectedHash;
+  let xhr = null;
+  try {
+    expectedHash = await computeFileHashAuto(fileToSend, (progress) => {
+      setLoadingFilePercentage(container, progress, "var(--accent-purple-transparent)");
+    }, hashAbortController.signal);
+  } catch (error) {
+    elementToProcess.alreadydone = true;
+    elementToProcess.storageerror = true;
+    setLoadingFilePercentage(container, 0);
+    container.classList.add("red-transparent-bg");
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+    errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: Hash computation failed: ${error.message}`;
+    container.innerHTML = "";
+    container.appendChild(errorDiv);
+    return;
+  }
+
+  // Hash done, switch to green for upload
+  setLoadingFilePercentage(container, 0);
 
   const formData = new FormData();
   formData.append("file", fileToSend);
-  const path = elementToProcess.path;
 
   const uploadPromise = new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+    xhr = new XMLHttpRequest();
 
-    xhr.open("POST", `/upload/file?path=${encodeURIComponent(path)}`, true);
+    xhr.open("POST", `/upload/file?path=${encodeURIComponent(path)}&expected_hash=${expectedHash}`, true);
 
     xhr.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) {
@@ -122,8 +465,20 @@ async function updateUploadElement(elementToProcess) {
   try {
     await uploadPromise;
   } catch (error) {
-    alert(TRANSLATIONS.error_uploading_file);
-    window.location.reload();
+    // Don't reload - mark as done and continue queue
+    elementToProcess.alreadydone = true;
+    elementToProcess.storageerror = true;
+    setLoadingFilePercentage(container, 0);
+    container.classList.add("red-transparent-bg");
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+    errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
+    container.innerHTML = "";
+    container.appendChild(errorDiv);
+  } finally {
+    // Hide cancel button
+    const cancelBtn = container.querySelector(".cancel-upload-btn");
+    if (cancelBtn) cancelBtn.classList.remove("visible");
   }
 }
 
@@ -139,43 +494,71 @@ async function onFileSelect(filepath, event, files_) {
 
   let size = 0;
 
-  for (const singleFile of files) {
-    const fileContainerDiv = document.createElement("div");
-    fileContainerDiv.className = "file-container modal-upload";
+  const fileArray = Array.from(files);
+  const BATCH_SIZE = 50;
+  const fileContainer = document.getElementById("file-list-modal") || document.body;
 
-    const fileTitleDiv = document.createElement("div");
-    fileTitleDiv.className = "file-name no-text-select add-file-icon no-margin";
-    fileTitleDiv.innerHTML = singleFile.name;
+  // Show preparing indicator
+  const preparingDiv = document.createElement("div");
+  preparingDiv.className = "file-container modal-upload";
+  preparingDiv.innerHTML = '<div class="file-name no-text-select">Preparing files...</div>';
+  fileContainer.appendChild(preparingDiv);
 
-    fileContainerDiv.appendChild(fileTitleDiv);
+  // Process files in batches to avoid blocking the main thread
+  for (let batchStart = 0; batchStart < fileArray.length; batchStart += BATCH_SIZE) {
+    const batch = fileArray.slice(batchStart, batchStart + BATCH_SIZE);
 
-    const newFileElement = {
-      id: currentFileID++,
-      path: filepath,
-      file: singleFile,
-      waitingfor: false,
-      wasreplaced: false,
-      replaceerror: false,
-      alreadydone: false,
-      storageerror: false,
-      container: fileContainerDiv,
-    };
+    for (const singleFile of batch) {
+      const fileContainerDiv = document.createElement("div");
+      fileContainerDiv.className = "file-container modal-upload";
 
-    let completePath;
+      const fileTitleDiv = document.createElement("div");
+      fileTitleDiv.className = "file-name no-text-select add-file-icon no-margin";
+      fileTitleDiv.innerHTML = singleFile.name;
 
-    if (singleFile.webkitRelativePath && singleFile.webkitRelativePath !== "")
-      completePath =
-        filepath.replace(/^\/+/, "") + "/" + singleFile.webkitRelativePath;
-    else completePath = filepath.replace(/^\/+/, "") + "/" + singleFile.name;
+      fileContainerDiv.appendChild(fileTitleDiv);
 
-    queryData.push({
-      id: newFileElement.id,
-      filepath: completePath,
-    });
-    size += singleFile.size;
+      const cancelBtn = document.createElement("button");
+      cancelBtn.className = "cancel-upload-btn";
+      cancelBtn.textContent = "Cancel";
+      fileContainerDiv.appendChild(cancelBtn);
 
-    tempFilesToProcessList.push(newFileElement);
+      const newFileElement = {
+        id: currentFileID++,
+        path: filepath,
+        file: singleFile,
+        waitingfor: false,
+        wasreplaced: false,
+        replaceerror: false,
+        alreadydone: false,
+        storageerror: false,
+        container: fileContainerDiv,
+      };
+
+      let completePath;
+
+      if (singleFile.webkitRelativePath && singleFile.webkitRelativePath !== "")
+        completePath =
+          filepath.replace(/^\/+/, "") + "/" + singleFile.webkitRelativePath;
+      else completePath = filepath.replace(/^\/+/, "") + "/" + singleFile.name;
+
+      queryData.push({
+        id: newFileElement.id,
+        filepath: completePath,
+      });
+      size += singleFile.size;
+
+      tempFilesToProcessList.push(newFileElement);
+    }
+
+    // Yield to the event loop between batches
+    if (batchStart + BATCH_SIZE < fileArray.length) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
   }
+
+  // Remove preparing indicator
+  preparingDiv.remove();
 
   const response = await getAvailableFiles({ data: queryData, size: size });
 

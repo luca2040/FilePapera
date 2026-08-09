@@ -7,6 +7,9 @@
   --code-bg: #282a36;
   --accent-green: rgba(99, 209, 32);
   --yellow-color: rgb(209, 159, 32);
+  --accent-purple: rgb(168, 85, 247);
+  --accent-purple-dark: rgb(124, 58, 237);
+  --accent-purple-transparent: rgb(68, 34, 100);
   --accent-green-dark: rgb(66, 136, 21);
   --accent-green-transparent: rgb(40, 84, 12);
   --yellow-color-transparent: rgb(80, 61, 12);
@@ -475,6 +478,7 @@ div[selected] {
 
 .file-container.modal-upload {
   min-height: 27px;
+  flex-shrink: 0;
   padding: 10px 20px;
   border-radius: 2px;
   border-bottom: 1px solid var(--border-color);
@@ -501,6 +505,32 @@ div[selected] {
   border-bottom: none;
 }
 
+.cancel-upload-btn {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 0.8em;
+  background: var(--red-color-transparent);
+  color: var(--text-light);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: none;
+}
+
+.cancel-upload-btn.visible {
+  display: inline-block;
+}
+
+.cancel-upload-btn:hover {
+  background: var(--error-not-found);
+}
+
+.cancel-upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .folder-clickable {
   cursor: pointer;
   transition: all 0.2s ease;
@@ -514,14 +544,15 @@ div[selected] {
   display: flex;
   flex: 1;
   gap: 10px;
+  min-width: 0;
 }
 
 .file-name {
   font-weight: bold;
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /*overflow: hidden;*/
+  /*text-overflow: ellipsis;*/
   word-break: break-word;
   white-space: normal;
 }

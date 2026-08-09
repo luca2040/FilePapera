@@ -11,6 +11,14 @@ from urllib.parse import unquote_plus, quote
 
 from app.routes.auth.auth_utils import login_required
 from .api_utils import list_dir, check_valid_path, get_storage_size, generate_large_file
+from .api_chunked import (
+    initiate_upload,
+    upload_chunk,
+    get_upload_status,
+    complete_upload,
+    cancel_upload,
+    cleanup_expired_uploads,
+)
 
 
 bp = Blueprint("api", __name__)
@@ -42,7 +50,13 @@ def list_files_and_folders():
             folder_details = []
 
             for f in files:
-                decoded_file = enc.decode(f)
+                # Skip internal directories that aren't valid encoded names (e.g., .partial)
+                if f.startswith("."):
+                    continue
+                try:
+                    decoded_file = enc.decode(f)
+                except Exception:
+                    continue
                 full_path = os.path.join(folder_path, f)
 
                 if os.path.isdir(full_path):
@@ -125,14 +139,14 @@ def create_folder():
 @login_required(is_API=True)
 def upload_file():
     path = request.args.get("path", "")
+    expected_hash = request.args.get("expected_hash")
+    final_file_path = None
 
     try:
         enc = current_app.config["FILENAME_ENCODER"]
 
         path = unquote_plus(path).lstrip("/")
         full_path = os.path.join(current_app.config["UPLOAD_FOLDER"], path)
-
-        os.makedirs(enc.encode(full_path), exist_ok=True)
 
         if "file" not in request.files:
             return jsonify({"error": "No file part"}), 400
@@ -148,6 +162,11 @@ def upload_file():
         if check_valid_path(final_file_path):
             return jsonify({"message": "Invalid path"}), 403
 
+        os.makedirs(enc.encode(full_path), exist_ok=True)
+
+        if expected_hash and len(expected_hash) != 64:
+            return jsonify({"error": "Invalid hash format"}), 400
+
         sha256_hash = hashlib.sha256()
 
         os.makedirs(os.path.dirname(final_file_path), exist_ok=True)
@@ -159,6 +178,14 @@ def upload_file():
 
         received_hash = sha256_hash.hexdigest()
 
+        if expected_hash and expected_hash != received_hash:
+            os.remove(final_file_path)
+            return jsonify({
+                "error": "Hash mismatch",
+                "expected": expected_hash,
+                "got": received_hash,
+            }), 400
+
         return (
             jsonify(
                 {"message": "File uploaded successfully.", "sha256": received_hash}
@@ -166,6 +193,8 @@ def upload_file():
             200,
         )
     except Exception as _:
+        if final_file_path and os.path.exists(final_file_path):
+            os.remove(final_file_path)
         return jsonify({"error": "Exception uploading file"}), 500
 
 
@@ -216,6 +245,95 @@ def available_files():
 
     except Exception as _:
         return jsonify({"error": "Exception checking files"}), 500
+
+
+@bp.route("/upload/initiate", methods=["POST"])
+@login_required(is_API=True)
+def upload_initiate():
+    try:
+        data = request.get_json()
+        filename = data.get("filename")
+        total_size = data.get("total_size")
+        target_path = data.get("target_path", "")
+        expected_hash = data.get("expected_hash")
+        chunk_size = data.get("chunk_size", 5 * 1024 * 1024)
+
+        if not filename or total_size is None:
+            return jsonify({"error": "filename and total_size required"}), 400
+
+        if expected_hash and len(expected_hash) != 64:
+            return jsonify({"error": "Invalid hash format"}), 400
+
+        max_size, used_size = get_storage_size()
+        free_size = max_size - used_size
+        if total_size > free_size:
+            return jsonify({"error": "Insufficient storage", "storageError": True}), 507
+
+        result = initiate_upload(filename, total_size, target_path, expected_hash, chunk_size)
+        return jsonify(result), 200
+    except Exception as _:
+        return jsonify({"error": "Exception initiating upload"}), 500
+
+
+@bp.route("/upload/chunk", methods=["POST"])
+@login_required(is_API=True)
+def upload_chunk_route():
+    try:
+        upload_id = request.args.get("upload_id")
+        chunk_index = request.args.get("chunk_index", type=int)
+
+        if not upload_id or chunk_index is None:
+            return jsonify({"error": "upload_id and chunk_index required"}), 400
+
+        data = request.get_data()
+        if not data:
+            return jsonify({"error": "Empty chunk"}), 400
+
+        result, code = upload_chunk(upload_id, chunk_index, data)
+        return jsonify(result), code
+    except Exception as _:
+        return jsonify({"error": "Exception uploading chunk"}), 500
+
+
+@bp.route("/upload/status", methods=["GET"])
+@login_required(is_API=True)
+def upload_status():
+    try:
+        upload_id = request.args.get("upload_id")
+        if not upload_id:
+            return jsonify({"error": "upload_id required"}), 400
+        result, code = get_upload_status(upload_id)
+        return jsonify(result), code
+    except Exception as _:
+        return jsonify({"error": "Exception getting status"}), 500
+
+
+@bp.route("/upload/complete", methods=["POST"])
+@login_required(is_API=True)
+def upload_complete():
+    try:
+        data = request.get_json()
+        upload_id = data.get("upload_id")
+        if not upload_id:
+            return jsonify({"error": "upload_id required"}), 400
+        result, code = complete_upload(upload_id)
+        return jsonify(result), code
+    except Exception as _:
+        return jsonify({"error": "Exception completing upload"}), 500
+
+
+@bp.route("/upload/cancel", methods=["POST"])
+@login_required(is_API=True)
+def upload_cancel():
+    try:
+        data = request.get_json()
+        upload_id = data.get("upload_id")
+        if not upload_id:
+            return jsonify({"error": "upload_id required"}), 400
+        result, code = cancel_upload(upload_id)
+        return jsonify(result), code
+    except Exception as _:
+        return jsonify({"error": "Exception cancelling upload"}), 500
 
 
 @bp.route("/reformat", methods=["GET"])
