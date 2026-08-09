@@ -11,7 +11,7 @@ flask_sockets==0.2.1
 gevent==25.4.2
 gevent-websocket==0.10.1
 greenlet==3.2.0
-setuptools==80.3.1
+setuptools==83.0.0
 zope.event==5.0
 zope.interface==7.0.3
 zipstream-new==1.1.8
