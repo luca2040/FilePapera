@@ -156,16 +156,21 @@ function checkTotalReplaceButton() {
     (item) => item.waitingfor === true
   );
 
-  replaceButton = document.getElementById("main-replace-button");
+  const replaceButton = document.getElementById("main-replace-button");
 
   if (index !== -1) {
-    replaceButton.style = "display:flex";
+    replaceButton.style.display = "flex";
 
     replaceButton.onclick = () => {
       for (const file of filesToProcessList) {
         if (file.waitingfor) {
           removeButtonFromReplaceContainer(file.container);
           file.waitingfor = false;
+          file.alreadydone = false;
+          file.cancelled = false;
+          file.wasreplaced = false;
+          file.replaceerror = false;
+          file.storageerror = false;
         }
       }
 
@@ -175,6 +180,67 @@ function checkTotalReplaceButton() {
     };
   } else {
     replaceButton.style.display = "none";
+  }
+
+  ////////////////////////////////////////
+
+  const uploadingIndex = filesToProcessList.findIndex(
+    (item) => (!item.alreadydone && !item.cancelled) && !item.storageerror
+  );
+
+  const cancelButton = document.getElementById("main-cancel-button");
+
+  if (uploadingIndex !== -1) {
+    cancelButton.style.display = "flex";
+    cancelButton.onclick = () => {
+      // Abort all in-progress: chunked + single
+      filesToProcessList.forEach(f => {
+        if (f.alreadydone)
+          return;
+        if (f.upload_id) cancelChunkedUpload(f.upload_id, f);
+        if (f.hashAbortController) f.hashAbortController.abort();
+      });
+      // Clear pending files
+      // filesToProcessList = filesToProcessList.filter(f => f.alreadydone || f.cancelled);
+
+      filesToProcessList.forEach(f => {
+        if (f.alreadydone)
+          return;
+
+        f.waitingfor = true;
+        f.alreadydone = false;
+        f.cancelled = false;
+        f.wasreplaced = false;
+        f.replaceerror = false;
+        f.storageerror = false;
+
+        if (f.container) {
+            // Remove error states
+            // file.container.style.background = "";
+            f.container.classList.remove("red-transparent-bg", "yellow-transparent-bg");
+
+            // Add yellow "waitingfor" state
+            f.container.classList.add("yellow-transparent-bg");
+
+            // if for some reason there was an error that altered the filename, here it gets reset
+            const statusDiv = f.container.querySelector(".file-name");
+            if (statusDiv && f.file) {
+              statusDiv.textContent = f.file.name;
+            }
+
+            // Show replace/reload button (if it exists in container)
+            // const replaceBtn = f.container.querySelector(".replace-files");
+            // if (replaceBtn) replaceBtn.style.display = "flex";
+          }
+      });
+
+      documentDisplayFileList();
+
+      checkTotalReplaceButton();
+      processUploadQueue();
+    };
+  } else {
+    cancelButton.style.display = "none";
   }
 }
 

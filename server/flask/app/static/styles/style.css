@@ -653,6 +653,27 @@ div[selected] {
   background-color: var(--yellow-color-transparent);
 }
 
+.cancel-files.file-input::before {
+  content: "\f00d";
+  color: var(--error-not-found);
+}
+
+.cancel-files.file-input {
+  grid-column: 3;
+  border-color: var(--error-not-found);
+}
+
+.cancel-files.file-input:hover {
+  background-color: var(--red-color-transparent);
+}
+
+.cancel-files-colored {
+  color: var(--error-not-found);
+}
+.cancel-files-colored:hover {
+  background-color: var(--red-color-transparent);
+}
+
 .cancel-files-colored {
   color: var(--error-not-found);
 }
@@ -852,7 +873,7 @@ span.sort-span.value {
 .modal-grid-wrapper {
   display: grid;
   align-items: stretch;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   grid-template-rows: auto auto;
   gap: 10px 0;
   margin-bottom: 20px;

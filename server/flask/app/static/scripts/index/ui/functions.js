@@ -994,6 +994,19 @@ function documentDisplayFileList() {
   for (const file of filesToProcessList) {
     removeButtonFromReplaceContainer(file.container);
 
+    if (file.container) {
+          // file.container.style.background = "";
+          file.container.classList.remove("red-transparent-bg", "yellow-transparent-bg", "transparent-blue");
+
+          if (file.waitingfor) {
+            file.container.classList.add("yellow-transparent-bg"); // waiting (yellow)
+          } else if (file.storageerror || file.replaceerror) {
+            file.container.classList.add("red-transparent-bg"); // error (red)
+          } else {
+            file.container.classList.add("transparent-blue"); // completed (blue)
+          }
+        }
+
     if (file.waitingfor || file.replaceerror) {
       const cancelButton = document.createElement("button");
       cancelButton.className = "file-action-button cancel-files-colored";
@@ -1023,10 +1036,14 @@ function documentDisplayFileList() {
           (item) => item.id === file.id
         );
         filesToProcessList[index].waitingfor = false;
+        filesToProcessList[index].alreadydone = false;
+        filesToProcessList[index].cancelled = false;
+        filesToProcessList[index].wasreplaced = false;
+        filesToProcessList[index].replaceerror = false;
+        filesToProcessList[index].storageerror = false;
+
         removeButtonFromReplaceContainer(filesToProcessList[index].container);
-
         checkTotalReplaceButton();
-
         processUploadQueue();
       };
 
@@ -1261,6 +1278,10 @@ function setLoadingFileComplete(container) {
     "background-size 0.3s ease, background-position 0.3s ease";
   container.style.backgroundSize = `100% 0%`;
   container.style.backgroundPosition = "right";
+
+  container.classList.remove("red-transparent-bg", "yellow-transparent-bg");
+
+  checkTotalReplaceButton();
 
   setTimeout(() => {
     if (!container) return;
