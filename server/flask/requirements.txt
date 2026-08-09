@@ -6,7 +6,7 @@ itsdangerous==2.2.0
 Jinja2==3.1.6
 MarkupSafe==3.0.2
 uWSGI==2.0.25.1
-Werkzeug==3.0.6
+Werkzeug==3.1.6
 flask_sockets==0.2.1
 gevent==25.4.2
 gevent-websocket==0.10.1
