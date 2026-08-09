@@ -173,6 +173,9 @@ async function uploadChunked(file, path, container, fileElement) {
     cancelBtn.classList.add("visible");
   }
 
+  // update global cancel button
+  checkTotalReplaceButton();
+
   let expectedHash;
   try {
     expectedHash = await computeFileHashAuto(file, (progress) => {
@@ -184,9 +187,13 @@ async function uploadChunked(file, path, container, fileElement) {
       setLoadingFilePercentage(container, 0);
       container.classList.add("red-transparent-bg");
       if (cancelBtn) cancelBtn.classList.remove("visible");
-      fileElement.alreadydone = true;
-      fileElement.cancelled = true;
-      return;
+      fileElement.alreadydone = false;
+      fileElement.cancelled = false;
+      fileElement.waitingfor = true;
+
+      // refresh the whole file list UI - may be excessive but works fine
+      documentDisplayFileList();
+      throw new Error(`Hash computation cancelled`);
     }
     throw new Error(`Hash computation failed: ${error.message}`);
   }
@@ -360,6 +367,8 @@ async function updateUploadElement(elementToProcess) {
     return;
   }
 
+  checkTotalReplaceButton();
+
   const path = elementToProcess.path;
 
   if (fileToSend.size > CHUNKED_THRESHOLD) {
@@ -370,6 +379,8 @@ async function updateUploadElement(elementToProcess) {
       return;
     } catch (error) {
       // Cancelled - don't show error, just mark as done and continue queue
+      console.log(error);
+      checkTotalReplaceButton();
       if (error.message === "Upload cancelled" || elementToProcess.cancelled) {
         elementToProcess.alreadydone = true;
         return;
@@ -379,11 +390,11 @@ async function updateUploadElement(elementToProcess) {
       elementToProcess.storageerror = true;
       setLoadingFilePercentage(container, 0);
       container.classList.add("red-transparent-bg");
-      const errorDiv = document.createElement("div");
-      errorDiv.className = "file-name no-text-select add-error-icon no-margin";
-      errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
-      container.innerHTML = "";
-      container.appendChild(errorDiv);
+      // const errorDiv = document.createElement("div");
+      // errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+      // errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
+      // container.innerHTML = "";
+      // container.appendChild(errorDiv);
       return;
     }
   }
@@ -412,15 +423,17 @@ async function updateUploadElement(elementToProcess) {
       setLoadingFilePercentage(container, progress, "var(--accent-purple-transparent)");
     }, hashAbortController.signal);
   } catch (error) {
+    console.log(error);
+    checkTotalReplaceButton();
     elementToProcess.alreadydone = true;
     elementToProcess.storageerror = true;
     setLoadingFilePercentage(container, 0);
     container.classList.add("red-transparent-bg");
-    const errorDiv = document.createElement("div");
-    errorDiv.className = "file-name no-text-select add-error-icon no-margin";
-    errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: Hash computation failed: ${error.message}`;
-    container.innerHTML = "";
-    container.appendChild(errorDiv);
+    // const errorDiv = document.createElement("div");
+    // errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+    // errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: Hash computation failed: ${error.message}`;
+    // container.innerHTML = "";
+    // container.appendChild(errorDiv);
     return;
   }
 
@@ -466,19 +479,22 @@ async function updateUploadElement(elementToProcess) {
     await uploadPromise;
   } catch (error) {
     // Don't reload - mark as done and continue queue
+    console.log(error);
+    checkTotalReplaceButton();
     elementToProcess.alreadydone = true;
     elementToProcess.storageerror = true;
     setLoadingFilePercentage(container, 0);
     container.classList.add("red-transparent-bg");
-    const errorDiv = document.createElement("div");
-    errorDiv.className = "file-name no-text-select add-error-icon no-margin";
-    errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
-    container.innerHTML = "";
-    container.appendChild(errorDiv);
+    // const errorDiv = document.createElement("div");
+    // errorDiv.className = "file-name no-text-select add-error-icon no-margin";
+    // errorDiv.textContent = `${TRANSLATIONS.error_uploading_file}: ${error.message}`;
+    // container.innerHTML = "";
+    // container.appendChild(errorDiv);
   } finally {
     // Hide cancel button
     const cancelBtn = container.querySelector(".cancel-upload-btn");
     if (cancelBtn) cancelBtn.classList.remove("visible");
+    checkTotalReplaceButton();
   }
 }
 
