@@ -395,15 +395,15 @@ async function updateUploadElement(elementToProcess) {
   const hashAbortController = new AbortController();
   elementToProcess.hashAbortController = hashAbortController;
 
-  // Wire up cancel button for small files
-  const cancelBtn = container.querySelector(".cancel-upload-btn");
-  if (cancelBtn) {
-    cancelBtn.onclick = () => {
-      hashAbortController.abort();
-      if (xhr) xhr.abort();
-    };
-    cancelBtn.classList.add("visible");
-  }
+  // avoid making the cancel button visible for small files, its not needed
+  // const cancelBtn = container.querySelector(".cancel-upload-btn");
+  // if (cancelBtn) {
+  //   cancelBtn.onclick = () => {
+  //     hashAbortController.abort();
+  //     if (xhr) xhr.abort();
+  //   };
+  //   cancelBtn.classList.add("visible");
+  // }
 
   let expectedHash;
   let xhr = null;
