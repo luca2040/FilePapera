@@ -161,7 +161,131 @@ def get_upload_status(upload_id: str) -> dict:
     }, 200
 
 
+def upload_complete_route_handler(upload_id: str) -> None:
+    """Validates and kicks off the merge in the background. Returns immediately."""
+
+    with _get_lock(upload_id):
+        meta = _load_metadata(upload_id)
+
+    if not meta:
+        return {"error": "Upload not found"}, 404
+    if meta["status"] == "merging":
+        return {"message": "Merge already in progress"}, 202
+    if meta["status"] == "completed":
+        return {
+            "message": "Upload completed",
+            "sha256": meta.get("final_hash"),
+        }, 200
+    if meta["status"] != "in_progress":
+        return {"error": f"Upload status is {meta['status']}"}, 400
+    if len(meta["uploaded_chunks"]) != meta["total_chunks"]:
+        missing = [
+            i for i in range(meta["total_chunks"]) if i not in meta["uploaded_chunks"]
+        ]
+        return {"error": "Missing chunks", "missing_chunks": missing}, 400
+
+    # Flip status immediately so concurrent completes / status polls see "merging"
+    meta["status"] = "merging"
+    meta["updated_at"] = time.time()
+    with _get_lock(upload_id):
+        _save_metadata(upload_id, meta, sync=True)
+
+    # Capture the real Flask app object (not the proxy) to build a context in the thread
+    app = current_app._get_current_object()
+    thread = threading.Thread(
+        target=_merge_upload_worker, args=(app, upload_id), daemon=True
+    )
+    thread.start()
+
+    return {"message": "Merge started", "status": "merging"}, 202
+
+
+def _merge_upload_worker(app, upload_id: str) -> None:
+    """Runs in a background thread. Needs its own app context for current_app.config."""
+    with app.app_context():
+        try:
+            with _get_lock(upload_id):
+                meta = _load_metadata(upload_id)
+
+            enc = current_app.config["FILENAME_ENCODER"]
+            target_path = unquote_plus(meta["target_path"]).lstrip("/")
+            full_target = os.path.join(
+                current_app.config["UPLOAD_FOLDER"], target_path, meta["filename"]
+            )
+            full_target = enc.encode(full_target)
+
+            if check_valid_path(full_target):
+                _cleanup_upload(upload_id)
+                _set_merge_error(upload_id, "Invalid path")
+                return
+
+            target_dir = os.path.dirname(full_target)
+            os.makedirs(target_dir, exist_ok=True)
+
+            # Write to a temp file IN THE SAME DIRECTORY as the target, so the final
+            # os.replace() is a same-filesystem atomic rename (no partial-file window).
+            tmp_target = os.path.join(
+                target_dir, f".upload-{upload_id}-{uuid.uuid4().hex}.tmp"
+            )
+
+            sha256_hash = hashlib.sha256()
+            try:
+                with open(tmp_target, "wb") as out:
+                    for i in range(meta["total_chunks"]):
+                        chunk_file = _chunk_path(upload_id, i)
+                        with open(chunk_file, "rb") as f:
+                            while chunk := f.read(262144):
+                                out.write(chunk)
+                                sha256_hash.update(chunk)
+
+                received_hash = sha256_hash.hexdigest()
+                if meta["expected_hash"] and meta["expected_hash"] != received_hash:
+                    os.remove(tmp_target)
+                    _cleanup_upload(upload_id)
+                    _set_merge_error(
+                        upload_id,
+                        "Hash mismatch",
+                        expected=meta["expected_hash"],
+                        got=received_hash,
+                    )
+                    return
+
+                # Atomic — other processes/UIs either see nothing, or the complete file.
+                # Never a partially-written one.
+                os.replace(tmp_target, full_target)
+
+            except Exception:
+                if os.path.exists(tmp_target):
+                    os.remove(tmp_target)
+                raise
+
+            with _get_lock(upload_id):
+                meta = _load_metadata(upload_id)
+                meta["status"] = "completed"
+                meta["final_hash"] = received_hash
+                meta["updated_at"] = time.time()
+                _save_metadata(upload_id, meta, sync=True)
+
+            _cleanup_upload(upload_id)
+
+        except Exception as e:
+            _set_merge_error(upload_id, f"Merge failed: {e}")
+
+
+def _set_merge_error(upload_id: str, error: str, **extra) -> None:
+    with _get_lock(upload_id):
+        meta = _load_metadata(upload_id)
+        if meta:
+            meta["status"] = "error"
+            meta["error"] = error
+            meta["error_details"] = extra
+            meta["updated_at"] = time.time()
+            _save_metadata(upload_id, meta, sync=True)
+
+
+@DeprecationWarning
 def complete_upload(upload_id: str) -> dict:
+    """old upload complete function. blocking, streams to target. inefficient"""
     with _get_lock(upload_id):
         meta = _load_metadata(upload_id)
     if not meta:

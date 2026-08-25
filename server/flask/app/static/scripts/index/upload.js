@@ -121,6 +121,7 @@ async function computeFileHashStreaming(file, onProgress, abortSignal) {
   const totalSize = file.size;
   let processed = 0;
   const hasher = sha256.create();
+  let lastYeld = performance.now();
 
   for (let offset = 0; offset < totalSize; offset += HASH_CHUNK_SIZE) {
     if (abortSignal?.aborted) {
@@ -136,8 +137,11 @@ async function computeFileHashStreaming(file, onProgress, abortSignal) {
       onProgress((processed / totalSize) * 100);
     }
 
-    // Yield to event loop to keep UI responsive
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Yield to event loop to keep UI responsive - only if it is visible
+    if (!document.hidden && ((performance.now() - lastYeld) > 50)) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+        lastYeld = performance.now();
+    }
   }
 
   return hasher.hex();
@@ -348,6 +352,7 @@ async function uploadChunked(file, path, container, fileElement) {
     }
     if (fileElement.aborted || abortController.signal.aborted) throw new Error("Upload cancelled");
 
+    // since last update this does not complete, just starts the update
     const completeResponse = await fetch("/upload/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -360,7 +365,42 @@ async function uploadChunked(file, path, container, fileElement) {
       throw new Error(err.error || "Failed to complete upload");
     }
 
-    return await completeResponse.json();
+    const startResult = await completeResponse.json();
+
+    if (startResult.status === "completed" || startResult.message === "Upload completed") {
+      return startResult;
+    }
+
+    // Switch progress bar into an indeterminate "merging" state, since we no
+    // longer have chunk-by-chunk progress to report during this phase.
+    setLoadingFilePercentage(container, 100, "var(--accent-white-transparent)");
+
+    while (true) {
+      if (fileElement.aborted || abortController.signal.aborted) {
+        throw new Error("Upload cancelled");
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const statusResponse = await fetch(`/upload/status?upload_id=${upload_id}`, {
+        credentials: "include",
+      });
+
+      if (!statusResponse.ok) {
+        const err = await statusResponse.json();
+        throw new Error(err.error || "Failed to check merge status");
+      }
+
+      const status = await statusResponse.json();
+
+      if (status.status === "completed") {
+        return status;
+      }
+      if (status.status === "error") {
+        throw new Error(status.error || "Merge failed");
+      }
+      // status.status === "merging" -> keep polling
+    }
   } finally {
     activeChunkedUploads.delete(fileElement.id);
     if (cancelBtn) cancelBtn.classList.remove("visible");

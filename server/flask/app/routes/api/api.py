@@ -18,8 +18,8 @@ from .api_chunked import (
     complete_upload,
     cancel_upload,
     cleanup_expired_uploads,
+    upload_complete_route_handler,
 )
-
 
 bp = Blueprint("api", __name__)
 
@@ -180,11 +180,16 @@ def upload_file():
 
         if expected_hash and expected_hash != received_hash:
             os.remove(final_file_path)
-            return jsonify({
-                "error": "Hash mismatch",
-                "expected": expected_hash,
-                "got": received_hash,
-            }), 400
+            return (
+                jsonify(
+                    {
+                        "error": "Hash mismatch",
+                        "expected": expected_hash,
+                        "got": received_hash,
+                    }
+                ),
+                400,
+            )
 
         return (
             jsonify(
@@ -269,7 +274,9 @@ def upload_initiate():
         if total_size > free_size:
             return jsonify({"error": "Insufficient storage", "storageError": True}), 507
 
-        result = initiate_upload(filename, total_size, target_path, expected_hash, chunk_size)
+        result = initiate_upload(
+            filename, total_size, target_path, expected_hash, chunk_size
+        )
         return jsonify(result), 200
     except Exception as _:
         return jsonify({"error": "Exception initiating upload"}), 500
@@ -316,7 +323,7 @@ def upload_complete():
         upload_id = data.get("upload_id")
         if not upload_id:
             return jsonify({"error": "upload_id required"}), 400
-        result, code = complete_upload(upload_id)
+        result, code = upload_complete_route_handler(upload_id)
         return jsonify(result), code
     except Exception as _:
         return jsonify({"error": "Exception completing upload"}), 500
