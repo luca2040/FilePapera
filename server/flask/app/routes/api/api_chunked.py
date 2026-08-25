@@ -5,10 +5,12 @@ import uuid
 import time
 import shutil
 import threading
+import fcntl
 from pathlib import Path
 from typing import Optional
 from flask import current_app
 from urllib.parse import unquote_plus
+from contextlib import contextmanager
 
 from .api_utils import check_valid_path
 
@@ -48,19 +50,26 @@ def _load_metadata(upload_id: str) -> Optional[dict]:
 def _save_metadata(upload_id: str, meta: dict, sync: bool = False) -> None:
     path = _metadata_path(upload_id)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as f:
+    tmp_path = path.with_suffix(f".tmp.{os.getpid()}.{threading.get_ident()}")
+    with open(tmp_path, "w") as f:
         json.dump(meta, f)
         if sync:
             f.flush()
             os.fsync(f.fileno())
+    os.replace(tmp_path, path)  # atomic on POSIX
 
 
-def _get_lock(upload_id: str) -> threading.Lock:
-    """Get or create a lock for the given upload ID."""
-    with _locks_lock:
-        if upload_id not in _upload_locks:
-            _upload_locks[upload_id] = threading.Lock()
-        return _upload_locks[upload_id]
+@contextmanager
+def _get_lock(upload_id: str):
+    lock_path = _upload_dir(upload_id)
+    lock_path.mkdir(parents=True, exist_ok=True)
+    lock_file = lock_path / ".lock"
+    with open(lock_file, "w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)  # blocks until acquired, released on close
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def initiate_upload(

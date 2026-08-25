@@ -240,7 +240,7 @@ async function uploadChunked(file, path, container, fileElement) {
   let runningCount = 0;
   const queue = Array.from({ length: total_chunks }, (_, i) => i);
 
-  const MAX_CHUNK_RETRIES = 5;
+  const MAX_CHUNK_RETRIES = 8;
   const BASE_RETRY_DELAY_MS = 500;
   const MAX_RETRY_DELAY_MS = 10000;
 
