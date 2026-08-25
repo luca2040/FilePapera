@@ -240,6 +240,22 @@ async function uploadChunked(file, path, container, fileElement) {
   let runningCount = 0;
   const queue = Array.from({ length: total_chunks }, (_, i) => i);
 
+  const MAX_CHUNK_RETRIES = 5;
+  const BASE_RETRY_DELAY_MS = 500;
+  const MAX_RETRY_DELAY_MS = 10000;
+
+  function sleep(ms, signal) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(resolve, ms);
+      if (signal) {
+        signal.addEventListener("abort", () => {
+          clearTimeout(timer);
+          reject(new Error("Upload cancelled"));
+        }, { once: true });
+      }
+    });
+  }
+
   async function uploadSingleChunk(chunkIndex) {
     if (fileElement.aborted || abortController.signal.aborted) throw new Error("Upload cancelled");
 
@@ -247,24 +263,62 @@ async function uploadChunked(file, path, container, fileElement) {
     const end = Math.min(start + chunk_size, totalSize);
     const chunkBlob = file.slice(start, end);
 
-    const response = await fetch(`/upload/chunk?upload_id=${upload_id}&chunk_index=${chunkIndex}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/octet-stream" },
-      credentials: "include",
-      body: chunkBlob,
-      signal: abortController.signal,
-    });
+    let lastError;
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(`Chunk ${chunkIndex}: ${err.error || "Upload failed"}`);
+    for (let attempt = 0; attempt <= MAX_CHUNK_RETRIES; attempt++) {
+      if (fileElement.aborted || abortController.signal.aborted) throw new Error("Upload cancelled");
+
+      try {
+        const response = await fetch(`/upload/chunk?upload_id=${upload_id}&chunk_index=${chunkIndex}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/octet-stream" },
+          credentials: "include",
+          body: chunkBlob,
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          // Distinguish retryable (server/network) errors from permanent (client) ones
+          const err = await response.json().catch(() => ({}));
+          const message = err.error || `HTTP ${response.status}`;
+
+          if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+            // 4xx (except 429 rate-limit) is not going to fix itself with a retry
+            throw new Error(`Chunk ${chunkIndex}: ${message}`);
+          }
+          throw new RetryableError(`Chunk ${chunkIndex}: ${message}`);
+        }
+
+        // Success
+        uploadedChunks.add(chunkIndex);
+        completedChunks++;
+        const progress = (completedChunks / total_chunks) * 100;
+        setLoadingFilePercentage(container, progress);
+        return;
+
+      } catch (error) {
+        if (fileElement.aborted || abortController.signal.aborted) throw new Error("Upload cancelled");
+
+        // Network errors (fetch throws TypeError) are also retryable
+        const isRetryable = error instanceof RetryableError || error instanceof TypeError;
+        lastError = error;
+
+        if (!isRetryable || attempt === MAX_CHUNK_RETRIES) {
+          throw error;
+        }
+
+        const delay = Math.min(BASE_RETRY_DELAY_MS * 2 ** attempt, MAX_RETRY_DELAY_MS);
+        const jitter = delay * (0.5 + Math.random() * 0.5); // avoid thundering herd
+        console.warn(`Chunk ${chunkIndex} failed (attempt ${attempt + 1}/${MAX_CHUNK_RETRIES + 1}), retrying in ${Math.round(jitter)}ms`, error);
+
+        await sleep(jitter, abortController.signal);
+      }
     }
 
-    uploadedChunks.add(chunkIndex);
-    completedChunks++;
-    const progress = (completedChunks / total_chunks) * 100;
-    setLoadingFilePercentage(container, progress);
+    throw lastError;
   }
+
+  class RetryableError extends Error {}
 
   function startNext() {
     while (queue.length > 0 && runningCount < MAX_PARALLEL_CHUNKS && !fileElement.aborted && !abortController.signal.aborted) {
@@ -272,11 +326,17 @@ async function uploadChunked(file, path, container, fileElement) {
       if (uploadedChunks.has(chunkIndex)) continue;
 
       runningCount++;
-      const promise = uploadSingleChunk(chunkIndex);
-      promise.finally(() => {
-        runningCount--;
-        startNext();
-      });
+      uploadSingleChunk(chunkIndex)
+        .catch((err) => {
+          if (!firstError) {
+            firstError = err;
+            abortController.abort(); // stop other chunks too
+          }
+        })
+        .finally(() => {
+          runningCount--;
+          startNext();
+        });
     }
   }
 
