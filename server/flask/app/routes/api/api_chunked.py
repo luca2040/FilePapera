@@ -153,6 +153,8 @@ def get_upload_status(upload_id: str) -> dict:
         "total_size": meta["total_size"],
         "total_chunks": meta["total_chunks"],
         "uploaded_chunks": meta["uploaded_chunks"],
+        "final_hash": meta.get("final_hash", ""),  # this may not exist. get is safer
+        "error": meta.get("error", ""),  # same as before
         "missing_chunks": [
             i for i in range(meta["total_chunks"]) if i not in meta["uploaded_chunks"]
         ],
@@ -241,7 +243,7 @@ def _merge_upload_worker(app, upload_id: str) -> None:
                 received_hash = sha256_hash.hexdigest()
                 if meta["expected_hash"] and meta["expected_hash"] != received_hash:
                     os.remove(tmp_target)
-                    _cleanup_upload(upload_id)
+                    _cleanup_upload_chunks(upload_id)
                     _set_merge_error(
                         upload_id,
                         "Hash mismatch",
@@ -266,7 +268,7 @@ def _merge_upload_worker(app, upload_id: str) -> None:
                 meta["updated_at"] = time.time()
                 _save_metadata(upload_id, meta, sync=True)
 
-            _cleanup_upload(upload_id)
+            _cleanup_upload_chunks(upload_id)
 
         except Exception as e:
             _set_merge_error(upload_id, f"Merge failed: {e}")
@@ -357,6 +359,20 @@ def _cleanup_upload(upload_id: str) -> None:
     # Clean up the lock
     with _locks_lock:
         _upload_locks.pop(upload_id, None)
+
+
+def _cleanup_upload_chunks(upload_id: str) -> None:
+    upload_dir = _upload_dir(upload_id)
+    if not upload_dir.exists():
+        return
+    for entry in upload_dir.iterdir():
+        if entry.name in ("metadata.json", ".lock"):
+            continue
+        try:
+            if entry.is_file():
+                entry.unlink()
+        except OSError:
+            pass
 
 
 def cleanup_expired_uploads() -> int:

@@ -2,7 +2,7 @@ import hashlib
 import io
 import os
 import zipfile
-
+import time
 
 MAX_STORAGE = 10 * 1024 * 1024
 
@@ -17,6 +17,19 @@ def _upload(client, name="test.txt", content=b"hello world"):
 
 def _file_names(listing):
     return [element["name"] for element in listing["files"]]
+
+
+def _wait_for_upload_complete(auth_client, upload_id, timeout=5):
+    """Polls /upload/status until the background merge finishes or errors."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        response = auth_client.get(f"/upload/status?upload_id={upload_id}")
+        assert response.status_code == 200
+        data = response.get_json()
+        if data["status"] in ("completed", "error"):
+            return data
+        time.sleep(0.05)
+    raise AssertionError(f"Upload {upload_id} did not finish merging within {timeout}s")
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +138,9 @@ def test_upload_file_hash_verification_correct(auth_client):
 
     # File should exist
     listing = auth_client.get("/list?path=/").get_json()
-    assert any(f["name"] == "hash.txt" and f["size"] == len(content) for f in listing["files"])
+    assert any(
+        f["name"] == "hash.txt" and f["size"] == len(content) for f in listing["files"]
+    )
 
 
 def test_upload_file_hash_verification_wrong(auth_client):
@@ -179,9 +194,7 @@ def test_available_files_detects_existing(auth_client):
     )
     data = response.get_json()
     assert data["storageError"] is False
-    assert data["responseJSON"] == [
-        {"id": 1, "isfolder": False, "isfile": True}
-    ]
+    assert data["responseJSON"] == [{"id": 1, "isfolder": False, "isfile": True}]
 
 
 def test_available_files_detects_existing_folder(auth_client):
@@ -193,9 +206,7 @@ def test_available_files_detects_existing_folder(auth_client):
     )
     data = response.get_json()
     assert data["storageError"] is False
-    assert data["responseJSON"] == [
-        {"id": 2, "isfolder": True, "isfile": False}
-    ]
+    assert data["responseJSON"] == [{"id": 2, "isfolder": True, "isfile": False}]
 
 
 def test_available_files_reports_storage_error(auth_client):
@@ -217,9 +228,7 @@ def test_available_files_reports_storage_error(auth_client):
 def test_reformat_rename(auth_client):
     _upload(auth_client, "old.txt", b"x")
 
-    response = auth_client.get(
-        "/reformat?old_path=/old.txt&new_path=/new.txt"
-    )
+    response = auth_client.get("/reformat?old_path=/old.txt&new_path=/new.txt")
     assert response.status_code == 200
 
     listing = auth_client.get("/list?path=/").get_json()
@@ -230,9 +239,7 @@ def test_reformat_move_into_folder(auth_client):
     _upload(auth_client, "file.txt", b"x")
     auth_client.post("/new/folder?path=/&name=dest")
 
-    response = auth_client.get(
-        "/reformat?old_path=/file.txt&new_path=/dest/file.txt"
-    )
+    response = auth_client.get("/reformat?old_path=/file.txt&new_path=/dest/file.txt")
     assert response.status_code == 200
 
     listing = auth_client.get("/list?path=/dest").get_json()
@@ -242,9 +249,7 @@ def test_reformat_move_into_folder(auth_client):
 def test_reformat_same_path(auth_client):
     _upload(auth_client, "a.txt", b"x")
 
-    response = auth_client.get(
-        "/reformat?old_path=/a.txt&new_path=/a.txt"
-    )
+    response = auth_client.get("/reformat?old_path=/a.txt&new_path=/a.txt")
     assert response.status_code == 200
 
 
@@ -252,9 +257,7 @@ def test_reformat_target_already_exists(auth_client):
     _upload(auth_client, "a.txt", b"x")
     _upload(auth_client, "b.txt", b"y")
 
-    response = auth_client.get(
-        "/reformat?old_path=/a.txt&new_path=/b.txt"
-    )
+    response = auth_client.get("/reformat?old_path=/a.txt&new_path=/b.txt")
     assert response.status_code == 400
 
 
@@ -358,8 +361,14 @@ def test_download_path_traversal_never_escapes(auth_client):
 # ---------------------------------------------------------------------------
 
 
-def _initiate(auth_client, filename="test.bin", total_size=100, target_path="", expected_hash=None):
-    payload = {"filename": filename, "total_size": total_size, "target_path": target_path}
+def _initiate(
+    auth_client, filename="test.bin", total_size=100, target_path="", expected_hash=None
+):
+    payload = {
+        "filename": filename,
+        "total_size": total_size,
+        "target_path": target_path,
+    }
     if expected_hash is not None:
         payload["expected_hash"] = expected_hash
     response = auth_client.post("/upload/initiate", json=payload)
@@ -387,15 +396,22 @@ def test_chunked_upload_single_chunk(auth_client):
     assert response.get_json()["status"] == "uploaded"
 
     response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
-    assert response.status_code == 200
-    assert response.get_json()["sha256"] == "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+    assert response.status_code == 202
+
+    result = _wait_for_upload_complete(auth_client, upload_id)
+    assert result["status"] == "completed"
 
 
 def test_chunked_upload_multiple_chunks(auth_client):
     # Use 1 MB chunks to fit within 10 MB max storage
     response = auth_client.post(
         "/upload/initiate",
-        json={"filename": "big.bin", "total_size": 3 * 1024 * 1024, "target_path": "", "chunk_size": 1024 * 1024},
+        json={
+            "filename": "big.bin",
+            "total_size": 3 * 1024 * 1024,
+            "target_path": "",
+            "chunk_size": 1024 * 1024,
+        },
     )
     assert response.status_code == 200
     initiate = response.get_json()
@@ -415,14 +431,22 @@ def test_chunked_upload_multiple_chunks(auth_client):
         assert response.status_code == 200
 
     response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
-    assert response.status_code == 200
+    assert response.status_code == 202
+
+    result = _wait_for_upload_complete(auth_client, upload_id)
+    assert result["status"] == "completed"
 
 
 def test_chunked_upload_status(auth_client):
     # Use a custom chunk size to force multiple chunks for a small file
     response = auth_client.post(
         "/upload/initiate",
-        json={"filename": "status.txt", "total_size": 20, "target_path": "", "chunk_size": 10},
+        json={
+            "filename": "status.txt",
+            "total_size": 20,
+            "target_path": "",
+            "chunk_size": 10,
+        },
     )
     assert response.status_code == 200
     upload_id = response.get_json()["upload_id"]
@@ -468,12 +492,17 @@ def test_chunked_upload_hash_verification(auth_client):
     )
 
     response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
-    assert response.status_code == 200
-    assert response.get_json()["sha256"] == expected
+    assert response.status_code == 202
+
+    result = _wait_for_upload_complete(auth_client, upload_id)
+    assert result["status"] == "completed"
+    assert result["final_hash"] == expected
 
     # Wrong hash should fail
     wrong_hash = "0" * 64
-    initiate2 = _initiate(auth_client, "hash2.txt", len(content), expected_hash=wrong_hash)
+    initiate2 = _initiate(
+        auth_client, "hash2.txt", len(content), expected_hash=wrong_hash
+    )
     upload_id2 = initiate2["upload_id"]
     auth_client.post(
         f"/upload/chunk?upload_id={upload_id2}&chunk_index=0",
@@ -481,8 +510,11 @@ def test_chunked_upload_hash_verification(auth_client):
         content_type="application/octet-stream",
     )
     response = auth_client.post("/upload/complete", json={"upload_id": upload_id2})
-    assert response.status_code == 400
-    assert "Hash mismatch" in response.get_json()["error"]
+    assert response.status_code == 202
+
+    result2 = _wait_for_upload_complete(auth_client, upload_id2)
+    assert result2["status"] == "error"
+    assert "Hash mismatch" in result2["error"]
 
 
 def test_chunked_upload_hash_verification_invalid_format(auth_client):
@@ -491,7 +523,11 @@ def test_chunked_upload_hash_verification_invalid_format(auth_client):
 
     response = auth_client.post(
         "/upload/initiate",
-        json={"filename": "hash3.txt", "total_size": len(content), "expected_hash": invalid_hash},
+        json={
+            "filename": "hash3.txt",
+            "total_size": len(content),
+            "expected_hash": invalid_hash,
+        },
     )
     assert response.status_code == 400
     assert response.get_json()["error"] == "Invalid hash format"
@@ -516,7 +552,11 @@ def test_chunked_upload_missing_chunks_fails(auth_client):
 def test_chunked_upload_storage_limit(auth_client):
     response = auth_client.post(
         "/upload/initiate",
-        json={"filename": "huge.bin", "total_size": 10 * 1024 * 1024 + 1, "target_path": ""},
+        json={
+            "filename": "huge.bin",
+            "total_size": 10 * 1024 * 1024 + 1,
+            "target_path": "",
+        },
     )
     assert response.status_code == 507
     assert response.get_json()["storageError"] is True
@@ -556,9 +596,15 @@ def test_chunked_upload_large_file_default_chunks(auth_client):
 
     # Complete and verify
     response = auth_client.post("/upload/complete", json={"upload_id": upload_id})
-    assert response.status_code == 200
-    assert response.get_json()["sha256"] == expected_hash
+    assert response.status_code == 202
+
+    # Wait for background merge to finish, then check the hash
+    result = _wait_for_upload_complete(auth_client, upload_id)
+    assert result["status"] == "completed"
+    assert result["final_hash"] == expected_hash
 
     # Verify file exists and has correct content
     listing = auth_client.get("/list?path=/").get_json()
-    assert any(f["name"] == "large.bin" and f["size"] == total_size for f in listing["files"])
+    assert any(
+        f["name"] == "large.bin" and f["size"] == total_size for f in listing["files"]
+    )
