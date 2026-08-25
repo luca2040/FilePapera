@@ -96,8 +96,7 @@ def initiate_upload(
         "updated_at": time.time(),
     }
 
-    lock = _get_lock(upload_id)
-    with lock:
+    with _get_lock(upload_id):
         _save_metadata(upload_id, meta)
 
     return {
@@ -108,8 +107,7 @@ def initiate_upload(
 
 
 def upload_chunk(upload_id: str, chunk_index: int, data: bytes) -> dict:
-    lock = _get_lock(upload_id)
-    with lock:
+    with _get_lock(upload_id):
         meta = _load_metadata(upload_id)
 
     if not meta:
@@ -133,7 +131,7 @@ def upload_chunk(upload_id: str, chunk_index: int, data: bytes) -> dict:
     with open(_chunk_path(upload_id, chunk_index), "wb") as f:
         f.write(data)
 
-    with lock:
+    with _get_lock(upload_id):
         meta = _load_metadata(upload_id)
         meta["uploaded_chunks"].append(chunk_index)
         meta["uploaded_chunks"].sort()
@@ -144,8 +142,7 @@ def upload_chunk(upload_id: str, chunk_index: int, data: bytes) -> dict:
 
 
 def get_upload_status(upload_id: str) -> dict:
-    lock = _get_lock(upload_id)
-    with lock:
+    with _get_lock(upload_id):
         meta = _load_metadata(upload_id)
 
     if not meta:
@@ -165,8 +162,7 @@ def get_upload_status(upload_id: str) -> dict:
 
 
 def complete_upload(upload_id: str) -> dict:
-    lock = _get_lock(upload_id)
-    with lock:
+    with _get_lock(upload_id):
         meta = _load_metadata(upload_id)
     if not meta:
         return {"error": "Upload not found"}, 404
@@ -210,7 +206,7 @@ def complete_upload(upload_id: str) -> dict:
             "got": received_hash,
         }, 400
 
-    with lock:
+    with _get_lock(upload_id):
         meta = _load_metadata(upload_id)
         meta["status"] = "completed"
         meta["final_hash"] = received_hash
